@@ -1,17 +1,19 @@
--- =============================================
--- STMC HUB: IraqHope (FULLY FIXED VERSION)
--- Original Code Fully Preserved & Corrected
--- =============================================
+local _0xSTMC = "\101\120\101\99\117\116\101"
+local function _0xExecuteScript()
+    local _0xSource = {
+        [1] = "\45\45\32\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61",
+        [2] = "\45\45\32\83\84\77\67\32\72\85\66\58\32\73\114\97\113\72\111\112\101\32\40\70\105\120\101\100\32\66\121\112\97\115\115\32\38\32\79\98\102\117\115\99\97\116\101\100\41",
+        [3] = "\45\45\32\77\97\100\101\32\98\121\32\83\116\101\97\108\116\104\84\101\99\104\109\97\115\116\101\114",
+        [4] = "\45\45\32\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61\61"
+    }
+end
 
-local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
-local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local RepStorage = game:GetService("ReplicatedStorage")
-local LogService = game:GetService("LogService")
-local MarketplaceService = game:GetService("MarketplaceService")
+-- STMC HUB: IraqHope Obfuscated Bundle (Restored & Fixed Bypass)
+local _0xCode = [[
+-- =============================================
+-- STMC HUB: IraqHope (Restored Bypass Version)
+-- Made by StealthTechmaster
+-- =============================================
 
 local Configs_HUB = {
     Cor_Hub = Color3.fromRGB(15, 15, 15),
@@ -23,9 +25,16 @@ local Configs_HUB = {
     Text_Font = Enum.Font.FredokaOne
 }
 
--- =============================================
--- HELPER FUNCTIONS
--- =============================================
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local RepStorage = game:GetService("ReplicatedStorage")
+local LogService = game:GetService("LogService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local LP = Players.LocalPlayer
+
 local function Create(instance, parent, props)
     local new = Instance.new(instance)
     if props then
@@ -95,19 +104,13 @@ local function TextSetColor(instance)
     end)
 end
 
--- =============================================
--- SCREEN GUI SETUP
--- =============================================
-local ScreenGui = Create("ScreenGui", CoreGui, { Name = "STMC_Hub" })
+local ScreenGui = Create("ScreenGui", CoreGui, { Name = "\83\84\77\67\95\72\117\98" })
 
 local ClickSound = Instance.new("Sound", ScreenGui)
 ClickSound.SoundId = "rbxassetid://88442833509532"
 ClickSound.Volume = 0.5
 
-local function PlaySound() 
-    pcall(function() ClickSound:Play() end) 
-end
-
+local function PlaySound() ClickSound:Play() end
 task.spawn(function()
     task.wait(2)
     for _, button in pairs(ScreenGui:GetDescendants()) do
@@ -126,13 +129,8 @@ end)
 local ScreenFind = CoreGui:FindFirstChild(ScreenGui.Name)
 if ScreenFind and ScreenFind ~= ScreenGui then ScreenFind:Destroy() end
 
-function DestroyScript() 
-    pcall(function() ScreenGui:Destroy() end) 
-end
+function DestroyScript() ScreenGui:Destroy() end
 
--- =============================================
--- NOTIFICATION SYSTEM
--- =============================================
 local Menu_Notifi = Create("Frame", ScreenGui, {
     Size = UDim2.new(0, 300, 1, 0),
     Position = UDim2.new(1, 0, 0, 0),
@@ -158,10 +156,7 @@ function MakeNotifi(Configs)
         BackgroundColor3 = Configs_HUB.Cor_Hub,
         Position = UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0),
         AutomaticSize = "Y"
-    }) 
-    Corner(Frame2)
-    Stroke(Frame2)
-    
+    }) Corner(Frame2)
     Create("TextLabel", Frame2, {
         Size = UDim2.new(1, 0, 0, 25),
         Font = Configs_HUB.Text_Font,
@@ -172,7 +167,6 @@ function MakeNotifi(Configs)
         TextXAlignment = "Left",
         TextColor3 = Configs_HUB.Cor_Text
     })
-    
     local CloseNotifi = Create("TextButton", Frame2, {
         Text = "X",
         Font = Configs_HUB.Text_Font,
@@ -183,7 +177,6 @@ function MakeNotifi(Configs)
         AnchorPoint = Vector2.new(1, 0),
         Size = UDim2.new(0, 25, 0, 25)
     })
-    
     Create("TextLabel", Frame2, {
         Size = UDim2.new(1, -30, 0, 0),
         Position = UDim2.new(0, 20, 0, CloseNotifi.Size.Y.Offset + 10),
@@ -197,26 +190,18 @@ function MakeNotifi(Configs)
         BackgroundTransparency = 1,
         TextWrapped = true
     })
-    
     local FrameSize = Create("Frame", Frame2, {
         Size = UDim2.new(1, 0, 0, 2),
         BackgroundColor3 = Configs_HUB.Cor_Stroke,
         Position = UDim2.new(0, 2, 0, 30),
         BorderSizePixel = 0
-    }) 
-    Corner(FrameSize) 
-    Create("Frame", Frame2, { Size = UDim2.new(0, 0, 0, 5), Position = UDim2.new(0, 0, 1, 5), BackgroundTransparency = 1 })
-    
-    task.spawn(function() 
-        CreateTween(FrameSize, "Size", UDim2.new(0, 0, 0, 2), timewait, true) 
-    end)
-    
+    }) Corner(FrameSize) Create("Frame", Frame2, { Size = UDim2.new(0, 0, 0, 5), Position = UDim2.new(0, 0, 1, 5), BackgroundTransparency = 1 })
+    task.spawn(function() CreateTween(FrameSize, "Size", UDim2.new(0, 0, 0, 2), timewait, true) end)
     CloseNotifi.MouseButton1Click:Connect(function()
         CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.1, true)
         CreateTween(Frame2, "Position", UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0), 0.5, true)
         Frame1:Destroy()
     end)
-    
     task.spawn(function()
         CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.5, true)
         CreateTween(Frame2, "Position", UDim2.new(), 0.1, true)
@@ -230,7 +215,7 @@ function MakeNotifi(Configs)
 end
 
 -- =============================================
--- BYPASS SYSTEM (FULLY RESTORED)
+-- 🛡️ FULL ACE & SPRINT MOVEMENT BYPASS SYSTEM
 -- =============================================
 local BypassEnabled = false
 
@@ -405,7 +390,7 @@ FullBypass()
 MonitorNewRemotes()
 
 -- =============================================
--- FLIGHT SYSTEM (FULLY RESTORED)
+-- ✈️ FLIGHT SYSTEM (FIXED VERTICAL FLY)
 -- =============================================
 local Flying = false
 local FlySpeed = 50
@@ -486,7 +471,7 @@ LP.CharacterAdded:Connect(function()
 end)
 
 -- =============================================
--- GUI SCANNER REMOVER
+-- 🚫 GUI SCANNER REMOVER
 -- =============================================
 local PlayerGui = LP:WaitForChild("PlayerGui")
 local SuspiciousKeywords = {"warning","anticheat","detected","banned","admin","notification","toast","popup","exploit"}
@@ -518,7 +503,7 @@ for _, child in ipairs(PlayerGui:GetChildren()) do
 end
 
 -- =============================================
--- MAIN UI & INTERFACE (FULLY RESTORED)
+-- 🖥️ MAIN UI & INTERFACE
 -- =============================================
 local Menu = Create("Frame", ScreenGui, {
     Size = UDim2.new(0, 530, 0, 320),
@@ -548,7 +533,7 @@ local IntroSound = Instance.new("Sound")
 IntroSound.SoundId = "rbxassetid://8426701399"
 IntroSound.Volume = 2
 IntroSound.Parent = ScreenGui
-pcall(function() IntroSound:Play() end)
+IntroSound:Play()
 
 local Effect = Create("Frame", ScreenGui, {
     Size = UDim2.new(0, 10, 0, 10),
@@ -630,7 +615,7 @@ local Title = Create("TextLabel", NameFrame, {
     Font = Configs_HUB.Text_Font,
     TextXAlignment = Enum.TextXAlignment.Left,
     TextYAlignment = Enum.TextYAlignment.Center,
-    Text = "STMC HUB: MAX",
+    Text = "STMC HUB: IraqHope",
     TextSize = 20,
     ZIndex = 12
 })
@@ -776,7 +761,7 @@ local PlayerHead = Create("ImageLabel", AnimMenu, {
 Corner(PlayerHead, {CornerRadius = UDim.new(1, 0)})
 Stroke(PlayerHead)
 local Anim_Credits = Create("TextLabel", AnimMenu, {
-    Text = "مرحبا بك في STMC MAX " .. LP.Name,
+    Text = "مرحبا بك في STMC " .. LP.Name,
     BackgroundTransparency = 1,
     Size = UDim2.new(1, 0, 0, 25),
     Position = UDim2.new(0, 0, 0, 68),
@@ -917,7 +902,7 @@ function AddButton(parent, Configs)
         ImageColor3 = Configs_HUB.Cor_Stroke
     })
     TextButton.MouseButton1Click:Connect(function()
-        pcall(Callback)
+        Callback("Click!!")
         CreateTween(ImageLabel, "ImageColor3", Color3.fromRGB(30, 140, 200), 0.2, true)
         CreateTween(ImageLabel, "ImageColor3", Configs_HUB.Cor_Stroke, 0.2, false)
     end)
@@ -946,11 +931,7 @@ function AddPlayerProfile(parent)
     local placeName = "Unknown Place"
     pcall(function() placeName = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
     local exploit = "Unknown Exploit"
-    pcall(function() 
-        if identifyexecutor then exploit = identifyexecutor() 
-        elseif getexecutorname then exploit = getexecutorname() 
-        end 
-    end)
+    if identifyexecutor then exploit = identifyexecutor() elseif getexecutorname then exploit = getexecutorname() end
     local fps = 0; local frameCount = 0; local lastTime = tick()
     RunService.Heartbeat:Connect(function()
         frameCount = frameCount + 1
@@ -960,7 +941,7 @@ function AddPlayerProfile(parent)
         return "User: " .. LP.Name .. "\n" ..
                "Map Name: " .. placeName .. "\n" ..
                "Account Age: " .. LP.AccountAge .. " days\n" ..
-               "Script: STMC Hub (MAX)\n" ..
+               "Script: STMC Hub\n" ..
                "Exploit: " .. tostring(exploit) .. "\n" ..
                "Ping: " .. math.floor(LP:GetNetworkPing() * 1000) .. " ms\n" ..
                "FPS: " .. fps .. "\n" ..
@@ -1134,19 +1115,47 @@ function AddDropdown(parent, Configs)
     }
 end
 
--- =============================================
--- TABS CREATION (FULLY RESTORED)
--- =============================================
-local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
-local LocalPlayerTab = MakeTab({Name = "شخصيتي 🏃‍♂️", TabTitle = true})
-local ESPTab = MakeTab({Name = "رادار 👁️", TabTitle = true})
-local TeleportTab = MakeTab({Name = "الانتقال ⚡", TabTitle = true})
-local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
 local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, Image = "rbxassetid://6031075931"})
+local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
+local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
 
--- =============================================
--- MAIN TAB (FULLY RESTORED)
--- =============================================
+AddPlayerProfile(RightsTab)
+
+AddButton(RightsTab, {
+    Name = "📢 أنظم قناتنا التليكرام",
+    Callback = function()
+        setclipboard('https://t.me/StealthTechMasterComunity')
+        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ رابط التليجرام", Time = 2})
+    end
+})
+
+AddButton(RightsTab, {
+    Name = "👤 حساب مطور عبود Telegram",
+    Callback = function()
+        setclipboard('Messi_zx')
+        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ حساب عبود", Time = 2})
+    end
+})
+
+AddButton(RightsTab, {
+    Name = "👤 حساب مطور 1ua10 TIK TOK",
+    Callback = function()
+        setclipboard('1ua10')
+        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ حساب 1ua10", Time = 2})
+    end
+})
+
+AddButton(RightsTab, {
+    Name = "🏷️ تم صنع السكربت بواسطة STMC",
+    Callback = function()
+        MakeNotifi({
+            Title = "حقوق STMC",
+            Text = "تم صنع السكربت بواسطة StealthTechmaster\nكلان STMC\nهذا السكربت مخصص لـ عراق هوب\nتيك توك: 1ua10\nتليجرام: @StealthTechMasterComunity",
+            Time = 6
+        })
+    end
+})
+
 AddButton(MainTab, {
     Name = "🔓 فك حماية الطيران",
     Callback = function()
@@ -1169,215 +1178,14 @@ AddButton(MainTab, {
 })
 
 AddButton(MainTab, {
-    Name = "➕ زيادة سرعة الطيران (+50)",
-    Callback = function()
-        FlySpeed = FlySpeed + 50
-        MakeNotifi({Title="Fly", Text="سرعة الطيران الان: "..FlySpeed, Time=2})
-    end
-})
-
-AddButton(MainTab, {
-    Name = "➖ تقليل سرعة الطيران (-50)",
-    Callback = function()
-        if FlySpeed > 50 then
-            FlySpeed = FlySpeed - 50
-        end
-        MakeNotifi({Title="Fly", Text="سرعة الطيران الان: "..FlySpeed, Time=2})
-    end
-})
-
-AddButton(MainTab, {
     Name = "💰 فارم فلوس",
     Callback = function()
-        pcall(function()
-            loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/LSDSltPsDZyOKL7q/raw"))()
-        end)
+        loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/LSDSltPsDZyOKL7q/raw"))()
     end
 })
 
 -- =============================================
--- LOCAL PLAYER TAB (FULLY RESTORED)
--- =============================================
-local SpeedEnabled = false
-local JumpEnabled = false
-local NoclipEnabled = false
-local InfJumpEnabled = false
-
-AddButton(LocalPlayerTab, {
-    Name = "⚡ تفعيل سرعة عالية (WalkSpeed)",
-    Callback = function()
-        SpeedEnabled = true
-        MakeNotifi({Title="Player", Text="تم تفعيل السرعة", Time=2})
-    end
-})
-
-AddButton(LocalPlayerTab, {
-    Name = "🚶‍♂️ إرجاع السرعة الطبيعية",
-    Callback = function()
-        SpeedEnabled = false
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            LP.Character.Humanoid.WalkSpeed = 16
-        end
-        MakeNotifi({Title="Player", Text="تم إرجاع السرعة", Time=2})
-    end
-})
-
-AddButton(LocalPlayerTab, {
-    Name = "🦘 تفعيل قفز عالي (JumpPower)",
-    Callback = function()
-        JumpEnabled = true
-        MakeNotifi({Title="Player", Text="تم تفعيل القفز العالي", Time=2})
-    end
-})
-
-AddButton(LocalPlayerTab, {
-    Name = "🧍‍♂️ إرجاع القفز الطبيعي",
-    Callback = function()
-        JumpEnabled = false
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            LP.Character.Humanoid.JumpPower = 50
-        end
-        MakeNotifi({Title="Player", Text="تم إرجاع القفز", Time=2})
-    end
-})
-
-AddButton(LocalPlayerTab, {
-    Name = "👻 اختراق الجدران (Noclip) - تفعيل",
-    Callback = function()
-        NoclipEnabled = true
-        MakeNotifi({Title="Player", Text="Noclip On", Time=2})
-    end
-})
-
-AddButton(LocalPlayerTab, {
-    Name = "🧱 اختراق الجدران (Noclip) - إيقاف",
-    Callback = function()
-        NoclipEnabled = false
-        MakeNotifi({Title="Player", Text="Noclip Off", Time=2})
-    end
-})
-
-AddButton(LocalPlayerTab, {
-    Name = "☁️ قفز لا نهائي بالهواء - تفعيل",
-    Callback = function()
-        InfJumpEnabled = true
-        MakeNotifi({Title="Player", Text="Inf Jump On", Time=2})
-    end
-})
-
-AddButton(LocalPlayerTab, {
-    Name = "❌ قفز لا نهائي بالهواء - إيقاف",
-    Callback = function()
-        InfJumpEnabled = false
-        MakeNotifi({Title="Player", Text="Inf Jump Off", Time=2})
-    end
-})
-
-RunService.Stepped:Connect(function()
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        if SpeedEnabled then
-            LP.Character.Humanoid.WalkSpeed = 100
-        end
-        if JumpEnabled then
-            LP.Character.Humanoid.JumpPower = 150
-        end
-    end
-    
-    if NoclipEnabled and LP.Character then
-        for _, v in pairs(LP.Character:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.CanCollide = false
-            end
-        end
-    end
-end)
-
-UserInputService.JumpRequest:Connect(function()
-    if InfJumpEnabled and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-
--- =============================================
--- ESP TAB (RADAR) (FULLY RESTORED)
--- =============================================
-local ESP_Active = false
-
-AddButton(ESPTab, {
-    Name = "👁️ تفعيل كشف اللاعبين (ESP)",
-    Callback = function()
-        ESP_Active = true
-        MakeNotifi({Title="ESP", Text="تم تفعيل الرادار", Time=2})
-    end
-})
-
-AddButton(ESPTab, {
-    Name = "❌ إيقاف كشف اللاعبين (ESP)",
-    Callback = function()
-        ESP_Active = false
-        MakeNotifi({Title="ESP", Text="تم إيقاف الرادار", Time=2})
-    end
-})
-
-RunService.Heartbeat:Connect(function()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LP and player.Character then
-            local highlight = player.Character:FindFirstChild("STMC_ESP")
-            
-            if ESP_Active then
-                if not highlight then
-                    highlight = Instance.new("Highlight")
-                    highlight.Name = "STMC_ESP"
-                    highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                    highlight.FillTransparency = 0.5
-                    highlight.OutlineTransparency = 0
-                    highlight.Parent = player.Character
-                end
-            else
-                if highlight then
-                    highlight:Destroy()
-                end
-            end
-        end
-    end
-end)
-
--- =============================================
--- TELEPORT TAB (FULLY RESTORED)
--- =============================================
-local TPSelectedPlayer = ""
-
-local TPDropdown = AddDropdown(TeleportTab, {
-    Name = "اختر لاعب للانتقال إليه",
-    Options = {},
-    Callback = function(value)
-        TPSelectedPlayer = value
-    end
-})
-
-AddButton(TeleportTab, {
-    Name = "⚡ انتقال فوري للاعب المختار",
-    Callback = function()
-        if TPSelectedPlayer == "" or TPSelectedPlayer == "لا يوجد لاعبين" then
-            MakeNotifi({Title="تنبيه", Text="يرجى اختيار لاعب", Time=2})
-            return
-        end
-        
-        local targetPlayer = Players:FindFirstChild(TPSelectedPlayer)
-        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                LP.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-                MakeNotifi({Title="Teleport", Text="تم الانتقال إلى " .. TPSelectedPlayer, Time=2})
-            end
-        else
-            MakeNotifi({Title="خطأ", Text="اللاعب غير موجود أو لم يترسبن", Time=2})
-        end
-    end
-})
-
--- =============================================
--- TROLL TAB (FULLY RESTORED)
+-- 🔹 TROLL TAB
 -- =============================================
 local selectedPlayerName = ""
 local playerDropdown = nil
@@ -1421,9 +1229,7 @@ local function UpdatePlayerList()
         end
     end
     if #playerNames == 0 then table.insert(playerNames, "لا يوجد لاعبين") end
-    
-    if playerDropdown then pcall(function() playerDropdown:Update(playerNames) end) end
-    if TPDropdown then pcall(function() TPDropdown:Update(playerNames) end) end
+    if playerDropdown then playerDropdown:Update(playerNames) end
 end
 
 playerDropdown = AddDropdown(TrollTab, {
@@ -1444,10 +1250,110 @@ AddButton(TrollTab, {
 
         pcall(function()
             local args = {";r6"}
-            local signal = RepStorage:FindFirstChild("HDAdminHDClient")
-            if signal then
-                signal = signal:FindFirstChild("Signals")
-                if signal then
-                    signal = signal:FindFirstChild("RequestCommand")
-                    if signal then
-                        signal:InvokeServer(unpack(ar
+            RepStorage:WaitForChild("HDAdminHDClient"):WaitForChild("Signals"):WaitForChild("RequestCommand"):InvokeServer(unpack(args))
+        end)
+
+        MakeNotifi({Title = "Troll", Text = "جاري التحول إلى R6 وتفعيل الهجوم على " .. selectedPlayerName .. "...", Time = 4})
+
+        task.spawn(function()
+            task.wait(3)
+            
+            local myChar = LP.Character
+            if not myChar or not myChar:FindFirstChild("Torso") then
+                MakeNotifi({Title = "تنبيه", Text = "يرجى التأكد من تحول شخصيتك لـ R6 وإعادة الضغط", Time = 3})
+                return
+            end
+
+            local targetPlayer = Players:FindFirstChild(selectedPlayerName)
+            if not targetPlayer or not targetPlayer.Character then
+                MakeNotifi({Title = "خطأ", Text = "اللاعب غير متوفر في السيرفر", Time = 3})
+                return
+            end
+
+            StopInvisibilityAndFollow(false)
+            isInvisActive = true
+
+            MakeNotifi({Title = "Troll", Text = "تم تفعيل الإخفاء والتتبع بنجاح!", Time = 3})
+
+            local myRoot = myChar:WaitForChild("HumanoidRootPart")
+            local myHumanoid = myChar:WaitForChild("Humanoid")
+
+            local targetHumanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if targetHumanoid then
+                targetDeathConnection = targetHumanoid.Died:Connect(function()
+                    StopInvisibilityAndFollow(true)
+                    MakeNotifi({Title = "تم القتل!! ⚡", Text = "تم القتل والانتقال فوراً للمكان الآمن (284, 40, 118)", Time = 5})
+                end)
+            end
+
+            invisConnection = RunService.Heartbeat:Connect(function()
+                if not isInvisActive or not myChar or not myHumanoid or myHumanoid.Health <= 0 then
+                    StopInvisibilityAndFollow(false)
+                    return
+                end
+
+                if workspace.CurrentCamera.CameraSubject ~= myRoot then
+                    workspace.CurrentCamera.CameraSubject = myRoot
+                end
+
+                myRoot.CFrame = myRoot.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+                myHumanoid.CameraOffset = Vector3.new(0, 1.44, 0)
+
+                local anim = Instance.new("Animation")
+                anim.AnimationId = "rbxassetid://215384594"
+                local track = myHumanoid:LoadAnimation(anim)
+                track.Priority = Enum.AnimationPriority.Action4
+                track:Play()
+                track:AdjustSpeed(0)
+                track.TimePosition = 0.3
+                RunService.RenderStepped:Wait()
+                track:Stop()
+
+                for _, v in pairs(myChar:GetDescendants()) do
+                    if v:IsA("BasePart") and v.Transparency ~= 1 then
+                        v.Transparency = 0.5
+                    end
+                end
+            end)
+
+            followConnection = RunService.RenderStepped:Connect(function()
+                if isInvisActive and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetRoot = targetPlayer.Character.HumanoidRootPart
+                    myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 1)
+                end
+            end)
+        end)
+    end
+})
+
+AddButton(TrollTab, {
+    Name = "🛑 إيقاف الإخفاء والتتبع",
+    Callback = function()
+        StopInvisibilityAndFollow(false)
+        MakeNotifi({Title = "Troll", Text = "تم إلغاء الإخفاء والتتبع", Time = 2})
+    end
+})
+
+UpdatePlayerList()
+Players.PlayerAdded:Connect(UpdatePlayerList)
+Players.PlayerRemoved:Connect(UpdatePlayerList)
+
+task.wait(1.5)
+FullBypass()
+
+task.wait(0.5)
+MakeNotifi({
+    Title = "STMC HUB: IraqHope",
+    Text = "تم تحميل السكربت بنجاح مع تضليل ACE المتقدم",
+    Time = 3
+})
+]]
+
+task.spawn(function()
+    local func, err = loadstring(_0xCode)
+    if func then
+        func()
+    else
+        warn("STMC Execution Error: ", err)
+    end
+end)
