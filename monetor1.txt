@@ -1083,11 +1083,15 @@ function AddPlayerProfile(parent)
     return Label
 end
 
+-- =============================================
+-- UPDATED AddDropdown WITH SEARCH FEATURE
+-- =============================================
 function AddDropdown(parent, Configs)
     local DropdownName = Configs.Name or "Dropdown!!"
     local Options = Configs.Options or {"1", "2", "3"}
     local Default = Configs.Default or Options[1]
     local Callback = Configs.Callback or function() end
+    local Searchable = Configs.Searchable or false -- If true, adds a search TextBox inside dropdown
     
     local MainFrame = Create("Frame", parent, {
         Size = UDim2.new(1, 0, 0, 25),
@@ -1169,22 +1173,59 @@ function AddDropdown(parent, Configs)
         PaddingBottom = UDim.new(0, 4)
     })
     
+    -- Search TextBox (if Searchable)
+    local SearchBox
+    if Searchable then
+        SearchBox = Create("TextBox", DropdownFrame, {
+            Size = UDim2.new(1, 0, 0, 25),
+            BackgroundColor3 = Configs_HUB.Cor_Hub,
+            TextColor3 = Configs_HUB.Cor_Text,
+            PlaceholderText = "ابحث...",
+            Font = Configs_HUB.Text_Font,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ClearTextOnFocus = false,
+            ZIndex = 25
+        })
+        Corner(SearchBox)
+        Stroke(SearchBox)
+        -- Put SearchBox as first element in layout
+        SearchBox.LayoutOrder = -1
+    end
+    
     local Selected = Default
     local expanded = false
+    local currentSearchText = ""
     
     local function GetTargetHeight()
         local count = #Options
         local totalH = count * 22 + 8
-        return math.min(totalH, 110)
+        if Searchable then
+            totalH = totalH + 30 -- extra for search box
+        end
+        return math.min(totalH, 150)
     end
     
     local function UpdateButtons()
+        -- Clear existing buttons (except search box)
         for _, child in ipairs(DropdownFrame:GetChildren()) do
             if child:IsA("TextButton") then
                 child:Destroy()
             end
         end
-        for _, option in ipairs(Options) do
+        -- Filter options based on currentSearchText
+        local filteredOptions = {}
+        if currentSearchText ~= "" then
+            for _, option in ipairs(Options) do
+                if string.find(string.lower(option), string.lower(currentSearchText), 1, true) then
+                    table.insert(filteredOptions, option)
+                end
+            end
+        else
+            filteredOptions = Options
+        end
+        
+        for _, option in ipairs(filteredOptions) do
             local btn = Create("TextButton", DropdownFrame, {
                 Size = UDim2.new(1, 0, 0, 20),
                 BackgroundColor3 = Configs_HUB.Cor_Hub,
@@ -1201,11 +1242,15 @@ function AddDropdown(parent, Configs)
                 TextLabel.Text = DropdownName .. ": " .. option
                 Callback(option)
                 expanded = false
+                currentSearchText = ""
+                if SearchBox then SearchBox.Text = "" end
                 CreateTween(DropdownFrame, "Size", UDim2.new(1, 0, 0, 0), 0.2, true)
                 DropdownFrame.Visible = false
                 CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 25), 0.2, false)
             end)
         end
+        
+        -- Update height if expanded
         if expanded then
             local targetH = GetTargetHeight()
             DropdownFrame.Size = UDim2.new(1, 0, 0, targetH)
@@ -1214,6 +1259,14 @@ function AddDropdown(parent, Configs)
     end
     
     UpdateButtons()
+    
+    -- If search box exists, connect TextChanged
+    if SearchBox then
+        SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+            currentSearchText = SearchBox.Text
+            UpdateButtons()
+        end)
+    end
     
     TextButton.MouseButton1Click:Connect(function()
         expanded = not expanded
@@ -1274,7 +1327,6 @@ AddButton(MainTab, {
     end
 })
 
--- Keep existing speed buttons but they will also update panel if visible
 AddButton(MainTab, {
     Name = "➕ زيادة سرعة الطيران (+50)",
     Callback = function()
@@ -1304,14 +1356,11 @@ AddButton(MainTab, {
     end
 })
 
--- NEW: Refresh/Kill Command Dropdown and Button
 local RespawnKillDropdown = AddDropdown(MainTab, {
     Name = "اختر الأمر",
     Options = {"رفريش (Respawn)", "موت سريع (Kill)"},
     Default = "رفريش (Respawn)",
-    Callback = function(value)
-        -- store selection automatically via dropdown internal
-    end
+    Searchable = false -- No search needed
 })
 
 AddButton(MainTab, {
@@ -1319,15 +1368,13 @@ AddButton(MainTab, {
     Callback = function()
         local selected = RespawnKillDropdown.GetSelected()
         if selected == "رفريش (Respawn)" then
-            -- Respawn character
             if LP.Character then
-                LP.Character:BreakJoints() -- kills and respawns
+                LP.Character:BreakJoints()
                 MakeNotifi({Title="أمر", Text="تم تنفيذ الرفريش", Time=2})
             else
                 MakeNotifi({Title="خطأ", Text="لا يوجد شخصية حالياً", Time=2})
             end
         elseif selected == "موت سريع (Kill)" then
-            -- Quick death
             if LP.Character and LP.Character:FindFirstChild("Humanoid") then
                 LP.Character.Humanoid.Health = 0
                 MakeNotifi({Title="أمر", Text="تم القتل السريع", Time=2})
@@ -1487,13 +1534,14 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- =============================================
--- TELEPORT TAB (FULLY RESTORED)
+-- TELEPORT TAB (FULLY RESTORED) with Searchable Dropdown
 -- =============================================
 local TPSelectedPlayer = ""
 
 local TPDropdown = AddDropdown(TeleportTab, {
     Name = "اختر لاعب للانتقال إليه",
     Options = {},
+    Searchable = true, -- Enable search for player list
     Callback = function(value)
         TPSelectedPlayer = value
     end
@@ -1520,7 +1568,7 @@ AddButton(TeleportTab, {
 })
 
 -- =============================================
--- TROLL TAB (FULLY RESTORED)
+-- TROLL TAB (FULLY RESTORED) with Searchable Player Dropdown
 -- =============================================
 local selectedPlayerName = ""
 local playerDropdown = nil
@@ -1572,6 +1620,7 @@ end
 playerDropdown = AddDropdown(TrollTab, {
     Name = "اختر لاعب",
     Options = {},
+    Searchable = true, -- Enable search
     Callback = function(value)
         selectedPlayerName = value
     end
