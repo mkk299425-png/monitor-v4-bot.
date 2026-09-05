@@ -1450,4 +1450,160 @@ AddButton(TrollTab, {
                 if signal then
                     signal = signal:FindFirstChild("RequestCommand")
                     if signal then
-                        signal:InvokeServer(unpack(ar
+                        signal:InvokeServer(unpack(args))
+                    end
+                end
+            end
+        end)
+
+        MakeNotifi({Title = "Troll", Text = "جاري التحول إلى R6 وتفعيل الهجوم على " .. selectedPlayerName .. "...", Time = 4})
+
+        task.spawn(function()
+            task.wait(3)
+            
+            local myChar = LP.Character
+            if not myChar or not myChar:FindFirstChild("Torso") then
+                MakeNotifi({Title = "تنبيه", Text = "يرجى التأكد من تحول شخصيتك لـ R6 وإعادة الضغط", Time = 3})
+                return
+            end
+
+            local targetPlayer = Players:FindFirstChild(selectedPlayerName)
+            if not targetPlayer or not targetPlayer.Character then
+                MakeNotifi({Title = "خطأ", Text = "اللاعب غير متوفر في السيرفر", Time = 3})
+                return
+            end
+
+            StopInvisibilityAndFollow(false)
+            isInvisActive = true
+
+            MakeNotifi({Title = "Troll", Text = "تم تفعيل الإخفاء والتتبع بنجاح!", Time = 3})
+
+            local myRoot = myChar:WaitForChild("HumanoidRootPart")
+            local myHumanoid = myChar:WaitForChild("Humanoid")
+
+            local targetHumanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if targetHumanoid then
+                targetDeathConnection = targetHumanoid.Died:Connect(function()
+                    StopInvisibilityAndFollow(true)
+                    MakeNotifi({Title = "تم القتل!! ⚡", Text = "تم القتل والانتقال فوراً للمكان الآمن (284, 40, 118)", Time = 5})
+                end)
+            end
+
+            invisConnection = RunService.Heartbeat:Connect(function()
+                if not isInvisActive or not myChar or not myHumanoid or myHumanoid.Health <= 0 then
+                    StopInvisibilityAndFollow(false)
+                    return
+                end
+
+                if workspace.CurrentCamera.CameraSubject ~= myRoot then
+                    workspace.CurrentCamera.CameraSubject = myRoot
+                end
+
+                myRoot.CFrame = myRoot.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+                myHumanoid.CameraOffset = Vector3.new(0, 1.44, 0)
+
+                local anim = Instance.new("Animation")
+                anim.AnimationId = "rbxassetid://215384594"
+                local track = myHumanoid:LoadAnimation(anim)
+                track.Priority = Enum.AnimationPriority.Action4
+                track:Play()
+                track:AdjustSpeed(0)
+                track.TimePosition = 0.3
+                RunService.RenderStepped:Wait()
+                track:Stop()
+
+                for _, v in pairs(myChar:GetDescendants()) do
+                    if v:IsA("BasePart") and v.Transparency ~= 1 then
+                        v.Transparency = 0.5
+                    end
+                end
+            end)
+
+            followConnection = RunService.RenderStepped:Connect(function()
+                if isInvisActive and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetRoot = targetPlayer.Character.HumanoidRootPart
+                    myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 1)
+                end
+            end)
+        end)
+    end
+})
+
+AddButton(TrollTab, {
+    Name = "🛑 إيقاف الإخفاء والتتبع",
+    Callback = function()
+        StopInvisibilityAndFollow(false)
+        MakeNotifi({Title = "Troll", Text = "تم إلغاء الإخفاء والتتبع", Time = 2})
+    end
+})
+
+UpdatePlayerList()
+Players.PlayerAdded:Connect(UpdatePlayerList)
+Players.PlayerRemoved:Connect(UpdatePlayerList)
+
+-- =============================================
+-- RIGHTS TAB (FULLY RESTORED)
+-- =============================================
+AddPlayerProfile(RightsTab)
+
+AddButton(RightsTab, {
+    Name = "📢 أنظم قناتنا التليكرام",
+    Callback = function()
+        pcall(function()
+            if setclipboard then
+                setclipboard('https://t.me/StealthTechMasterComunity')
+            end
+        end)
+        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ رابط التليجرام", Time = 2})
+    end
+})
+
+AddButton(RightsTab, {
+    Name = "👤 حساب مطور عبود Telegram",
+    Callback = function()
+        pcall(function()
+            if setclipboard then
+                setclipboard('Messi_zx')
+            end
+        end)
+        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ حساب عبود", Time = 2})
+    end
+})
+
+AddButton(RightsTab, {
+    Name = "👤 حساب مطور 1ua10 TIK TOK",
+    Callback = function()
+        pcall(function()
+            if setclipboard then
+                setclipboard('1ua10')
+            end
+        end)
+        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ حساب 1ua10", Time = 2})
+    end
+})
+
+AddButton(RightsTab, {
+    Name = "🏷️ تم صنع السكربت بواسطة STMC",
+    Callback = function()
+        MakeNotifi({
+            Title = "حقوق STMC",
+            Text = "تم صنع السكربت بواسطة StealthTechmaster\nكلان STMC\nهذا السكربت مخصص لـ عراق هوب\nتيك توك: 1ua10\nتليجرام: @StealthTechMasterComunity",
+            Time = 6
+        })
+    end
+})
+
+-- =============================================
+-- FINAL INITIALIZATION
+-- =============================================
+task.wait(1.5)
+pcall(FullBypass)
+
+task.wait(0.5)
+MakeNotifi({
+    Title = "STMC MAX",
+    Text = "تم التفعيل بنجاح! استمتع بالمميزات الجديدة 🔥",
+    Time = 3
+})
+
+print("✅ STMC HUB (FULLY FIXED) Loaded Successfully!")
