@@ -1,1825 +1,1609 @@
---[[
-=========================================================
- STMC HUB // MAX V2
- Modern UI Rebuild
- UI rebuilt from zero
-=========================================================
- Features:
-   - Modern responsive interface
-   - Sidebar navigation
-   - Search
-   - Notifications
-   - Minimize / Close
-   - Mobile + PC dragging
-   - Fly
-   - Speed
-   - High Jump
-   - Noclip
-   - Infinite Jump
-   - ESP
-   - Player Teleport
-   - Player Profile
-=========================================================
-]]
-
---========================================================--
--- SERVICES
---========================================================--
+-- =============================================
+-- STMC HUB: IraqHope (FULLY FIXED VERSION)
+-- Original Code Fully Preserved & Corrected
+-- =============================================
 
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
+local LP = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local RepStorage = game:GetService("ReplicatedStorage")
+local LogService = game:GetService("LogService")
 local MarketplaceService = game:GetService("MarketplaceService")
-local CoreGui = game:GetService("CoreGui")
 
---========================================================--
--- CONFIG
---========================================================--
-
-local CFG = {
-    Name = "STMC HUB",
-    Version = "MAX V2",
-
-    MainColor = Color3.fromRGB(14, 14, 18),
-    SideColor = Color3.fromRGB(18, 18, 23),
-    CardColor = Color3.fromRGB(24, 24, 30),
-    CardHover = Color3.fromRGB(31, 31, 39),
-
-    White = Color3.fromRGB(245, 245, 250),
-    Gray = Color3.fromRGB(160, 160, 172),
-    DarkGray = Color3.fromRGB(92, 92, 105),
-
-    Accent = Color3.fromRGB(90, 130, 255),
-    Accent2 = Color3.fromRGB(145, 90, 255),
-    Green = Color3.fromRGB(60, 210, 135),
-    Red = Color3.fromRGB(235, 80, 90),
-    Yellow = Color3.fromRGB(255, 190, 70),
-
-    Radius = 12,
+local Configs_HUB = {
+    Cor_Hub = Color3.fromRGB(15, 15, 15),
+    Cor_Options = Color3.fromRGB(30, 30, 30),
+    Cor_Stroke = Color3.fromRGB(255, 255, 255),
+    Cor_Text = Color3.fromRGB(255, 255, 255),
+    Cor_DarkText = Color3.fromRGB(180, 180, 180),
+    Corner_Radius = UDim.new(0, 15),
+    Text_Font = Enum.Font.FredokaOne
 }
 
---========================================================--
--- HELPERS
---========================================================--
+-- =============================================
+-- HELPER FUNCTIONS
+-- =============================================
+local function Create(instance, parent, props)
+    local new = Instance.new(instance)
+    if props then
+        for prop, value in pairs(props) do
+            new[prop] = value
+        end
+    end
+    new.Parent = parent
+    return new
+end
 
-local function Create(className, parent, properties)
-    local object = Instance.new(className)
+local function SetProps(instance, props)
+    if instance and props then
+        for prop, value in pairs(props) do
+            instance[prop] = value
+        end
+    end
+    return instance
+end
 
-    if properties then
-        for property, value in pairs(properties) do
-            pcall(function()
-                object[property] = value
+local function Corner(parent, props)
+    local new = Create("UICorner", parent)
+    new.CornerRadius = Configs_HUB.Corner_Radius
+    if props then SetProps(new, props) end
+    return new
+end
+
+local function Stroke(parent, props)
+    local new = Create("UIStroke", parent)
+    new.Color = Configs_HUB.Cor_Stroke
+    new.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    new.Thickness = 2
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(180, 180, 180)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 15, 15)),
+        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(90, 90, 90)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+    gradient.Rotation = 0
+    gradient.Parent = new
+    coroutine.wrap(function()
+        while new.Parent do
+            gradient.Rotation = (gradient.Rotation + 2) % 360
+            RunService.RenderStepped:Wait()
+        end
+    end)()
+    if props then SetProps(new, props) end
+    return new
+end
+
+local function CreateTween(instance, prop, value, time, tweenWait)
+    local tween = TweenService:Create(instance,
+    TweenInfo.new(time, Enum.EasingStyle.Linear),
+    {[prop] = value})
+    tween:Play()
+    if tweenWait then tween.Completed:Wait() end
+end
+
+local function TextSetColor(instance)
+    instance.MouseEnter:Connect(function()
+        CreateTween(instance, "TextColor3", Color3.fromRGB(180, 180, 180), 0.4, false)
+    end)
+    instance.MouseLeave:Connect(function()
+        CreateTween(instance, "TextColor3", Configs_HUB.Cor_Text, 0.4, false)
+    end)
+end
+
+-- =============================================
+-- SCREEN GUI SETUP
+-- =============================================
+local ScreenGui = Create("ScreenGui", CoreGui, { Name = "STMC_Hub" })
+
+local ClickSound = Instance.new("Sound", ScreenGui)
+ClickSound.SoundId = "rbxassetid://88442833509532"
+ClickSound.Volume = 0.5
+
+local function PlaySound() 
+    pcall(function() ClickSound:Play() end) 
+end
+
+task.spawn(function()
+    task.wait(2)
+    for _, button in pairs(ScreenGui:GetDescendants()) do
+        if button:IsA("TextButton") or button:IsA("ImageButton") then
+            button.Activated:Connect(PlaySound)
+        end
+    end
+    ScreenGui.DescendantAdded:Connect(function(newButton)
+        if newButton:IsA("TextButton") or newButton:IsA("ImageButton") then
+            task.wait(0.1)
+            newButton.Activated:Connect(PlaySound)
+        end
+    end)
+end)
+
+local ScreenFind = CoreGui:FindFirstChild(ScreenGui.Name)
+if ScreenFind and ScreenFind ~= ScreenGui then ScreenFind:Destroy() end
+
+function DestroyScript() 
+    pcall(function() ScreenGui:Destroy() end) 
+end
+
+-- =============================================
+-- NOTIFICATION SYSTEM
+-- =============================================
+local Menu_Notifi = Create("Frame", ScreenGui, {
+    Size = UDim2.new(0, 300, 1, 0),
+    Position = UDim2.new(1, 0, 0, 0),
+    AnchorPoint = Vector2.new(1, 0),
+    BackgroundTransparency = 1
+})
+Create("UIPadding", Menu_Notifi, { PaddingLeft = UDim.new(0, 25), PaddingTop = UDim.new(0, 25), PaddingBottom = UDim.new(0, 50) })
+Create("UIListLayout", Menu_Notifi, { Padding = UDim.new(0, 15), VerticalAlignment = "Bottom" })
+
+function MakeNotifi(Configs)
+    local Title = Configs.Title or "STMC HUB"
+    local text = Configs.Text or "تم التنفيذ"
+    local timewait = Configs.Time or 5
+    
+    local Frame1 = Create("Frame", Menu_Notifi, {
+        Size = UDim2.new(2, 0, 0, 0),
+        BackgroundTransparency = 1,
+        AutomaticSize = "Y",
+        Name = "Title"
+    })
+    local Frame2 = Create("Frame", Frame1, {
+        Size = UDim2.new(0, Menu_Notifi.Size.X.Offset - 50, 0, 0),
+        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        Position = UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0),
+        AutomaticSize = "Y"
+    }) 
+    Corner(Frame2)
+    Stroke(Frame2)
+    
+    Create("TextLabel", Frame2, {
+        Size = UDim2.new(1, 0, 0, 25),
+        Font = Configs_HUB.Text_Font,
+        BackgroundTransparency = 1,
+        Text = Title,
+        TextSize = 20,
+        Position = UDim2.new(0, 20, 0, 5),
+        TextXAlignment = "Left",
+        TextColor3 = Configs_HUB.Cor_Text
+    })
+    
+    local CloseNotifi = Create("TextButton", Frame2, {
+        Text = "X",
+        Font = Configs_HUB.Text_Font,
+        TextSize = 20,
+        BackgroundTransparency = 1,
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        Position = UDim2.new(1, -5, 0, 5),
+        AnchorPoint = Vector2.new(1, 0),
+        Size = UDim2.new(0, 25, 0, 25)
+    })
+    
+    Create("TextLabel", Frame2, {
+        Size = UDim2.new(1, -30, 0, 0),
+        Position = UDim2.new(0, 20, 0, CloseNotifi.Size.Y.Offset + 10),
+        TextSize = 15,
+        TextColor3 = Configs_HUB.Cor_DarkText,
+        TextXAlignment = "Left",
+        TextYAlignment = "Top",
+        AutomaticSize = "Y",
+        Text = text,
+        Font = Configs_HUB.Text_Font,
+        BackgroundTransparency = 1,
+        TextWrapped = true
+    })
+    
+    local FrameSize = Create("Frame", Frame2, {
+        Size = UDim2.new(1, 0, 0, 2),
+        BackgroundColor3 = Configs_HUB.Cor_Stroke,
+        Position = UDim2.new(0, 2, 0, 30),
+        BorderSizePixel = 0
+    }) 
+    Corner(FrameSize) 
+    Create("Frame", Frame2, { Size = UDim2.new(0, 0, 0, 5), Position = UDim2.new(0, 0, 1, 5), BackgroundTransparency = 1 })
+    
+    task.spawn(function() 
+        CreateTween(FrameSize, "Size", UDim2.new(0, 0, 0, 2), timewait, true) 
+    end)
+    
+    CloseNotifi.MouseButton1Click:Connect(function()
+        CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.1, true)
+        CreateTween(Frame2, "Position", UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0), 0.5, true)
+        Frame1:Destroy()
+    end)
+    
+    task.spawn(function()
+        CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.5, true)
+        CreateTween(Frame2, "Position", UDim2.new(), 0.1, true)
+        task.wait(timewait)
+        if Frame2 then
+            CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.1, true)
+            CreateTween(Frame2, "Position", UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0), 0.5, true)
+            Frame1:Destroy()
+        end
+    end)
+end
+
+-- =============================================
+-- BYPASS SYSTEM (FULLY RESTORED)
+-- =============================================
+local BypassEnabled = false
+
+local function SafeHookFunction(func, newfunc)
+    if hookfunction then
+        return hookfunction(func, newfunc)
+    end
+    return func
+end
+
+local function FindAllACERemotes()
+    local remotes = {}
+    local containers = {
+        RepStorage,
+        workspace,
+        game:GetService("Lighting"),
+        game:GetService("CoreGui"),
+        game:GetService("StarterGui"),
+        LP:FindFirstChild("PlayerGui"),
+        LP:FindFirstChild("Backpack"),
+        LP:FindFirstChild("PlayerScripts"),
+        LP:FindFirstChild("Character") or workspace:FindFirstChild(LP.Name)
+    }
+    for _, service in ipairs(game:GetChildren()) do
+        if service:IsA("Service") and not table.find(containers, service) then
+            table.insert(containers, service)
+        end
+    end
+    for _, container in ipairs(containers) do
+        if not container then continue end
+        local success, descendants = pcall(function() return container:GetDescendants() end)
+        if not success then continue end
+        for _, obj in ipairs(descendants) do
+            if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) then
+                local name = obj.Name
+                if string.find(name, "ACE") or string.find(name:lower(), "ace") then
+                    table.insert(remotes, obj)
+                end
+            end
+        end
+    end
+    return remotes
+end
+
+local function ApplyBypassToRemote(remote)
+    if not remote then return end
+    if remote:IsA("RemoteEvent") then
+        local oldFire = remote.FireServer
+        if oldFire then
+            SafeHookFunction(oldFire, function(self, ...)
+                local args = {...}
+                local msg = tostring(args[1] or "")
+                if msg == "HB" then
+                    return oldFire(self, unpack(args))
+                end
+                return nil
+            end)
+        end
+    elseif remote:IsA("RemoteFunction") then
+        local oldInvoke = remote.InvokeServer
+        if oldInvoke then
+            SafeHookFunction(oldInvoke, function(self, ...)
+                local args = {...}
+                if tostring(args[1]) == "HB" then return "OK" end
+                return true
             end)
         end
     end
-
-    object.Parent = parent
-    return object
 end
 
-local function Tween(object, time, properties, style, direction)
-    if not object then
+local function DisableSprintMovementScans()
+    local ps = LP:FindFirstChild("PlayerScripts")
+    if not ps then return end
+    local sm = ps:FindFirstChild("SprintMovement")
+    if not sm then return end
+    if not getgc then return end
+    local GC = getgc(true)
+    for _, obj in ipairs(GC) do
+        if type(obj) == "function" then
+            local info = debug.getinfo(obj)
+            if info and info.what == "Lua" and info.source and string.find(info.source, "SprintMovement") then
+                if info.name == "scanForMovementObjects" or info.name == "scanForGuiObjects" then
+                    SafeHookFunction(obj, function() return false, nil end)
+                end
+            end
+        end
+    end
+end
+
+local function DisableLogs()
+    if not getconnections then return end
+    local conns = getconnections(LogService.MessageOut)
+    if conns then
+        for _, c in ipairs(conns) do
+            pcall(c.Disconnect, c)
+        end
+    end
+    pcall(function() 
+        if hookfunction then
+            hookfunction(LogService.MessageOut.Connect, function() return nil end)
+        end
+    end)
+end
+
+local function FullBypass()
+    if BypassEnabled then
+        MakeNotifi({Title = "STMC HUB", Text = "الحماية مكسورة مسبقاً", Time = 2})
         return
     end
-
-    local info = TweenInfo.new(
-        time or 0.2,
-        style or Enum.EasingStyle.Quint,
-        direction or Enum.EasingDirection.Out
-    )
-
-    local animation = TweenService:Create(object, info, properties)
-    animation:Play()
-
-    return animation
-end
-
-local function Round(object, radius)
-    return Create("UICorner", object, {
-        CornerRadius = UDim.new(0, radius or CFG.Radius)
-    })
-end
-
-local function Outline(object, color, thickness, transparency)
-    return Create("UIStroke", object, {
-        Color = color or Color3.fromRGB(60, 60, 72),
-        Thickness = thickness or 1,
-        Transparency = transparency or 0
-    })
-end
-
-local function AddPadding(object, left, right, top, bottom)
-    return Create("UIPadding", object, {
-        PaddingLeft = UDim.new(0, left or 0),
-        PaddingRight = UDim.new(0, right or 0),
-        PaddingTop = UDim.new(0, top or 0),
-        PaddingBottom = UDim.new(0, bottom or 0),
-    })
-end
-
-local function GetCharacter()
-    local char = LocalPlayer.Character
-
-    if not char then
-        return nil
+    local remotes = FindAllACERemotes()
+    if #remotes > 0 then
+        for _, r in ipairs(remotes) do
+            ApplyBypassToRemote(r)
+        end
     end
-
-    return char
+    DisableSprintMovementScans()
+    DisableLogs()
+    BypassEnabled = true
+    MakeNotifi({ Title = "STMC HUB", Text = "تم فك الحماية بنجاح", Time = 2 })
 end
 
-local function GetHumanoid()
-    local char = GetCharacter()
-
-    if not char then
-        return nil
+local function MonitorNewRemotes()
+    local containers = {
+        RepStorage,
+        workspace,
+        game:GetService("Lighting"),
+        game:GetService("CoreGui"),
+        game:GetService("StarterGui"),
+        LP:FindFirstChild("PlayerGui"),
+        LP:FindFirstChild("Backpack"),
+        LP:FindFirstChild("PlayerScripts")
+    }
+    for _, container in ipairs(containers) do
+        if not container then continue end
+        pcall(function()
+            container.ChildAdded:Connect(function(child)
+                if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
+                    if string.find(child.Name, "ACE") or string.find(child.Name:lower(), "ace") then
+                        task.wait(0.5)
+                        ApplyBypassToRemote(child)
+                    end
+                end
+            end)
+        end)
     end
-
-    return char:FindFirstChildOfClass("Humanoid")
 end
 
-local function GetRoot()
-    local char = GetCharacter()
-
-    if not char then
-        return nil
+LP.CharacterAdded:Connect(function()
+    task.wait(1)
+    local char = LP.Character
+    if char then
+        for _, obj in ipairs(char:GetDescendants()) do
+            if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) and (string.find(obj.Name, "ACE") or string.find(obj.Name:lower(), "ace")) then
+                ApplyBypassToRemote(obj)
+            end
+        end
     end
+    DisableSprintMovementScans()
+end)
 
-    return char:FindFirstChild("HumanoidRootPart")
-        or char:FindFirstChild("Torso")
+local ps = LP:FindFirstChild("PlayerScripts")
+if ps then
+    ps.ChildAdded:Connect(function(child)
+        if child:IsA("LocalScript") and child.Name == "SprintMovement" then
+            task.wait(1)
+            DisableSprintMovementScans()
+        end
+    end)
 end
 
---========================================================--
--- CLEAN OLD GUI
---========================================================--
+FullBypass()
+MonitorNewRemotes()
 
-pcall(function()
-    local old = CoreGui:FindFirstChild("STMC_HUB_MAX_V2")
-    if old then
-        old:Destroy()
+-- =============================================
+-- FLIGHT SYSTEM (FULLY RESTORED)
+-- =============================================
+local Flying = false
+local FlySpeed = 50
+local bodyVelocity = nil
+local bodyGyro = nil
+local flightConnection = nil
+local currentHumanoid = nil
+local currentRoot = nil
+
+local function stopFly()
+    if not Flying then return end
+    Flying = false
+    if flightConnection then flightConnection:Disconnect() flightConnection = nil end
+    if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
+    if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+    if currentHumanoid then 
+        currentHumanoid.PlatformStand = false 
+        currentHumanoid = nil 
+    end
+    currentRoot = nil
+    MakeNotifi({Title = "Fly", Text = "تم إيقاف الطيران", Time = 2})
+end
+
+local function startFly()
+    if Flying then return end
+    local char = LP.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not root or not humanoid then return end
+
+    stopFly()
+    currentRoot = root
+    currentHumanoid = humanoid
+
+    bodyGyro = Instance.new("BodyGyro", root)
+    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.P = 9e4
+    bodyGyro.CFrame = root.CFrame
+
+    bodyVelocity = Instance.new("BodyVelocity", root)
+    bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bodyVelocity.Velocity = Vector3.zero
+
+    humanoid.PlatformStand = true
+    Flying = true
+
+    local camera = workspace.CurrentCamera
+
+    flightConnection = RunService.Heartbeat:Connect(function()
+        if not Flying or not currentRoot or not currentHumanoid or currentHumanoid.Health <= 0 then
+            stopFly()
+            return
+        end
+
+        bodyGyro.CFrame = camera.CFrame
+
+        local moveDir = currentHumanoid.MoveDirection
+        if moveDir.Magnitude > 0.05 then
+            local camCFrame = camera.CFrame
+            local forward = camCFrame.LookVector
+            local right = camCFrame.RightVector
+            
+            local relativeMove = camCFrame:VectorToObjectSpace(moveDir)
+            local finalVel = (forward * -relativeMove.Z) + (right * relativeMove.X)
+            
+            bodyVelocity.Velocity = finalVel * FlySpeed
+        else
+            bodyVelocity.Velocity = Vector3.zero
+        end
+    end)
+
+    MakeNotifi({Title = "Fly", Text = "تم تشغيل الطيران", Time = 2})
+end
+
+LP.CharacterAdded:Connect(function()
+    if Flying then stopFly() end
+end)
+
+-- =============================================
+-- GUI SCANNER REMOVER
+-- =============================================
+local PlayerGui = LP:WaitForChild("PlayerGui")
+local SuspiciousKeywords = {"warning","anticheat","detected","banned","admin","notification","toast","popup","exploit"}
+
+PlayerGui.ChildAdded:Connect(function(child)
+    if child:IsA("ScreenGui") then
+        local name = child.Name:lower()
+        for _, kw in ipairs(SuspiciousKeywords) do
+            if string.find(name, kw) then
+                task.wait(0.1)
+                pcall(child.Destroy, child)
+                break
+            end
+        end
     end
 end)
 
---========================================================--
--- ROOT GUI
---========================================================--
+task.wait(0.5)
+for _, child in ipairs(PlayerGui:GetChildren()) do
+    if child:IsA("ScreenGui") then
+        local name = child.Name:lower()
+        for _, kw in ipairs(SuspiciousKeywords) do
+            if string.find(name, kw) then
+                pcall(child.Destroy, child)
+                break
+            end
+        end
+    end
+end
 
-local ScreenGui = Create("ScreenGui", CoreGui, {
-    Name = "STMC_HUB_MAX_V2",
-    IgnoreGuiInset = true,
-    ResetOnSpawn = false,
-    ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-})
-
---========================================================--
--- NOTIFICATION SYSTEM
---========================================================--
-
-local NotificationHolder = Create("Frame", ScreenGui, {
-    Size = UDim2.new(0, 320, 1, 0),
-    Position = UDim2.new(1, -15, 0, 0),
-    AnchorPoint = Vector2.new(1, 0),
+-- =============================================
+-- MAIN UI & INTERFACE (FULLY RESTORED)
+-- =============================================
+local Menu = Create("Frame", ScreenGui, {
+    Size = UDim2.new(0, 530, 0, 320),
+    Position = UDim2.new(0.5, -265, 0.5, -160),
+    BackgroundColor3 = Configs_HUB.Cor_Hub,
     BackgroundTransparency = 1,
+    Active = true,
+    Draggable = true,
+    BorderSizePixel = 0,
+    ClipsDescendants = true,
+    ZIndex = 1
+})
+Corner(Menu)
+Stroke(Menu)
+
+local Image = Create("ImageLabel", Menu, {
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundTransparency = 1,
+    Image = "rbxassetid://114192101892854",
+    ImageTransparency = 1,
+    ScaleType = Enum.ScaleType.Crop,
+    ZIndex = 0
+})
+Corner(Image)
+
+local IntroSound = Instance.new("Sound")
+IntroSound.SoundId = "rbxassetid://8426701399"
+IntroSound.Volume = 2
+IntroSound.Parent = ScreenGui
+pcall(function() IntroSound:Play() end)
+
+local Effect = Create("Frame", ScreenGui, {
+    Size = UDim2.new(0, 10, 0, 10),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = Configs_HUB.Cor_Stroke,
+    BackgroundTransparency = 0,
+    BorderSizePixel = 0,
+    ClipsDescendants = true,
     ZIndex = 100
 })
+local EffectCorner = Instance.new("UICorner"); EffectCorner.CornerRadius = UDim.new(0, 18); EffectCorner.Parent = Effect
+local EffectStroke = Instance.new("UIStroke"); EffectStroke.Color = Configs_HUB.Cor_Stroke; EffectStroke.Thickness = 2; EffectStroke.Transparency = 0; EffectStroke.Parent = Effect
 
-Create("UIListLayout", NotificationHolder, {
-    FillDirection = Enum.FillDirection.Vertical,
-    VerticalAlignment = Enum.VerticalAlignment.Bottom,
-    HorizontalAlignment = Enum.HorizontalAlignment.Right,
-    Padding = UDim.new(0, 10)
+local EffectGrow = TweenService:Create(Effect, TweenInfo.new(0.55, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 560, 0, 350),
+    BackgroundTransparency = 0.75
 })
+EffectGrow:Play()
 
-AddPadding(NotificationHolder, 0, 0, 0, 18)
+task.wait(0.12)
+local MenuAppear = TweenService:Create(Menu, TweenInfo.new(0.7, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0.3})
+MenuAppear:Play()
+local ImageAppear = TweenService:Create(Image, TweenInfo.new(0.65, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {ImageTransparency = 0})
+ImageAppear:Play()
 
-local function Notify(title, message, duration, kind)
-    duration = duration or 3
-    kind = kind or "default"
+task.wait(0.35)
+local EffectOut = TweenService:Create(Effect, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+    Size = UDim2.new(0, 590, 0, 350),
+    BackgroundTransparency = 1
+})
+EffectOut:Play()
+local StrokeOut = TweenService:Create(EffectStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
+StrokeOut:Play()
+EffectOut.Completed:Wait()
+Effect:Destroy()
+IntroSound.Ended:Connect(function() IntroSound:Destroy() end)
 
-    local color = CFG.Accent
-
-    if kind == "success" then
-        color = CFG.Green
-    elseif kind == "error" then
-        color = CFG.Red
-    elseif kind == "warning" then
-        color = CFG.Yellow
+local TopBar = Create("Frame", Menu, {
+    BackgroundTransparency = 1,
+    Size = UDim2.new(1, 0, 0, 30),
+    Position = UDim2.new(0, 0, 0, 0),
+    Visible = false,
+    BorderSizePixel = 0,
+    ZIndex = 10
+})
+local ButtonsFrame = Create("Frame", TopBar, {
+    Size = UDim2.new(0, 40, 1, -5),
+    Position = UDim2.new(1, -10, 0, 2.5),
+    AnchorPoint = Vector2.new(1, 0),
+    BackgroundTransparency = 1,
+    ZIndex = 15
+})
+Create("ImageLabel", TopBar, {
+    Size = UDim2.new(0, 24, 0, 24),
+    Position = UDim2.new(0, 8, 0.5, 0),
+    AnchorPoint = Vector2.new(0, 0.5),
+    BackgroundTransparency = 1,
+    Image = "rbxassetid://89949755377207",
+    ImageColor3 = Color3.fromRGB(255, 255, 255),
+    ZIndex = 20
+})
+local NameFrame = Create("Frame", TopBar, {
+    Size = UDim2.new(0, 0, 0, 25),
+    AutomaticSize = Enum.AutomaticSize.X,
+    Position = UDim2.new(0, 38, 0.5, 0),
+    AnchorPoint = Vector2.new(0, 0.5),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.15,
+    ZIndex = 11
+})
+Corner(NameFrame); Stroke(NameFrame)
+local Title = Create("TextLabel", NameFrame, {
+    Size = UDim2.new(0, 0, 1, 0),
+    AutomaticSize = Enum.AutomaticSize.X,
+    Position = UDim2.new(0, 10, 0, 0),
+    BackgroundTransparency = 1,
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    Font = Configs_HUB.Text_Font,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Center,
+    Text = "STMC HUB: MAX",
+    TextSize = 20,
+    ZIndex = 12
+})
+local Padding = Instance.new("UIPadding"); Padding.PaddingLeft = UDim.new(0, 10); Padding.PaddingRight = UDim.new(0, 10); Padding.Parent = NameFrame
+local TextGradient = Instance.new("UIGradient"); TextGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(180, 180, 180)),
+    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(90, 90, 90)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
+}
+TextGradient.Parent = Title
+task.spawn(function()
+    local speed = 0.008; local offset = 0
+    while Title and Title.Parent do
+        offset = offset + speed
+        if offset >= 1 then offset = 0 end
+        TextGradient.Offset = Vector2.new(-offset, 0)
+        RunService.RenderStepped:Wait()
     end
+end)
 
-    local wrapper = Create("Frame", NotificationHolder, {
-        Size = UDim2.new(1, 0, 0, 0),
-        AutomaticSize = Enum.AutomaticSize.Y,
+local Minimize_BTN = Create("TextButton", ButtonsFrame, {
+    Text = "-",
+    TextColor3 = Configs_HUB.Cor_Text,
+    Size = UDim2.new(0.5, 0, 1, 0),
+    BackgroundTransparency = 1,
+    Font = Configs_HUB.Text_Font,
+    TextYAlignment = "Bottom",
+    TextSize = 25
+})
+local IsMinimized = false
+Minimize_BTN.MouseButton1Click:Connect(function()
+    Minimize_BTN.Text = not IsMinimized and "+" or "-"
+    if IsMinimized then
+        IsMinimized = false
+        CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.15, false)
+    else
+        IsMinimized = true
+        CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 25), 0.15, true)
+    end
+end)
+
+local Close_Button = Create("TextButton", ButtonsFrame, {
+    Text = "×",
+    TextYAlignment = "Bottom",
+    TextColor3 = Configs_HUB.Cor_Text,
+    Size = UDim2.new(0.5, 0, 1, 0),
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, 0, 0, 0),
+    BackgroundTransparency = 1,
+    Font = Configs_HUB.Text_Font,
+    TextSize = 25
+})
+local function CreateClose()
+    IsMinimized = false
+    CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, false)
+    local CloseGui = Create("TextButton", Menu, {
+        BackgroundTransparency = 0.5,
+        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        Size = UDim2.new(1, 0, 1, 0),
+        AutoButtonColor = false,
+        Text = "",
+        Visible = false
+    })
+    Corner(CloseGui)
+    local CloseMenu = Create("Frame", CloseGui, {
+        Size = UDim2.new(),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Transparency = 1,
+        BackgroundColor3 = Configs_HUB.Cor_Hub
+    })
+    Corner(CloseMenu); Stroke(CloseMenu)
+    Create("TextLabel", CloseMenu, {
+        Size = UDim2.new(0.8, 0, 0.25, 0),
+        Text = "هل تريد اغلاق السكربت؟",
+        Position = UDim2.new(0.1, 0, 0.2),
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextScaled = true,
+        BackgroundTransparency = 1
+    })
+    local Confirm = Create("TextButton", CloseMenu, {
+        Size = UDim2.new(0.35, 0, 0.3, 0),
+        Position = UDim2.new(0.1, 0, 0.5, 0),
+        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        Text = "نعم",
+        Font = Configs_HUB.Text_Font,
+        TextColor3 = Color3.fromRGB(240, 0, 0),
+        TextSize = 20
+    })
+    Corner(Confirm); Stroke(Confirm)
+    local Cancel = Create("TextButton", CloseMenu, {
+        Size = UDim2.new(0.35, 0, 0.3, 0),
+        Position = UDim2.new(0.9, 0, 0.5, 0),
+        AnchorPoint = Vector2.new(1, 0),
+        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        Text = "لا",
+        Font = Configs_HUB.Text_Font,
+        TextColor3 = Color3.fromRGB(0, 240, 0),
+        TextSize = 20
+    })
+    Corner(Cancel); Stroke(Cancel)
+    local function SetVisible()
+        if Menu.Size.Y.Offset > 100 then CloseGui.Visible = true else CloseGui.Visible = false end
+    end
+    SetVisible()
+    Menu:GetPropertyChangedSignal("Size"):Connect(SetVisible)
+    CreateTween(CloseMenu, "Transparency", 0, 0.2, false)
+    CreateTween(CloseMenu, "Size", UDim2.new(0.7, 0, 0.7, 0), 0.2, false)
+    Cancel.MouseButton1Click:Connect(function()
+        CreateTween(CloseMenu, "Transparency", 1, 0.3, false)
+        CreateTween(CloseMenu, "Size", UDim2.new(), 0.2, true)
+        CloseGui:Destroy()
+    end)
+    Confirm.MouseButton1Click:Connect(function()
+        CloseGui:Destroy()
+        CreateTween(Menu, "Size", UDim2.new(), 0.3, true)
+        DestroyScript()
+    end)
+    CloseGui.MouseButton1Click:Connect(function()
+        CreateTween(CloseMenu, "Transparency", 1, 0.3, false)
+        CreateTween(CloseMenu, "Size", UDim2.new(), 0.2, true)
+        CloseGui:Destroy()
+    end)
+end
+Close_Button.MouseButton1Click:Connect(CreateClose)
+
+local AnimMenu = Create("Frame", ScreenGui, {
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Size = UDim2.new(0, 0, 0, 100),
+    BackgroundColor3 = Configs_HUB.Cor_Hub
+})
+Corner(AnimMenu, {CornerRadius = UDim.new(0, 6)})
+Stroke(AnimMenu)
+local PlayerHead = Create("ImageLabel", AnimMenu, {
+    BackgroundTransparency = 1,
+    Size = UDim2.new(0, 55, 0, 55),
+    Position = UDim2.new(0.5, -27.5, 0, 8),
+    Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LP.UserId .. "&width=420&height=420&format=png"
+})
+Corner(PlayerHead, {CornerRadius = UDim.new(1, 0)})
+Stroke(PlayerHead)
+local Anim_Credits = Create("TextLabel", AnimMenu, {
+    Text = "مرحبا بك في STMC MAX " .. LP.Name,
+    BackgroundTransparency = 1,
+    Size = UDim2.new(1, 0, 0, 25),
+    Position = UDim2.new(0, 0, 0, 68),
+    Visible = false,
+    Font = Configs_HUB.Text_Font,
+    TextTransparency = 1,
+    TextColor3 = Configs_HUB.Cor_Text,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    TextYAlignment = Enum.TextYAlignment.Center,
+    TextSize = 15
+})
+CreateTween(AnimMenu, "Size", UDim2.new(0, 180, 0, 100), 0.5, true)
+Anim_Credits.Visible = true
+for i = 1, 0, -0.1 do task.wait() Anim_Credits.TextTransparency = i end
+task.wait(1)
+for i = 0, 1, 0.1 do task.wait() Anim_Credits.TextTransparency = i end
+Anim_Credits:Destroy(); PlayerHead:Destroy(); AnimMenu:Destroy()
+
+CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 35), 0.5, true)
+TopBar.Visible = true
+CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, true)
+Menu.Draggable = true
+
+local ScrollBar = Create("ScrollingFrame", Menu, {
+    Size = UDim2.new(0, 140, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
+    Position = UDim2.new(0, 0, 1, 0),
+    AnchorPoint = Vector2.new(0, 1),
+    CanvasSize = UDim2.new(),
+    ScrollingDirection = "Y",
+    AutomaticCanvasSize = "Y",
+    BackgroundTransparency = 1,
+    ScrollBarThickness = 2
+})
+Create("UIPadding", ScrollBar, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
+Create("UIListLayout", ScrollBar, { Padding = UDim.new(0, 14) })
+
+local Containers = Create("Frame", Menu, {
+    Size = UDim2.new(1, -tonumber(ScrollBar.Size.X.Offset + 2), 1, -tonumber(TopBar.Size.Y.Offset + 2)),
+    AnchorPoint = Vector2.new(1, 1),
+    Position = UDim2.new(1, 0, 1, 0),
+    BackgroundTransparency = 1
+})
+Corner(Containers); Stroke(Containers)
+
+local firstVisible = true; local FirstTab = true; local textsize = 15; local textcolor = Configs_HUB.Cor_Text
+Menu:GetPropertyChangedSignal("Size"):Connect(function()
+    if Menu.Size.Y.Offset > 70 then ScrollBar.Visible = true; Containers.Visible = true else ScrollBar.Visible = false; Containers.Visible = false end
+end)
+
+function MakeTab(Configs)
+    local TabName = Configs.Name or "Tab"
+    local TabTitle = Configs.TabTitle or false
+    local TabImage = Configs.Image or nil
+    
+    local Frame = Create("Frame", ScrollBar, { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1 }) Corner(Frame) Stroke(Frame)
+    local TextButton = Create("TextButton", Frame, { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "" })
+    if TabImage then Create("ImageLabel", Frame, { Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10), BackgroundTransparency = 1, Image = TabImage, Name = "TabIcon" }) end
+    local textOffset = TabImage and 30 or 5
+    local TextLabel = Create("TextLabel", Frame, {
+        Size = UDim2.new(1, -textOffset, 1, 0),
+        Position = UDim2.new(0, textOffset, 0, 0),
         BackgroundTransparency = 1,
-        ClipsDescendants = false
-    })
-
-    local card = Create("Frame", wrapper, {
-        Size = UDim2.new(1, 0, 0, 72),
-        Position = UDim2.new(1, 0, 0, 0),
-        BackgroundColor3 = CFG.CardColor,
-        BackgroundTransparency = 0.02
-    })
-
-    Round(card, 13)
-    Outline(card, Color3.fromRGB(58, 58, 70), 1)
-
-    local accent = Create("Frame", card, {
-        Size = UDim2.new(0, 4, 1, -14),
-        Position = UDim2.new(0, 7, 0, 7),
-        BackgroundColor3 = color
-    })
-
-    Round(accent, 4)
-
-    local titleLabel = Create("TextLabel", card, {
-        Size = UDim2.new(1, -48, 0, 24),
-        Position = UDim2.new(0, 22, 0, 9),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBold,
-        Text = title,
-        TextSize = 15,
-        TextColor3 = CFG.White,
+        Font = Configs_HUB.Text_Font,
+        TextColor3 = textcolor,
+        TextSize = textsize,
+        Text = TabName,
         TextXAlignment = Enum.TextXAlignment.Left
     })
-
-    local messageLabel = Create("TextLabel", card, {
-        Size = UDim2.new(1, -45, 0, 30),
-        Position = UDim2.new(0, 22, 0, 32),
+    local Container = Create("ScrollingFrame", Containers, {
+        Size = UDim2.new(1, 0, 1, 0),
+        ScrollingDirection = "Y",
+        AutomaticCanvasSize = "Y",
+        CanvasSize = UDim2.new(),
         BackgroundTransparency = 1,
-        Font = Enum.Font.Gotham,
-        Text = message,
-        TextSize = 12,
-        TextWrapped = true,
-        TextColor3 = CFG.Gray,
+        ScrollBarThickness = 2,
+        Visible = firstVisible
+    })
+    Corner(Container); Stroke(Container)
+    Create("UIPadding", Container, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
+    Create("UIListLayout", Container, { Padding = UDim.new(0, 5) })
+    if TabTitle then
+        Create("TextLabel", Container, {
+            BackgroundTransparency = 1,
+            Text = "#" .. string.gsub(TabName, " ", "-"),
+            TextSize = 25,
+            Font = Configs_HUB.Text_Font,
+            TextXAlignment = "Left",
+            TextColor3 = Configs_HUB.Cor_Text,
+            Size = UDim2.new(1, 0, 0, 30),
+            Position = UDim2.new(0, 30, 0, 0),
+            Name = "Frame"
+        })
+    end
+    TextButton.MouseButton1Click:Connect(function()
+        for _, container in pairs(Containers:GetChildren()) do if container:IsA("ScrollingFrame") then container.Visible = false end end
+        for _, frame in pairs(ScrollBar:GetChildren()) do
+            if frame:IsA("Frame") and frame:FindFirstChild("TextLabel") and frame.TextLabel ~= TextLabel then
+                CreateTween(frame.TextLabel, "TextColor3", Configs_HUB.Cor_DarkText, 0.3, false)
+                frame.TextLabel.TextSize = 14
+            end
+        end
+        Container.Visible = true
+        CreateTween(TextLabel, "TextColor3", Configs_HUB.Cor_Text, 0.3, false)
+        TextLabel.TextSize = 15
+    end)
+    firstVisible = false; FirstTab = false; textsize = 14; textcolor = Configs_HUB.Cor_DarkText
+    return Container
+end
+
+function AddButton(parent, Configs)
+    local ButtonName = Configs.Name or "Button!!"
+    local Callback = Configs.Callback or function() end
+    
+    local TextButton = Create("TextButton", parent, {
+        Size = UDim2.new(1, 0, 0, 25),
+        BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.5,
+        Name = "Frame",
+        Text = "",
+        AutoButtonColor = false
+    })
+    Corner(TextButton); Stroke(TextButton)
+    local TextLabel = Create("TextLabel", TextButton, {
+        TextSize = 14,
+        TextColor3 = Configs_HUB.Cor_Text,
+        Text = ButtonName,
+        Size = UDim2.new(1, 0, 1, 0),
+        Position = UDim2.new(0, 35, 0, 0),
+        BackgroundTransparency = 1,
+        TextXAlignment = "Left",
+        Font = Configs_HUB.Text_Font
+    })
+    local ImageLabel = Create("ImageLabel", TextButton, {
+        Image = "rbxassetid://99956220697276",
+        Size = UDim2.new(0, 20, 0, 20),
+        Position = UDim2.new(0, 5, 0, 2.5),
+        BackgroundTransparency = 1,
+        ImageColor3 = Configs_HUB.Cor_Stroke
+    })
+    TextButton.MouseButton1Click:Connect(function()
+        pcall(Callback)
+        CreateTween(ImageLabel, "ImageColor3", Color3.fromRGB(30, 140, 200), 0.2, true)
+        CreateTween(ImageLabel, "ImageColor3", Configs_HUB.Cor_Stroke, 0.2, false)
+    end)
+    TextSetColor(TextLabel)
+    return TextButton
+end
+
+function AddTextLabel(parent, text)
+    local Label = Create("TextLabel", parent, {
+        Size = UDim2.new(1, 0, 0, 100),
+        BackgroundTransparency = 1,
+        Text = text or "Loading...",
+        TextColor3 = Configs_HUB.Cor_Text,
+        TextSize = 13,
+        Font = Configs_HUB.Text_Font,
         TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top
+        TextYAlignment = Enum.TextYAlignment.Top,
+        TextWrapped = true,
+        TextScaled = false,
+        AutomaticSize = Enum.AutomaticSize.Y
     })
+    return { Update = function(self, newText) Label.Text = newText end, Label = Label }
+end
 
-    Tween(card, 0.35, {
-        Position = UDim2.new(0, 0, 0, 0)
-    })
-
-    task.delay(duration, function()
-        if card and card.Parent then
-            Tween(card, 0.3, {
-                Position = UDim2.new(1, 20, 0, 0)
-            })
-
-            task.wait(0.32)
-
-            if wrapper then
-                wrapper:Destroy()
+function AddPlayerProfile(parent)
+    local placeName = "Unknown Place"
+    pcall(function() placeName = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
+    local exploit = "Unknown Exploit"
+    pcall(function() 
+        if identifyexecutor then exploit = identifyexecutor() 
+        elseif getexecutorname then exploit = getexecutorname() 
+        end 
+    end)
+    local fps = 0; local frameCount = 0; local lastTime = tick()
+    RunService.Heartbeat:Connect(function()
+        frameCount = frameCount + 1
+        if tick() - lastTime >= 1 then fps = frameCount; frameCount = 0; lastTime = tick() end
+    end)
+    local function GetInfo()
+        return "User: " .. LP.Name .. "\n" ..
+               "Map Name: " .. placeName .. "\n" ..
+               "Account Age: " .. LP.AccountAge .. " days\n" ..
+               "Script: STMC Hub (MAX)\n" ..
+               "Exploit: " .. tostring(exploit) .. "\n" ..
+               "Ping: " .. math.floor(LP:GetNetworkPing() * 1000) .. " ms\n" ..
+               "FPS: " .. fps .. "\n" ..
+               "Time: " .. os.date("%H:%M:%S")
+    end
+    local Label = AddTextLabel(parent, GetInfo())
+    task.spawn(function()
+        while task.wait(1) do
+            if Label and Label.Update then
+                pcall(function() Label.Update(GetInfo()) end)
             end
         end
     end)
+    return Label
 end
 
---========================================================--
--- MAIN WINDOW
---========================================================--
-
-local Main = Create("Frame", ScreenGui, {
-    Size = UDim2.new(0, 900, 0, 560),
-    Position = UDim2.new(0.5, -450, 0.5, -280),
-    BackgroundColor3 = CFG.MainColor,
-    BorderSizePixel = 0,
-    Active = true,
-    ClipsDescendants = true
-})
-
-Round(Main, 18)
-Outline(Main, Color3.fromRGB(52, 52, 68), 1)
-
--- Shadow simulation
-local Shadow = Create("Frame", ScreenGui, {
-    Size = Main.Size,
-    Position = Main.Position + UDim2.fromOffset(0, 10),
-    BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-    BackgroundTransparency = 0.65,
-    ZIndex = 0
-})
-
-Round(Shadow, 18)
-
-Main.ZIndex = 2
-
---========================================================--
--- HEADER
---========================================================--
-
-local Header = Create("Frame", Main, {
-    Size = UDim2.new(1, 0, 0, 64),
-    BackgroundColor3 = CFG.SideColor,
-    BorderSizePixel = 0,
-    ZIndex = 5
-})
-
-local HeaderLine = Create("Frame", Header, {
-    Size = UDim2.new(1, 0, 0, 1),
-    Position = UDim2.new(0, 0, 1, -1),
-    BackgroundColor3 = Color3.fromRGB(45, 45, 58),
-    BorderSizePixel = 0
-})
-
---========================================================--
--- LOGO
---========================================================--
-
-local Logo = Create("Frame", Header, {
-    Size = UDim2.new(0, 42, 0, 42),
-    Position = UDim2.new(0, 12, 0.5, -21),
-    BackgroundColor3 = CFG.Accent
-})
-
-Round(Logo, 11)
-
-Create("TextLabel", Logo, {
-    Size = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 1,
-    Text = "S",
-    Font = Enum.Font.GothamBlack,
-    TextSize = 23,
-    TextColor3 = Color3.fromRGB(255, 255, 255)
-})
-
-Create("TextLabel", Header, {
-    Size = UDim2.new(0, 220, 0, 25),
-    Position = UDim2.new(0, 64, 0, 10),
-    BackgroundTransparency = 1,
-    Text = "STMC HUB",
-    Font = Enum.Font.GothamBlack,
-    TextSize = 20,
-    TextColor3 = CFG.White,
-    TextXAlignment = Enum.TextXAlignment.Left
-})
-
-Create("TextLabel", Header, {
-    Size = UDim2.new(0, 220, 0, 18),
-    Position = UDim2.new(0, 65, 0, 34),
-    BackgroundTransparency = 1,
-    Text = "MAX V2 • Modern Edition",
-    Font = Enum.Font.Gotham,
-    TextSize = 11,
-    TextColor3 = CFG.Gray,
-    TextXAlignment = Enum.TextXAlignment.Left
-})
-
---========================================================--
--- HEADER BUTTONS
---========================================================--
-
-local HeaderButtons = Create("Frame", Header, {
-    Size = UDim2.new(0, 100, 1, 0),
-    Position = UDim2.new(1, -108, 0, 0),
-    BackgroundTransparency = 1
-})
-
-local Minimize = Create("TextButton", HeaderButtons, {
-    Size = UDim2.new(0, 44, 0, 36),
-    Position = UDim2.new(0, 0, 0.5, -18),
-    BackgroundColor3 = CFG.CardColor,
-    Text = "—",
-    Font = Enum.Font.GothamBold,
-    TextSize = 16,
-    TextColor3 = CFG.White,
-    AutoButtonColor = false
-})
-
-Round(Minimize, 10)
-
-local Close = Create("TextButton", HeaderButtons, {
-    Size = UDim2.new(0, 44, 0, 36),
-    Position = UDim2.new(0, 50, 0.5, -18),
-    BackgroundColor3 = Color3.fromRGB(40, 25, 30),
-    Text = "×",
-    Font = Enum.Font.GothamBold,
-    TextSize = 20,
-    TextColor3 = CFG.Red,
-    AutoButtonColor = false
-})
-
-Round(Close, 10)
-
---========================================================--
--- SIDEBAR
---========================================================--
-
-local Sidebar = Create("Frame", Main, {
-    Size = UDim2.new(0, 190, 1, -64),
-    Position = UDim2.new(0, 0, 0, 64),
-    BackgroundColor3 = CFG.SideColor,
-    BorderSizePixel = 0,
-    ZIndex = 4
-})
-
--- Divider
-Create("Frame", Sidebar, {
-    Size = UDim2.new(0, 1, 1, 0),
-    Position = UDim2.new(1, -1, 0, 0),
-    BackgroundColor3 = Color3.fromRGB(45, 45, 58)
-})
-
---========================================================--
--- PROFILE CARD
---========================================================--
-
-local ProfileCard = Create("Frame", Sidebar, {
-    Size = UDim2.new(1, -20, 0, 74),
-    Position = UDim2.new(0, 10, 0, 12),
-    BackgroundColor3 = CFG.CardColor
-})
-
-Round(ProfileCard, 12)
-
-local Avatar = Create("ImageLabel", ProfileCard, {
-    Size = UDim2.new(0, 48, 0, 48),
-    Position = UDim2.new(0, 10, 0.5, -24),
-    BackgroundTransparency = 1,
-    Image = "rbxassetid://0"
-})
-
-Round(Avatar, 24)
-
-pcall(function()
-    Avatar.Image =
-        "https://www.roblox.com/headshot-thumbnail/image?userId="
-        .. LocalPlayer.UserId
-        .. "&width=420&height=420&format=png"
-end)
-
-Create("TextLabel", ProfileCard, {
-    Size = UDim2.new(1, -70, 0, 22),
-    Position = UDim2.new(0, 66, 0, 14),
-    BackgroundTransparency = 1,
-    Text = LocalPlayer.DisplayName,
-    Font = Enum.Font.GothamBold,
-    TextSize = 13,
-    TextColor3 = CFG.White,
-    TextXAlignment = Enum.TextXAlignment.Left,
-    TextTruncate = Enum.TextTruncate.AtEnd
-})
-
-Create("TextLabel", ProfileCard, {
-    Size = UDim2.new(1, -70, 0, 20),
-    Position = UDim2.new(0, 66, 0, 36),
-    BackgroundTransparency = 1,
-    Text = "@" .. LocalPlayer.Name,
-    Font = Enum.Font.Gotham,
-    TextSize = 11,
-    TextColor3 = CFG.Gray,
-    TextXAlignment = Enum.TextXAlignment.Left,
-    TextTruncate = Enum.TextTruncate.AtEnd
-})
-
---========================================================--
--- SEARCH
---========================================================--
-
-local Search = Create("TextBox", Sidebar, {
-    Size = UDim2.new(1, -20, 0, 34),
-    Position = UDim2.new(0, 10, 0, 96),
-    BackgroundColor3 = Color3.fromRGB(21, 21, 27),
-    PlaceholderText = "بحث...",
-    PlaceholderColor3 = CFG.DarkGray,
-    Text = "",
-    TextSize = 12,
-    Font = Enum.Font.Gotham,
-    TextColor3 = CFG.White,
-    ClearTextOnFocus = false
-})
-
-Round(Search, 10)
-Outline(Search, Color3.fromRGB(49, 49, 61), 1)
-AddPadding(Search, 12, 12, 0, 0)
-
---========================================================--
--- TAB LIST
---========================================================--
-
-local TabList = Create("ScrollingFrame", Sidebar, {
-    Size = UDim2.new(1, -20, 1, -145),
-    Position = UDim2.new(0, 10, 0, 140),
-    BackgroundTransparency = 1,
-    BorderSizePixel = 0,
-    CanvasSize = UDim2.new(),
-    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    ScrollBarThickness = 2,
-    ScrollBarImageTransparency = 0.5
-})
-
-Create("UIListLayout", TabList, {
-    Padding = UDim.new(0, 7)
-})
-
---========================================================--
--- CONTENT AREA
---========================================================--
-
-local Content = Create("Frame", Main, {
-    Size = UDim2.new(1, -190, 1, -64),
-    Position = UDim2.new(0, 190, 0, 64),
-    BackgroundColor3 = CFG.MainColor,
-    BorderSizePixel = 0,
-    ZIndex = 3
-})
-
---========================================================--
--- PAGE HEADER
---========================================================--
-
-local PageTitle = Create("TextLabel", Content, {
-    Size = UDim2.new(1, -40, 0, 30),
-    Position = UDim2.new(0, 20, 0, 17),
-    BackgroundTransparency = 1,
-    Text = "الرئيسية",
-    Font = Enum.Font.GothamBlack,
-    TextSize = 22,
-    TextColor3 = CFG.White,
-    TextXAlignment = Enum.TextXAlignment.Left
-})
-
-local PageSubtitle = Create("TextLabel", Content, {
-    Size = UDim2.new(1, -40, 0, 22),
-    Position = UDim2.new(0, 20, 0, 45),
-    BackgroundTransparency = 1,
-    Text = "التحكم والإعدادات",
-    Font = Enum.Font.Gotham,
-    TextSize = 12,
-    TextColor3 = CFG.Gray,
-    TextXAlignment = Enum.TextXAlignment.Left
-})
-
-local PageContainer = Create("ScrollingFrame", Content, {
-    Size = UDim2.new(1, -40, 1, -88),
-    Position = UDim2.new(0, 20, 0, 78),
-    BackgroundTransparency = 1,
-    BorderSizePixel = 0,
-    CanvasSize = UDim2.new(),
-    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    ScrollBarThickness = 2,
-    ScrollBarImageTransparency = 0.55
-})
-
-Create("UIListLayout", PageContainer, {
-    Padding = UDim.new(0, 10),
-    SortOrder = Enum.SortOrder.LayoutOrder
-})
-
---========================================================--
--- TAB SYSTEM
---========================================================--
-
-local Tabs = {}
-local ActiveTab = nil
-
-local function CreateTabButton(name, icon)
-    local button = Create("TextButton", TabList, {
-        Size = UDim2.new(1, 0, 0, 42),
-        BackgroundColor3 = CFG.SideColor,
+function AddDropdown(parent, Configs)
+    local DropdownName = Configs.Name or "Dropdown!!"
+    local Options = Configs.Options or {"1", "2", "3"}
+    local Default = Configs.Default or Options[1]
+    local Callback = Configs.Callback or function() end
+    
+    local MainFrame = Create("Frame", parent, {
+        Size = UDim2.new(1, 0, 0, 25),
         BackgroundTransparency = 1,
-        AutoButtonColor = false,
-        Text = ""
+        Name = "DropdownContainer"
     })
-
-    Round(button, 10)
-
-    local indicator = Create("Frame", button, {
-        Size = UDim2.new(0, 3, 0, 20),
-        Position = UDim2.new(0, 2, 0.5, -10),
-        BackgroundColor3 = CFG.Accent,
-        BackgroundTransparency = 1
-    })
-
-    Round(indicator, 3)
-
-    local iconLabel = Create("TextLabel", button, {
-        Size = UDim2.new(0, 30, 1, 0),
-        Position = UDim2.new(0, 12, 0, 0),
-        BackgroundTransparency = 1,
-        Text = icon,
-        Font = Enum.Font.GothamBold,
-        TextSize = 15,
-        TextColor3 = CFG.Gray
-    })
-
-    local label = Create("TextLabel", button, {
-        Size = UDim2.new(1, -50, 1, 0),
-        Position = UDim2.new(0, 46, 0, 0),
-        BackgroundTransparency = 1,
-        Text = name,
-        Font = Enum.Font.GothamMedium,
-        TextSize = 12,
-        TextColor3 = CFG.Gray,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
-
-    return button, indicator, iconLabel, label
-end
-
-local function AddPage(name, subtitle, icon)
-    local page = Create("Frame", PageContainer, {
-        Size = UDim2.new(1, 0, 0, 0),
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundTransparency = 1,
-        Visible = false
-    })
-
-    local layout = Create("UIListLayout", page, {
-        Padding = UDim.new(0, 10)
-    })
-
-    local button, indicator, iconLabel, label = CreateTabButton(name, icon)
-
-    local tab = {
-        Name = name,
-        Subtitle = subtitle,
-        Icon = icon,
-        Page = page,
-        Button = button,
-        Indicator = indicator,
-        IconLabel = iconLabel,
-        Label = label,
+    
+    local TextButton = Create("TextButton", MainFrame, {
+        Size = UDim2.new(1, 0, 0, 25),
+        BackgroundColor3 = Configs_HUB.Cor_Options,
+        Name = "Header",
+        Text = "",
+        AutoButtonColor = false
+    }) 
+    
+    local dropdownStroke = Stroke(TextButton, { Color = Configs_HUB.Cor_Stroke, Thickness = 2 })
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Configs_HUB.Cor_Stroke),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 100, 255)),
+        ColorSequenceKeypoint.new(1, Configs_HUB.Cor_Stroke)
     }
-
-    table.insert(Tabs, tab)
-
-    button.MouseButton1Click:Connect(function()
-        for _, other in ipairs(Tabs) do
-            other.Page.Visible = false
-
-            Tween(other.Button, 0.18, {
-                BackgroundTransparency = 1
-            })
-
-            Tween(other.Indicator, 0.18, {
-                BackgroundTransparency = 1
-            })
-
-            Tween(other.Label, 0.18, {
-                TextColor3 = CFG.Gray
-            })
-
-            Tween(other.IconLabel, 0.18, {
-                TextColor3 = CFG.Gray
-            })
+    gradient.Rotation = 0
+    gradient.Parent = dropdownStroke
+    coroutine.wrap(function()
+        while dropdownStroke.Parent do
+            gradient.Rotation = (gradient.Rotation + 1) % 360
+            RunService.RenderStepped:Wait()
         end
-
-        page.Visible = true
-
-        Tween(button, 0.18, {
-            BackgroundColor3 = CFG.CardColor,
-            BackgroundTransparency = 0
-        })
-
-        Tween(indicator, 0.18, {
-            BackgroundTransparency = 0
-        })
-
-        Tween(label, 0.18, {
-            TextColor3 = CFG.White
-        })
-
-        Tween(iconLabel, 0.18, {
-            TextColor3 = CFG.Accent
-        })
-
-        PageTitle.Text = name
-        PageSubtitle.Text = subtitle
-
-        ActiveTab = tab
-    end)
-
-    return tab
-end
-
---========================================================--
--- UI COMPONENTS
---========================================================--
-
-local function AddSection(parent, title, description)
-    local card = Create("Frame", parent, {
-        Size = UDim2.new(1, 0, 0, 58),
-        BackgroundColor3 = CFG.CardColor
-    })
-
-    Round(card, 12)
-    Outline(card, Color3.fromRGB(48, 48, 60), 1)
-
-    Create("TextLabel", card, {
-        Size = UDim2.new(1, -30, 0, 22),
-        Position = UDim2.new(0, 15, 0, 8),
-        BackgroundTransparency = 1,
-        Text = title,
-        Font = Enum.Font.GothamBold,
-        TextSize = 13,
-        TextColor3 = CFG.White,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
-
-    Create("TextLabel", card, {
-        Size = UDim2.new(1, -30, 0, 18),
-        Position = UDim2.new(0, 15, 0, 31),
-        BackgroundTransparency = 1,
-        Text = description or "",
-        Font = Enum.Font.Gotham,
-        TextSize = 10,
-        TextColor3 = CFG.Gray,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
-
-    return card
-end
-
-local function AddButton(parent, text, callback)
-    local button = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 46),
-        BackgroundColor3 = CFG.CardColor,
-        AutoButtonColor = false,
-        Text = ""
-    })
-
-    Round(button, 11)
-    Outline(button, Color3.fromRGB(48, 48, 60), 1)
-
-    local icon = Create("Frame", button, {
-        Size = UDim2.new(0, 28, 0, 28),
-        Position = UDim2.new(0, 10, 0.5, -14),
-        BackgroundColor3 = Color3.fromRGB(34, 34, 44)
-    })
-
-    Round(icon, 8)
-
-    Create("TextLabel", icon, {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency = 1,
-        Text = "›",
-        Font = Enum.Font.GothamBold,
-        TextSize = 18,
-        TextColor3 = CFG.Accent
-    })
-
-    local label = Create("TextLabel", button, {
-        Size = UDim2.new(1, -60, 1, 0),
-        Position = UDim2.new(0, 50, 0, 0),
-        BackgroundTransparency = 1,
-        Text = text,
-        Font = Enum.Font.GothamMedium,
+    end)()
+    Corner(TextButton)
+    
+    local TextLabel = Create("TextLabel", TextButton, {
         TextSize = 12,
-        TextColor3 = CFG.White,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
-
-    button.MouseEnter:Connect(function()
-        Tween(button, 0.15, {
-            BackgroundColor3 = CFG.CardHover
-        })
-    end)
-
-    button.MouseLeave:Connect(function()
-        Tween(button, 0.15, {
-            BackgroundColor3 = CFG.CardColor
-        })
-    end)
-
-    button.MouseButton1Click:Connect(function()
-        Tween(icon, 0.1, {
-            Size = UDim2.new(0, 24, 0, 24),
-            Position = UDim2.new(0, 12, 0.5, -12)
-        })
-
-        task.delay(0.1, function()
-            Tween(icon, 0.15, {
-                Size = UDim2.new(0, 28, 0, 28),
-                Position = UDim2.new(0, 10, 0.5, -14)
-            })
-        end)
-
-        pcall(callback)
-    end)
-
-    return button
-end
-
-local function AddToggle(parent, text, default, callback)
-    local enabled = default or false
-
-    local button = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 46),
-        BackgroundColor3 = CFG.CardColor,
-        AutoButtonColor = false,
-        Text = ""
-    })
-
-    Round(button, 11)
-    Outline(button, Color3.fromRGB(48, 48, 60), 1)
-
-    local label = Create("TextLabel", button, {
-        Size = UDim2.new(1, -85, 1, 0),
-        Position = UDim2.new(0, 14, 0, 0),
+        TextColor3 = Configs_HUB.Cor_Text,
+        Text = DropdownName,
+        Size = UDim2.new(1, -30, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
         BackgroundTransparency = 1,
-        Text = text,
-        Font = Enum.Font.GothamMedium,
-        TextSize = 12,
-        TextColor3 = CFG.White,
-        TextXAlignment = Enum.TextXAlignment.Left
+        TextXAlignment = "Left",
+        Font = Configs_HUB.Text_Font
     })
-
-    local toggle = Create("Frame", button, {
-        Size = UDim2.new(0, 48, 0, 26),
-        Position = UDim2.new(1, -60, 0.5, -13),
-        BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    })
-
-    Round(toggle, 20)
-
-    local knob = Create("Frame", toggle, {
+    TextSetColor(TextLabel)
+    
+    local Arrow = Create("ImageLabel", TextButton, {
+        Image = "rbxassetid://6031090998",
         Size = UDim2.new(0, 20, 0, 20),
-        Position = UDim2.new(0, 3, 0.5, -10),
-        BackgroundColor3 = CFG.White
+        Position = UDim2.new(1, -25, 0.5, 0),
+        AnchorPoint = Vector2.new(0, 0.5),
+        BackgroundTransparency = 1,
+        ImageColor3 = Configs_HUB.Cor_Text
     })
-
-    Round(knob, 20)
-
-    local function Refresh()
-        if enabled then
-            Tween(toggle, 0.2, {
-                BackgroundColor3 = CFG.Accent
+    
+    local DropdownFrame = Create("ScrollingFrame", MainFrame, {
+        Size = UDim2.new(1, 0, 0, 0),
+        Position = UDim2.new(0, 0, 0, 28),
+        BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.1,
+        ClipsDescendants = true,
+        Visible = false,
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Configs_HUB.Cor_Stroke,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ZIndex = 20
+    })
+    Corner(DropdownFrame)
+    Stroke(DropdownFrame)
+    
+    local DropdownList = Create("UIListLayout", DropdownFrame, {
+        Padding = UDim.new(0, 2),
+        SortOrder = Enum.SortOrder.LayoutOrder
+    })
+    
+    Create("UIPadding", DropdownFrame, {
+        PaddingLeft = UDim.new(0, 4),
+        PaddingRight = UDim.new(0, 4),
+        PaddingTop = UDim.new(0, 4),
+        PaddingBottom = UDim.new(0, 4)
+    })
+    
+    local Selected = Default
+    local expanded = false
+    
+    local function GetTargetHeight()
+        local count = #Options
+        local totalH = count * 22 + 8
+        return math.min(totalH, 110)
+    end
+    
+    local function UpdateButtons()
+        for _, child in ipairs(DropdownFrame:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
+            end
+        end
+        for _, option in ipairs(Options) do
+            local btn = Create("TextButton", DropdownFrame, {
+                Size = UDim2.new(1, 0, 0, 20),
+                BackgroundColor3 = Configs_HUB.Cor_Hub,
+                Text = option,
+                TextColor3 = Configs_HUB.Cor_Text,
+                TextSize = 12,
+                Font = Configs_HUB.Text_Font,
+                AutoButtonColor = false,
+                ZIndex = 21
             })
-
-            Tween(knob, 0.2, {
-                Position = UDim2.new(1, -23, 0.5, -10)
-            })
-        else
-            Tween(toggle, 0.2, {
-                BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-            })
-
-            Tween(knob, 0.2, {
-                Position = UDim2.new(0, 3, 0.5, -10)
-            })
+            Corner(btn)
+            btn.MouseButton1Click:Connect(function()
+                Selected = option
+                TextLabel.Text = DropdownName .. ": " .. option
+                Callback(option)
+                expanded = false
+                CreateTween(DropdownFrame, "Size", UDim2.new(1, 0, 0, 0), 0.2, true)
+                DropdownFrame.Visible = false
+                CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 25), 0.2, false)
+            end)
+        end
+        if expanded then
+            local targetH = GetTargetHeight()
+            DropdownFrame.Size = UDim2.new(1, 0, 0, targetH)
+            MainFrame.Size = UDim2.new(1, 0, 0, 28 + targetH)
         end
     end
-
-    button.MouseButton1Click:Connect(function()
-        enabled = not enabled
-        Refresh()
-        pcall(callback, enabled)
+    
+    UpdateButtons()
+    
+    TextButton.MouseButton1Click:Connect(function()
+        expanded = not expanded
+        if expanded then
+            DropdownFrame.Visible = true
+            local targetH = GetTargetHeight()
+            CreateTween(DropdownFrame, "Size", UDim2.new(1, 0, 0, targetH), 0.2, false)
+            CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 28 + targetH), 0.2, false)
+        else
+            CreateTween(DropdownFrame, "Size", UDim2.new(1, 0, 0, 0), 0.2, true)
+            DropdownFrame.Visible = false
+            CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 25), 0.2, false)
+        end
     end)
-
-    Refresh()
-
+    
     return {
-        Get = function()
-            return enabled
+        Update = function(self, newOptions)
+            Options = newOptions
+            UpdateButtons()
         end,
-
-        Set = function(value)
-            enabled = value
-            Refresh()
-            pcall(callback, enabled)
-        end,
-
-        Button = button
+        GetSelected = function(self)
+            return Selected
+        end
     }
 end
 
-local function AddInfo(parent, title, value)
-    local row = Create("Frame", parent, {
-        Size = UDim2.new(1, 0, 0, 38),
-        BackgroundColor3 = CFG.CardColor
-    })
+-- =============================================
+-- TABS CREATION (FULLY RESTORED)
+-- =============================================
+local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
+local LocalPlayerTab = MakeTab({Name = "شخصيتي 🏃‍♂️", TabTitle = true})
+local ESPTab = MakeTab({Name = "رادار 👁️", TabTitle = true})
+local TeleportTab = MakeTab({Name = "الانتقال ⚡", TabTitle = true})
+local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
+local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, Image = "rbxassetid://6031075931"})
 
-    Round(row, 10)
-
-    Create("TextLabel", row, {
-        Size = UDim2.new(0.45, 0, 1, 0),
-        Position = UDim2.new(0, 12, 0, 0),
-        BackgroundTransparency = 1,
-        Text = title,
-        Font = Enum.Font.Gotham,
-        TextSize = 11,
-        TextColor3 = CFG.Gray,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
-
-    Create("TextLabel", row, {
-        Size = UDim2.new(0.48, -12, 1, 0),
-        Position = UDim2.new(0.52, 0, 0, 0),
-        BackgroundTransparency = 1,
-        Text = value,
-        Font = Enum.Font.GothamBold,
-        TextSize = 11,
-        TextColor3 = CFG.White,
-        TextXAlignment = Enum.TextXAlignment.Right
-    })
-
-    return row
-end
-
---========================================================--
--- PAGES
---========================================================--
-
-local HomePage = AddPage(
-    "الرئيسية",
-    "التحكم الرئيسي والمعلومات",
-    "⌂"
-)
-
-local PlayerPage = AddPage(
-    "شخصيتي",
-    "الحركة والخصائص المحلية",
-    "◉"
-)
-
-local ESPPage = AddPage(
-    "الرادار",
-    "إظهار اللاعبين داخل الخريطة",
-    "◈"
-)
-
-local TeleportPage = AddPage(
-    "الانتقال",
-    "اختيار لاعب والانتقال إليه",
-    "↗"
-)
-
-local AboutPage = AddPage(
-    "حول",
-    "معلومات السكربت والجلسة",
-    "?"
-)
-
---========================================================--
--- HOME PAGE
---========================================================--
-
-AddSection(
-    HomePage.Page,
-    "STMC HUB MAX",
-    "واجهة جديدة بالكامل بتصميم حديث"
-)
-
-AddButton(
-    HomePage.Page,
-    "تشغيل الطيران",
-    function()
-        StartFly()
+-- =============================================
+-- MAIN TAB (FULLY RESTORED)
+-- =============================================
+AddButton(MainTab, {
+    Name = "🔓 فك حماية الطيران",
+    Callback = function()
+        FullBypass()
     end
-)
+})
 
-AddButton(
-    HomePage.Page,
-    "إيقاف الطيران",
-    function()
-        StopFly()
+AddButton(MainTab, {
+    Name = "🛩️ تشغيل وضع طيران",
+    Callback = function()
+        startFly()
     end
-)
+})
 
-AddSection(
-    HomePage.Page,
-    "حالة الجلسة",
-    "معلومات مباشرة"
-)
+AddButton(MainTab, {
+    Name = "⏹️ إيقاف طيران",
+    Callback = function()
+        stopFly()
+    end
+})
 
-local HomeStatus = AddInfo(
-    HomePage.Page,
-    "اللاعب",
-    LocalPlayer.Name
-)
+AddButton(MainTab, {
+    Name = "➕ زيادة سرعة الطيران (+50)",
+    Callback = function()
+        FlySpeed = FlySpeed + 50
+        MakeNotifi({Title="Fly", Text="سرعة الطيران الان: "..FlySpeed, Time=2})
+    end
+})
 
---========================================================--
--- PLAYER PAGE
---========================================================--
+AddButton(MainTab, {
+    Name = "➖ تقليل سرعة الطيران (-50)",
+    Callback = function()
+        if FlySpeed > 50 then
+            FlySpeed = FlySpeed - 50
+        end
+        MakeNotifi({Title="Fly", Text="سرعة الطيران الان: "..FlySpeed, Time=2})
+    end
+})
 
-AddSection(
-    PlayerPage.Page,
-    "الحركة",
-    "خيارات التحكم بالحركة"
-)
+AddButton(MainTab, {
+    Name = "💰 فارم فلوس",
+    Callback = function()
+        pcall(function()
+            loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/LSDSltPsDZyOKL7q/raw"))()
+        end)
+    end
+})
 
+-- =============================================
+-- LOCAL PLAYER TAB (FULLY RESTORED)
+-- =============================================
 local SpeedEnabled = false
 local JumpEnabled = false
 local NoclipEnabled = false
 local InfJumpEnabled = false
 
-AddToggle(
-    PlayerPage.Page,
-    "سرعة عالية",
-    false,
-    function(enabled)
-        SpeedEnabled = enabled
+AddButton(LocalPlayerTab, {
+    Name = "⚡ تفعيل سرعة عالية (WalkSpeed)",
+    Callback = function()
+        SpeedEnabled = true
+        MakeNotifi({Title="Player", Text="تم تفعيل السرعة", Time=2})
+    end
+})
 
-        if not enabled then
-            local humanoid = GetHumanoid()
-
-            if humanoid then
-                humanoid.WalkSpeed = 16
-            end
+AddButton(LocalPlayerTab, {
+    Name = "🚶‍♂️ إرجاع السرعة الطبيعية",
+    Callback = function()
+        SpeedEnabled = false
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            LP.Character.Humanoid.WalkSpeed = 16
         end
-
-        Notify(
-            "السرعة",
-            enabled and "تم التشغيل" or "تم الإيقاف",
-            2,
-            enabled and "success" or "default"
-        )
+        MakeNotifi({Title="Player", Text="تم إرجاع السرعة", Time=2})
     end
-)
+})
 
-AddToggle(
-    PlayerPage.Page,
-    "قفز عالي",
-    false,
-    function(enabled)
-        JumpEnabled = enabled
+AddButton(LocalPlayerTab, {
+    Name = "🦘 تفعيل قفز عالي (JumpPower)",
+    Callback = function()
+        JumpEnabled = true
+        MakeNotifi({Title="Player", Text="تم تفعيل القفز العالي", Time=2})
+    end
+})
 
-        if not enabled then
-            local humanoid = GetHumanoid()
-
-            if humanoid then
-                humanoid.JumpPower = 50
-            end
+AddButton(LocalPlayerTab, {
+    Name = "🧍‍♂️ إرجاع القفز الطبيعي",
+    Callback = function()
+        JumpEnabled = false
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            LP.Character.Humanoid.JumpPower = 50
         end
-
-        Notify(
-            "القفز",
-            enabled and "تم التشغيل" or "تم الإيقاف",
-            2,
-            enabled and "success" or "default"
-        )
+        MakeNotifi({Title="Player", Text="تم إرجاع القفز", Time=2})
     end
-)
+})
 
-AddToggle(
-    PlayerPage.Page,
-    "Noclip",
-    false,
-    function(enabled)
-        NoclipEnabled = enabled
-
-        Notify(
-            "Noclip",
-            enabled and "تم التشغيل" or "تم الإيقاف",
-            2,
-            enabled and "success" or "default"
-        )
+AddButton(LocalPlayerTab, {
+    Name = "👻 اختراق الجدران (Noclip) - تفعيل",
+    Callback = function()
+        NoclipEnabled = true
+        MakeNotifi({Title="Player", Text="Noclip On", Time=2})
     end
-)
+})
 
-AddToggle(
-    PlayerPage.Page,
-    "Infinite Jump",
-    false,
-    function(enabled)
-        InfJumpEnabled = enabled
-
-        Notify(
-            "Infinite Jump",
-            enabled and "تم التشغيل" or "تم الإيقاف",
-            2,
-            enabled and "success" or "default"
-        )
+AddButton(LocalPlayerTab, {
+    Name = "🧱 اختراق الجدران (Noclip) - إيقاف",
+    Callback = function()
+        NoclipEnabled = false
+        MakeNotifi({Title="Player", Text="Noclip Off", Time=2})
     end
-)
+})
 
---========================================================--
--- FLY
---========================================================--
-
-local Flying = false
-local FlySpeed = 50
-
-local FlightConnection = nil
-local BodyVelocity = nil
-local BodyGyro = nil
-local FlightRoot = nil
-local FlightHumanoid = nil
-
-function StopFly()
-    if FlightConnection then
-        FlightConnection:Disconnect()
-        FlightConnection = nil
+AddButton(LocalPlayerTab, {
+    Name = "☁️ قفز لا نهائي بالهواء - تفعيل",
+    Callback = function()
+        InfJumpEnabled = true
+        MakeNotifi({Title="Player", Text="Inf Jump On", Time=2})
     end
+})
 
-    if BodyVelocity then
-        BodyVelocity:Destroy()
-        BodyVelocity = nil
+AddButton(LocalPlayerTab, {
+    Name = "❌ قفز لا نهائي بالهواء - إيقاف",
+    Callback = function()
+        InfJumpEnabled = false
+        MakeNotifi({Title="Player", Text="Inf Jump Off", Time=2})
     end
-
-    if BodyGyro then
-        BodyGyro:Destroy()
-        BodyGyro = nil
-    end
-
-    if FlightHumanoid then
-        FlightHumanoid.PlatformStand = false
-        FlightHumanoid = nil
-    end
-
-    Flying = false
-    FlightRoot = nil
-
-    Notify(
-        "Fly",
-        "تم إيقاف الطيران",
-        2,
-        "default"
-    )
-end
-
-function StartFly()
-    if Flying then
-        Notify(
-            "Fly",
-            "الطيران يعمل مسبقاً",
-            2,
-            "warning"
-        )
-        return
-    end
-
-    local character = GetCharacter()
-    local humanoid = GetHumanoid()
-    local root = GetRoot()
-
-    if not character or not humanoid or not root then
-        Notify(
-            "Fly",
-            "تعذر العثور على الشخصية",
-            2,
-            "error"
-        )
-        return
-    end
-
-    Flying = true
-    FlightRoot = root
-    FlightHumanoid = humanoid
-
-    BodyGyro = Instance.new("BodyGyro")
-    BodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
-    BodyGyro.P = 40000
-    BodyGyro.CFrame = root.CFrame
-    BodyGyro.Parent = root
-
-    BodyVelocity = Instance.new("BodyVelocity")
-    BodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-    BodyVelocity.Velocity = Vector3.zero
-    BodyVelocity.Parent = root
-
-    humanoid.PlatformStand = true
-
-    FlightConnection = RunService.Heartbeat:Connect(function()
-        if not Flying then
-            return
-        end
-
-        if not FlightRoot or not FlightRoot.Parent then
-            StopFly()
-            return
-        end
-
-        local camera = workspace.CurrentCamera
-
-        BodyGyro.CFrame = camera.CFrame
-
-        local direction = Vector3.zero
-        local move = FlightHumanoid.MoveDirection
-
-        if move.Magnitude > 0.01 then
-            direction = move.Unit
-        end
-
-        if direction.Magnitude > 0 then
-            BodyVelocity.Velocity = direction * FlySpeed
-        else
-            BodyVelocity.Velocity = Vector3.zero
-        end
-    end)
-
-    Notify(
-        "Fly",
-        "تم تشغيل الطيران",
-        2,
-        "success"
-    )
-end
-
-AddButton(
-    PlayerPage.Page,
-    "زيادة سرعة الطيران +50",
-    function()
-        FlySpeed += 50
-
-        Notify(
-            "Fly Speed",
-            "السرعة الحالية: " .. FlySpeed,
-            2,
-            "success"
-        )
-    end
-)
-
-AddButton(
-    PlayerPage.Page,
-    "تقليل سرعة الطيران -50",
-    function()
-        FlySpeed = math.max(50, FlySpeed - 50)
-
-        Notify(
-            "Fly Speed",
-            "السرعة الحالية: " .. FlySpeed,
-            2
-        )
-    end
-)
-
---========================================================--
--- PLAYER LOOP
---========================================================--
+})
 
 RunService.Stepped:Connect(function()
-    local character = GetCharacter()
-    local humanoid = GetHumanoid()
-
-    if humanoid then
+    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
         if SpeedEnabled then
-            humanoid.WalkSpeed = 100
+            LP.Character.Humanoid.WalkSpeed = 100
         end
-
         if JumpEnabled then
-            humanoid.JumpPower = 150
+            LP.Character.Humanoid.JumpPower = 150
         end
     end
-
-    if NoclipEnabled and character then
-        for _, object in ipairs(character:GetDescendants()) do
-            if object:IsA("BasePart") then
-                object.CanCollide = false
+    
+    if NoclipEnabled and LP.Character then
+        for _, v in pairs(LP.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
             end
         end
     end
 end)
 
 UserInputService.JumpRequest:Connect(function()
-    if not InfJumpEnabled then
-        return
-    end
-
-    local humanoid = GetHumanoid()
-
-    if humanoid then
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    if InfJumpEnabled and LP.Character and LP.Character:FindFirstChild("Humanoid") then
+        LP.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
-LocalPlayer.CharacterAdded:Connect(function()
-    StopFly()
-end)
+-- =============================================
+-- ESP TAB (RADAR) (FULLY RESTORED)
+-- =============================================
+local ESP_Active = false
 
---========================================================--
--- ESP
---========================================================--
-
-local ESPEnabled = false
-
-local function RemoveESP()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local highlight = player.Character:FindFirstChild("STMC_ESP")
-
-            if highlight then
-                highlight:Destroy()
-            end
-        end
+AddButton(ESPTab, {
+    Name = "👁️ تفعيل كشف اللاعبين (ESP)",
+    Callback = function()
+        ESP_Active = true
+        MakeNotifi({Title="ESP", Text="تم تفعيل الرادار", Time=2})
     end
-end
+})
 
-local function ApplyESP()
-    if not ESPEnabled then
-        return
+AddButton(ESPTab, {
+    Name = "❌ إيقاف كشف اللاعبين (ESP)",
+    Callback = function()
+        ESP_Active = false
+        MakeNotifi({Title="ESP", Text="تم إيقاف الرادار", Time=2})
     end
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local highlight = player.Character:FindFirstChild("STMC_ESP")
-
-            if not highlight then
-                highlight = Instance.new("Highlight")
-                highlight.Name = "STMC_ESP"
-                highlight.FillColor = CFG.Accent
-                highlight.OutlineColor = CFG.White
-                highlight.FillTransparency = 0.55
-                highlight.OutlineTransparency = 0
-                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                highlight.Parent = player.Character
-            end
-        end
-    end
-end
-
-AddToggle(
-    ESPPage.Page,
-    "كشف اللاعبين ESP",
-    false,
-    function(enabled)
-        ESPEnabled = enabled
-
-        if enabled then
-            Notify(
-                "ESP",
-                "تم تشغيل الرادار",
-                2,
-                "success"
-            )
-        else
-            RemoveESP()
-
-            Notify(
-                "ESP",
-                "تم إيقاف الرادار",
-                2
-            )
-        end
-    end
-)
+})
 
 RunService.Heartbeat:Connect(function()
-    if ESPEnabled then
-        ApplyESP()
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    if player.Character then
-        local highlight = player.Character:FindFirstChild("STMC_ESP")
-
-        if highlight then
-            highlight:Destroy()
-        end
-    end
-end)
-
---========================================================--
--- TELEPORT
---========================================================--
-
-local SelectedPlayer = nil
-local PlayerButtonsContainer = nil
-
-AddSection(
-    TeleportPage.Page,
-    "اختر لاعب",
-    "اضغط على اسم اللاعب لتحديده"
-)
-
-PlayerButtonsContainer = Create("Frame", TeleportPage.Page, {
-    Size = UDim2.new(1, 0, 0, 0),
-    AutomaticSize = Enum.AutomaticSize.Y,
-    BackgroundTransparency = 1
-})
-
-Create("UIListLayout", PlayerButtonsContainer, {
-    Padding = UDim.new(0, 7)
-})
-
-local function RefreshPlayerList()
-    if not PlayerButtonsContainer then
-        return
-    end
-
-    for _, child in ipairs(PlayerButtonsContainer:GetChildren()) do
-        if child:IsA("TextButton") or child:IsA("TextLabel") then
-            child:Destroy()
-        end
-    end
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local button = Create("TextButton", PlayerButtonsContainer, {
-                Size = UDim2.new(1, 0, 0, 42),
-                BackgroundColor3 = CFG.CardColor,
-                Text = player.DisplayName .. "  @" .. player.Name,
-                Font = Enum.Font.GothamMedium,
-                TextSize = 12,
-                TextColor3 = CFG.White,
-                AutoButtonColor = false
-            })
-
-            Round(button, 10)
-
-            button.MouseButton1Click:Connect(function()
-                SelectedPlayer = player
-
-                for _, other in ipairs(PlayerButtonsContainer:GetChildren()) do
-                    if other:IsA("TextButton") then
-                        Tween(other, 0.15, {
-                            BackgroundColor3 = CFG.CardColor
-                        })
-                    end
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LP and player.Character then
+            local highlight = player.Character:FindFirstChild("STMC_ESP")
+            
+            if ESP_Active then
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Name = "STMC_ESP"
+                    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineTransparency = 0
+                    highlight.Parent = player.Character
                 end
-
-                Tween(button, 0.15, {
-                    BackgroundColor3 = Color3.fromRGB(35, 45, 75)
-                })
-
-                Notify(
-                    "Player",
-                    "تم اختيار " .. player.Name,
-                    2,
-                    "success"
-                )
-            end)
+            else
+                if highlight then
+                    highlight:Destroy()
+                end
+            end
         end
     end
+end)
 
-    if #Players:GetPlayers() <= 1 then
-        Create("TextLabel", PlayerButtonsContainer, {
-            Size = UDim2.new(1, 0, 0, 42),
-            BackgroundTransparency = 1,
-            Text = "لا يوجد لاعبين آخرين",
-            Font = Enum.Font.Gotham,
-            TextSize = 12,
-            TextColor3 = CFG.Gray
-        })
+-- =============================================
+-- TELEPORT TAB (FULLY RESTORED)
+-- =============================================
+local TPSelectedPlayer = ""
+
+local TPDropdown = AddDropdown(TeleportTab, {
+    Name = "اختر لاعب للانتقال إليه",
+    Options = {},
+    Callback = function(value)
+        TPSelectedPlayer = value
+    end
+})
+
+AddButton(TeleportTab, {
+    Name = "⚡ انتقال فوري للاعب المختار",
+    Callback = function()
+        if TPSelectedPlayer == "" or TPSelectedPlayer == "لا يوجد لاعبين" then
+            MakeNotifi({Title="تنبيه", Text="يرجى اختيار لاعب", Time=2})
+            return
+        end
+        
+        local targetPlayer = Players:FindFirstChild(TPSelectedPlayer)
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                LP.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+                MakeNotifi({Title="Teleport", Text="تم الانتقال إلى " .. TPSelectedPlayer, Time=2})
+            end
+        else
+            MakeNotifi({Title="خطأ", Text="اللاعب غير موجود أو لم يترسبن", Time=2})
+        end
+    end
+})
+
+-- =============================================
+-- TROLL TAB (FULLY RESTORED)
+-- =============================================
+local selectedPlayerName = ""
+local playerDropdown = nil
+local isInvisActive = false
+local invisConnection = nil
+local followConnection = nil
+local targetDeathConnection = nil
+local EscapePosition = Vector3.new(284, 40, 118)
+
+local function StopInvisibilityAndFollow(teleportToSafeSpot)
+    isInvisActive = false
+    if invisConnection then invisConnection:Disconnect() invisConnection = nil end
+    if followConnection then followConnection:Disconnect() followConnection = nil end
+    if targetDeathConnection then targetDeathConnection:Disconnect() targetDeathConnection = nil end
+    
+    local char = LP.Character
+    if char then
+        local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+        
+        if teleportToSafeSpot and root then
+            root.CFrame = CFrame.new(EscapePosition)
+        end
+
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid.CameraOffset = Vector3.zero end
+        workspace.CurrentCamera.CameraSubject = humanoid or root
+        
+        for _, v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") and v.Transparency == 0.5 then
+                v.Transparency = 0
+            end
+        end
     end
 end
 
-AddButton(
-    TeleportPage.Page,
-    "انتقال إلى اللاعب المحدد",
-    function()
-        if not SelectedPlayer then
-            Notify(
-                "Teleport",
-                "اختر لاعباً أولاً",
-                2,
-                "warning"
-            )
+local function UpdatePlayerList()
+    local playerNames = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LP then
+            table.insert(playerNames, player.Name)
+        end
+    end
+    if #playerNames == 0 then table.insert(playerNames, "لا يوجد لاعبين") end
+    
+    if playerDropdown then pcall(function() playerDropdown:Update(playerNames) end) end
+    if TPDropdown then pcall(function() TPDropdown:Update(playerNames) end) end
+end
+
+playerDropdown = AddDropdown(TrollTab, {
+    Name = "اختر لاعب",
+    Options = {},
+    Callback = function(value)
+        selectedPlayerName = value
+    end
+})
+
+AddButton(TrollTab, {
+    Name = "🗡️ اقتل اللاعب (تتبع + إخفاء + هروب فوري)",
+    Callback = function()
+        if selectedPlayerName == "" or selectedPlayerName == "لا يوجد لاعبين" then
+            MakeNotifi({Title = "تنبيه", Text = "يرجى اختيار لاعب أولاً من القائمة أعلاه", Time = 3})
             return
         end
-
-        local targetCharacter = SelectedPlayer.Character
-        local targetRoot = targetCharacter
-            and targetCharacter:FindFirstChild("HumanoidRootPart")
-
-        local myRoot = GetRoot()
-
-        if not targetRoot or not myRoot then
-            Notify(
-                "Teleport",
-                "تعذر تنفيذ الانتقال",
-                2,
-                "error"
-            )
-            return
-        end
-
-        myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 3)
-
-        Notify(
-            "Teleport",
-            "تم الانتقال إلى " .. SelectedPlayer.Name,
-            2,
-            "success"
-        )
-    end
-)
-
-Players.PlayerAdded:Connect(RefreshPlayerList)
-Players.PlayerRemoving:Connect(function(player)
-    if SelectedPlayer == player then
-        SelectedPlayer = nil
-    end
-
-    task.defer(RefreshPlayerList)
-end)
-
-RefreshPlayerList()
-
---========================================================--
--- ABOUT PAGE
---========================================================--
-
-AddSection(
-    AboutPage.Page,
-    "معلومات السكربت",
-    "بيانات الجلسة الحالية"
-)
-
-AddInfo(
-    AboutPage.Page,
-    "الاسم",
-    LocalPlayer.Name
-)
-
-AddInfo(
-    AboutPage.Page,
-    "Display Name",
-    LocalPlayer.DisplayName
-)
-
-AddInfo(
-    AboutPage.Page,
-    "User ID",
-    tostring(LocalPlayer.UserId)
-)
-
-AddInfo(
-    AboutPage.Page,
-    "Account Age",
-    tostring(LocalPlayer.AccountAge) .. " يوم"
-)
-
-local placeName = "Unknown"
-
-pcall(function()
-    placeName = MarketplaceService:GetProductInfo(game.PlaceId).Name
-end)
-
-AddInfo(
-    AboutPage.Page,
-    "الخريطة",
-    placeName
-)
-
-AddInfo(
-    AboutPage.Page,
-    "Place ID",
-    tostring(game.PlaceId)
-)
-
-local FPS = 0
-local frameCounter = 0
-local fpsTime = tick()
-
-RunService.RenderStepped:Connect(function()
-    frameCounter += 1
-
-    if tick() - fpsTime >= 1 then
-        FPS = frameCounter
-        frameCounter = 0
-        fpsTime = tick()
-    end
-end)
-
-local PingLabel = AddInfo(
-    AboutPage.Page,
-    "Ping",
-    "0 ms"
-)
-
-local FPSLabel = AddInfo(
-    AboutPage.Page,
-    "FPS",
-    "0"
-)
-
-task.spawn(function()
-    while ScreenGui.Parent do
-        task.wait(1)
-
-        local ping = 0
 
         pcall(function()
-            ping = math.floor(LocalPlayer:GetNetworkPing() * 1000)
-        end)
-
-        for _, child in ipairs(PingLabel:GetChildren()) do
-            if child:IsA("TextLabel") and child.Position.X.Scale > 0.4 then
-                child.Text = ping .. " ms"
-            end
-        end
-
-        for _, child in ipairs(FPSLabel:GetChildren()) do
-            if child:IsA("TextLabel") and child.Position.X.Scale > 0.4 then
-                child.Text = tostring(FPS)
-            end
-        end
-    end
-end)
-
---========================================================--
--- SEARCH
---========================================================--
-
-Search:GetPropertyChangedSignal("Text"):Connect(function()
-    local query = Search.Text:lower()
-
-    for _, tab in ipairs(Tabs) do
-        local visible = query == ""
-            or string.find(tab.Name:lower(), query, 1, true)
-
-        tab.Button.Visible = visible
-    end
-end)
-
---========================================================--
--- MINIMIZE
---========================================================--
-
-local Minimized = false
-local OriginalSize = UDim2.new(0, 900, 0, 560)
-
-Minimize.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
-
-    if Minimized then
-        Minimize.Text = "+"
-        Tween(Main, 0.25, {
-            Size = UDim2.new(0, 900, 0, 64)
-        })
-    else
-        Minimize.Text = "—"
-        Tween(Main, 0.3, {
-            Size = OriginalSize
-        })
-    end
-end)
-
---========================================================--
--- CLOSE
---========================================================--
-
-Close.MouseButton1Click:Connect(function()
-    Tween(Main, 0.3, {
-        Size = UDim2.new(0, 0, 0, 0)
-    })
-
-    task.wait(0.35)
-
-    if ScreenGui then
-        ScreenGui:Destroy()
-    end
-end)
-
---========================================================--
--- DRAG SYSTEM
---========================================================--
-
-local dragging = false
-local dragStart
-local startPos
-
-Header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-
-        dragging = true
-        dragStart = input.Position
-        startPos = Main.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if not dragging then
-        return
-    end
-
-    if input.UserInputType ~= Enum.UserInputType.MouseMovement
-        and input.UserInputType ~= Enum.UserInputType.Touch then
-        return
-    end
-
-    local delta = input.Position - dragStart
-
-    Main.Position = UDim2.new(
-        startPos.X.Scale,
-        startPos.X.Offset + delta.X,
-        startPos.Y.Scale,
-        startPos.Y.Offset + delta.Y
-    )
-
-    Shadow.Position = Main.Position + UDim2.fromOffset(0, 10)
-end)
-
---========================================================--
--- BUTTON HOVER
---========================================================--
-
-Minimize.MouseEnter:Connect(function()
-    Tween(Minimize, 0.15, {
-        BackgroundColor3 = CFG.CardHover
-    })
-end)
-
-Minimize.MouseLeave:Connect(function()
-    Tween(Minimize, 0.15, {
-        BackgroundColor3 = CFG.CardColor
-    })
-end)
-
-Close.MouseEnter:Connect(function()
-    Tween(Close, 0.15, {
-        BackgroundColor3 = Color3.fromRGB(65, 30, 35)
-    })
-end)
-
-Close.MouseLeave:Connect(function()
-    Tween(Close, 0.15, {
-        BackgroundColor3 = Color3.fromRGB(40, 25, 30)
-    })
-end)
-
---========================================================--
--- RESPONSIVE
---========================================================--
-
-local function Responsive()
-    local camera = workspace.CurrentCamera
-
-    if not camera then
-        return
-    end
-
-    local viewport = camera.ViewportSize
-
-    if viewport.X < 760 then
-        Main.Size = UDim2.new(
-            0,
-            math.min(680, viewport.X - 20),
-            0,
-            math.min(500, viewport.Y - 30)
-        )
-
-        Main.Position = UDim2.new(
-            0.5,
-            -Main.AbsoluteSize.X / 2,
-            0.5,
-            -Main.AbsoluteSize.Y / 2
-        )
-    else
-        Main.Size = OriginalSize
-    end
-
-    Shadow.Size = Main.Size
-    Shadow.Position = Main.Position + UDim2.fromOffset(0, 10)
-end
-
-workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(Responsive)
-
---========================================================--
--- INTRO
---========================================================--
-
-Main.Visible = true
-Main.Size = UDim2.new(0, 0, 0, 0)
-
-Tween(Main, 0.55, {
-    Size = OriginalSize
-})
-
-task.wait(0.2)
-
-Responsive()
-
---========================================================--
--- DEFAULT PAGE
---========================================================--
-
-task.wait(0.1)
-
-if Tabs[1] then
-    Tabs[1].Button:Activate()
-end
-
-Notify(
-    "STMC HUB",
-    "تم تشغيل MAX V2 بنجاح",
-    3,
-    "success"
-)
-
---========================================================--
--- OPTIONAL: UPDATE HOME STATUS
---========================================================--
-
-task.spawn(function()
-    while ScreenGui.Parent do
-        task.wait(1)
-
-        if HomeStatus then
-            local valueLabel
-
-            for _, child in ipairs(HomeStatus:GetChildren()) do
-                if child:IsA("TextLabel") and child.Position.X.Scale > 0.4 then
-                    valueLabel = child
-                    break
+            local args = {";r6"}
+            local signal = RepStorage:FindFirstChild("HDAdminHDClient")
+            if signal then
+                signal = signal:FindFirstChild("Signals")
+                if signal then
+                    signal = signal:FindFirstChild("RequestCommand")
+                    if signal then
+                        signal:InvokeServer(unpack(args))
+                    end
                 end
             end
+        end)
 
-            if valueLabel then
-                valueLabel.Text = LocalPlayer.Name
+        MakeNotifi({Title = "Troll", Text = "جاري التحول إلى R6 وتفعيل الهجوم على " .. selectedPlayerName .. "...", Time = 4})
+
+        task.spawn(function()
+            task.wait(3)
+            
+            local myChar = LP.Character
+            if not myChar or not myChar:FindFirstChild("Torso") then
+                MakeNotifi({Title = "تنبيه", Text = "يرجى التأكد من تحول شخصيتك لـ R6 وإعادة الضغط", Time = 3})
+                return
             end
-        end
+
+            local targetPlayer = Players:FindFirstChild(selectedPlayerName)
+            if not targetPlayer or not targetPlayer.Character then
+                MakeNotifi({Title = "خطأ", Text = "اللاعب غير متوفر في السيرفر", Time = 3})
+                return
+            end
+
+            StopInvisibilityAndFollow(false)
+            isInvisActive = true
+
+            MakeNotifi({Title = "Troll", Text = "تم تفعيل الإخفاء والتتبع بنجاح!", Time = 3})
+
+            local myRoot = myChar:WaitForChild("HumanoidRootPart")
+            local myHumanoid = myChar:WaitForChild("Humanoid")
+
+            local targetHumanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if targetHumanoid then
+                targetDeathConnection = targetHumanoid.Died:Connect(function()
+                    StopInvisibilityAndFollow(true)
+                    MakeNotifi({Title = "تم القتل!! ⚡", Text = "تم القتل والانتقال فوراً للمكان الآمن (284, 40, 118)", Time = 5})
+                end)
+            end
+
+            invisConnection = RunService.Heartbeat:Connect(function()
+                if not isInvisActive or not myChar or not myHumanoid or myHumanoid.Health <= 0 then
+                    StopInvisibilityAndFollow(false)
+                    return
+                end
+
+                if workspace.CurrentCamera.CameraSubject ~= myRoot then
+                    workspace.CurrentCamera.CameraSubject = myRoot
+                end
+
+                myRoot.CFrame = myRoot.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+                myHumanoid.CameraOffset = Vector3.new(0, 1.44, 0)
+
+                local anim = Instance.new("Animation")
+                anim.AnimationId = "rbxassetid://215384594"
+                local track = myHumanoid:LoadAnimation(anim)
+                track.Priority = Enum.AnimationPriority.Action4
+                track:Play()
+                track:AdjustSpeed(0)
+                track.TimePosition = 0.3
+                RunService.RenderStepped:Wait()
+                track:Stop()
+
+                for _, v in pairs(myChar:GetDescendants()) do
+                    if v:IsA("BasePart") and v.Transparency ~= 1 then
+                        v.Transparency = 0.5
+                    end
+                end
+            end)
+
+            followConnection = RunService.RenderStepped:Connect(function()
+                if isInvisActive and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetRoot = targetPlayer.Character.HumanoidRootPart
+                    myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 1)
+                end
+            end)
+        end)
     end
-end)
+})
+
+AddButton(TrollTab, {
+    Name = "🛑 إيقاف الإخفاء والتتبع",
+    Callback = function()
+        StopInvisibilityAndFollow(false)
+        MakeNotifi({Title = "Troll", Text = "تم إلغاء الإخفاء والتتبع", Time = 2})
+    end
+})
+
+UpdatePlayerList()
+Players.PlayerAdded:Connect(UpdatePlayerList)
+Players.PlayerRemoved:Connect(UpdatePlayerList)
+
+-- =============================================
+-- RIGHTS TAB (FULLY RESTORED)
+-- =============================================
+AddPlayerProfile(RightsTab)
+
+AddButton(RightsTab, {
+    Name = "📢 أنظم قناتنا التليكرام",
+    Callback = function()
+        pcall(function()
+            if setclipboard then
+                setclipboard('https://t.me/StealthTechMasterComunity')
+            end
+        end)
+        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ رابط التليجرام", Time = 2})
+    end
+})
+
+AddButton(RightsTab, {
+    Name = "👤 حساب مطور عبود Telegram",
+    Callback = function()
+        pcall(function()
+            if setclipboard then
+                setclipboard('Messi_zx')
+            end
+        end)
+        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ حساب عبود", Time = 2})
+    end
+})
+
+AddButton(RightsTab, {
+    Name = "👤 حساب مطور 1ua10 TIK TOK",
+    Callback = function()
+        pcall(function()
+            if setclipboard then
+                setclipboard('1ua10')
+            end
+        end)
+        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ حساب 1ua10", Time = 2})
+    end
+})
+
+AddButton(RightsTab, {
+    Name = "🏷️ تم صنع السكربت بواسطة STMC",
+    Callback = function()
+        MakeNotifi({
+            Title = "حقوق STMC",
+            Text = "تم صنع السكربت بواسطة StealthTechmaster\nكلان STMC\nهذا السكربت مخصص لـ عراق هوب\nتيك توك: 1ua10\nتليجرام: @StealthTechMasterComunity",
+            Time = 6
+        })
+    end
+})
+
+-- =============================================
+-- FINAL INITIALIZATION
+-- =============================================
+task.wait(1.5)
+pcall(FullBypass)
+
+task.wait(0.5)
+MakeNotifi({
+    Title = "STMC MAX",
+    Text = "تم التفعيل بنجاح! استمتع بالمميزات الجديدة 🔥",
+    Time = 3
+})
+
+print("✅ STMC HUB (FULLY FIXED) Loaded Successfully!")
