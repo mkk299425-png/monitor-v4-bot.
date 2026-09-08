@@ -513,13 +513,13 @@ local function UpdateFlyPanel()
     FlySpeedLabel.Text = "السرعة: " .. FlySpeed
 end
 
-FlyIncButton.MouseButton1Click:Connect(function()
+FlyIncButton.Activated:Connect(function()
     FlySpeed = FlySpeed + 10
     UpdateFlyPanel()
     MakeNotifi({Title="Fly", Text="سرعة الطيران: "..FlySpeed, Time=1})
 end)
 
-FlyDecButton.MouseButton1Click:Connect(function()
+FlyDecButton.Activated:Connect(function()
     if FlySpeed > 10 then
         FlySpeed = FlySpeed - 10
     end
@@ -527,10 +527,8 @@ FlyDecButton.MouseButton1Click:Connect(function()
     MakeNotifi({Title="Fly", Text="سرعة الطيران: "..FlySpeed, Time=1})
 end)
 
-FlyStopButton.Activated:Connect(function()
-    stopFly()
-end)
-
+-- Connection is created after the flight functions below.
+-- This button is a true toggle: fly <-> land.
 local function stopFly()
     if not Flying then
         FlyPanel.Visible = FlyPanelCreated
@@ -563,10 +561,12 @@ local function stopFly()
     end
 
     currentRoot = nil
-    FlyPanel.Visible = FlyPanelCreated
+    -- Keep the small flight panel open after landing.
+    FlyPanel.Visible = true
+    FlyPanelCreated = true
     FlyStopButton.Text = "🛩️ تشغيل الطيران"
     UpdateMainFlyButton()
-    MakeNotifi({Title = "Fly", Text = "تم الهبوط — لوحة الطيران ما زالت مفتوحة", Time = 2})
+    MakeNotifi({Title = "Fly", Text = "تم الهبوط — اضغط نفس الزر للطيران مرة ثانية", Time = 2})
 end
 
 local function startFly()
@@ -625,6 +625,16 @@ local function startFly()
 
     MakeNotifi({Title = "Fly", Text = "تم تشغيل الطيران", Time = 2})
 end
+
+-- IMPORTANT: bind the panel button after both functions exist.
+-- Activated works for mouse, touch and controller.
+FlyStopButton.Activated:Connect(function()
+    if Flying then
+        stopFly()
+    else
+        startFly()
+    end
+end)
 
 LP.CharacterAdded:Connect(function()
     if Flying then stopFly() end
