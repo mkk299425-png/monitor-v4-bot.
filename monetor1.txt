@@ -407,6 +407,7 @@ MonitorNewRemotes()
 -- =============================================
 -- FLIGHT SYSTEM (FULLY RESTORED)
 -- =============================================
+local MainFlyButton = nil
 local Flying = false
 local FlySpeed = 50
 local bodyVelocity = nil
@@ -414,6 +415,17 @@ local bodyGyro = nil
 local flightConnection = nil
 local currentHumanoid = nil
 local currentRoot = nil
+local FlyPanelCreated = false
+
+local function UpdateMainFlyButton()
+    if MainFlyButton then
+        if Flying then
+            MainFlyButton.Text = "🛬 هبوط الطيران"
+        else
+            MainFlyButton.Text = "🛩️ تشغيل وضع طيران"
+        end
+    end
+end
 
 -- Fly Control Panel (new)
 local FlyPanel = Create("Frame", ScreenGui, {
@@ -486,11 +498,12 @@ local FlyStopButton = Create("TextButton", FlyPanel, {
     Size = UDim2.new(1, -10, 0, 30),
     Position = UDim2.new(0, 5, 0, 90),
     BackgroundColor3 = Configs_HUB.Cor_Options,
-    Text = "إيقاف الطيران",
+    Text = "🛬 هبوط",
     TextColor3 = Color3.fromRGB(255, 100, 100),
     Font = Configs_HUB.Text_Font,
     TextSize = 14,
     AutoButtonColor = false,
+    Active = true,
     ZIndex = 51
 })
 Corner(FlyStopButton)
@@ -514,23 +527,46 @@ FlyDecButton.MouseButton1Click:Connect(function()
     MakeNotifi({Title="Fly", Text="سرعة الطيران: "..FlySpeed, Time=1})
 end)
 
-FlyStopButton.MouseButton1Click:Connect(function()
+FlyStopButton.Activated:Connect(function()
     stopFly()
 end)
 
 local function stopFly()
-    if not Flying then return end
-    Flying = false
-    if flightConnection then flightConnection:Disconnect() flightConnection = nil end
-    if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
-    if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
-    if currentHumanoid then 
-        currentHumanoid.PlatformStand = false 
-        currentHumanoid = nil 
+    if not Flying then
+        FlyPanel.Visible = FlyPanelCreated
+        UpdateMainFlyButton()
+        return
     end
+
+    Flying = false
+
+    if flightConnection then
+        flightConnection:Disconnect()
+        flightConnection = nil
+    end
+
+    if bodyVelocity then
+        bodyVelocity.Velocity = Vector3.zero
+        bodyVelocity:Destroy()
+        bodyVelocity = nil
+    end
+
+    if bodyGyro then
+        bodyGyro:Destroy()
+        bodyGyro = nil
+    end
+
+    if currentHumanoid then
+        currentHumanoid.PlatformStand = false
+        currentHumanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+        currentHumanoid = nil
+    end
+
     currentRoot = nil
-    FlyPanel.Visible = false
-    MakeNotifi({Title = "Fly", Text = "تم إيقاف الطيران", Time = 2})
+    FlyPanel.Visible = FlyPanelCreated
+    FlyStopButton.Text = "🛩️ تشغيل الطيران"
+    UpdateMainFlyButton()
+    MakeNotifi({Title = "Fly", Text = "تم الهبوط — لوحة الطيران ما زالت مفتوحة", Time = 2})
 end
 
 local function startFly()
@@ -556,7 +592,10 @@ local function startFly()
 
     humanoid.PlatformStand = true
     Flying = true
+    FlyPanelCreated = true
     FlyPanel.Visible = true
+    FlyStopButton.Text = "🛬 هبوط"
+    UpdateMainFlyButton()
     UpdateFlyPanel()
 
     local camera = workspace.CurrentCamera
@@ -1313,17 +1352,24 @@ AddButton(MainTab, {
     end
 })
 
-AddButton(MainTab, {
+MainFlyButton = AddButton(MainTab, {
     Name = "🛩️ تشغيل وضع طيران",
     Callback = function()
-        startFly()
+        if Flying then
+            stopFly()
+        else
+            startFly()
+        end
     end
 })
 
 AddButton(MainTab, {
-    Name = "⏹️ إيقاف طيران",
+    Name = "🎛️ إظهار لوحة الطيران",
     Callback = function()
-        stopFly()
+        FlyPanelCreated = true
+        FlyPanel.Visible = true
+        UpdateFlyPanel()
+        MakeNotifi({Title="Fly", Text="تم إظهار لوحة التحكم بالطيران", Time=2})
     end
 })
 
