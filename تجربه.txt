@@ -1,6 +1,6 @@
 -- =============================================
--- STMC HUB: IraqHope (FULLY FIXED VERSION + CHAT & COMMAND SYSTEM)
--- Original Code Fully Preserved & Extended
+-- STMC HUB: IraqHope (FULLY FIXED VERSION)
+-- Original Code Fully Preserved & Corrected
 -- =============================================
 
 local Players = game:GetService("Players")
@@ -12,7 +12,6 @@ local RunService = game:GetService("RunService")
 local RepStorage = game:GetService("ReplicatedStorage")
 local LogService = game:GetService("LogService")
 local MarketplaceService = game:GetService("MarketplaceService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Configs_HUB = {
     Cor_Hub = Color3.fromRGB(15, 15, 15),
@@ -1344,491 +1343,7 @@ function AddDropdown(parent, Configs)
 end
 
 -- =============================================
--- CHAT & COMMAND SYSTEM (NEW)
--- =============================================
-
--- Command executor button (appears in MainTab)
-local CommandPanelVisible = false
-local CommandPanel = nil
-
-local function CreateCommandPanel()
-    if CommandPanel then
-        CommandPanel.Visible = not CommandPanel.Visible
-        if CommandPanel.Visible then
-            CreateTween(CommandPanel, "BackgroundTransparency", 0.2, 0.2, false)
-        else
-            CreateTween(CommandPanel, "BackgroundTransparency", 1, 0.2, false)
-        end
-        return
-    end
-    
-    -- Create the command panel
-    CommandPanel = Create("Frame", ScreenGui, {
-        Name = "CommandPanel",
-        Size = UDim2.new(0, 350, 0, 100),
-        Position = UDim2.new(0.5, -175, 0.5, -50),
-        BackgroundColor3 = Configs_HUB.Cor_Hub,
-        BackgroundTransparency = 0.2,
-        Active = true,
-        Draggable = true,
-        Visible = true,
-        BorderSizePixel = 0,
-        ZIndex = 60
-    })
-    Corner(CommandPanel)
-    Stroke(CommandPanel)
-    
-    -- Title
-    local TitleLabel = Create("TextLabel", CommandPanel, {
-        Size = UDim2.new(1, 0, 0, 30),
-        Position = UDim2.new(0, 0, 0, 0),
-        BackgroundTransparency = 1,
-        Text = "⚡ تنفيذ الأمر",
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 16,
-        TextXAlignment = Enum.TextXAlignment.Center,
-        ZIndex = 61
-    })
-    
-    -- Close button
-    local CloseCmd = Create("TextButton", CommandPanel, {
-        Text = "✕",
-        Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -5, 0, 0),
-        AnchorPoint = Vector2.new(1, 0),
-        BackgroundTransparency = 1,
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 20,
-        ZIndex = 62
-    })
-    CloseCmd.MouseButton1Click:Connect(function()
-        CreateTween(CommandPanel, "BackgroundTransparency", 1, 0.3, true)
-        CommandPanel.Visible = false
-    end)
-    
-    -- Input box
-    local CmdInput = Create("TextBox", CommandPanel, {
-        Size = UDim2.new(1, -20, 0, 35),
-        Position = UDim2.new(0, 10, 0, 35),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.3,
-        Text = "",
-        PlaceholderText = "اكتب الأمر هنا... مثال: ;titler me مرحبا",
-        TextColor3 = Configs_HUB.Cor_Text,
-        PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
-        Font = Configs_HUB.Text_Font,
-        TextSize = 14,
-        ClearTextOnFocus = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 61
-    })
-    Corner(CmdInput)
-    Stroke(CmdInput)
-    
-    -- Send button
-    local SendCmd = Create("TextButton", CommandPanel, {
-        Size = UDim2.new(0, 80, 0, 30),
-        Position = UDim2.new(1, -10, 1, -10),
-        AnchorPoint = Vector2.new(1, 1),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        Text = "إرسال",
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 16,
-        AutoButtonColor = false,
-        ZIndex = 61
-    })
-    Corner(SendCmd)
-    Stroke(SendCmd)
-    
-    -- Execute command function
-    local function ExecuteCommand(cmdText)
-        if not cmdText or cmdText == "" then
-            MakeNotifi({Title = "تنبيه", Text = "الرجاء كتابة أمر", Time = 2})
-            return
-        end
-        
-        -- Check if it's a command (starts with ;)
-        if string.sub(cmdText, 1, 1) == ";" then
-            -- Remove the ; and parse
-            local fullCmd = string.sub(cmdText, 2)
-            local parts = {}
-            for part in string.gmatch(fullCmd, "[^%s]+") do
-                table.insert(parts, part)
-            end
-            
-            local commandName = parts[1]
-            local args = {}
-            for i = 2, #parts do
-                table.insert(args, parts[i])
-            end
-            
-            -- Handle ;titler me <text>
-            if commandName == "titler" and args[1] == "me" then
-                -- Extract the text (everything after "me")
-                local textStart = string.find(fullCmd, "me") + 2
-                local text = string.sub(fullCmd, textStart + 1)
-                text = string.gsub(text, "^%s+", "") -- Trim leading spaces
-                
-                if text and text ~= "" then
-                    -- Create a Title above player's head
-                    local char = LP.Character
-                    if char then
-                        local head = char:FindFirstChild("Head")
-                        if head then
-                            -- Remove old title if exists
-                            local oldTitle = char:FindFirstChild("STMC_Title")
-                            if oldTitle then oldTitle:Destroy() end
-                            
-                            -- Create BillboardGui
-                            local billboard = Instance.new("BillboardGui")
-                            billboard.Name = "STMC_Title"
-                            billboard.Adornee = head
-                            billboard.Size = UDim2.new(0, 300, 0, 50)
-                            billboard.StudsOffset = Vector3.new(0, 3.5, 0)
-                            billboard.AlwaysOnTop = true
-                            billboard.Parent = char
-                            
-                            -- Title frame
-                            local frame = Instance.new("Frame")
-                            frame.Size = UDim2.new(1, 0, 1, 0)
-                            frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-                            frame.BackgroundTransparency = 0.5
-                            frame.Parent = billboard
-                            Corner(frame)
-                            
-                            -- Text label
-                            local label = Instance.new("TextLabel")
-                            label.Size = UDim2.new(1, -10, 1, -5)
-                            label.Position = UDim2.new(0, 5, 0, 2.5)
-                            label.BackgroundTransparency = 1
-                            label.Text = text
-                            label.TextColor3 = Color3.fromRGB(255, 255, 100)
-                            label.TextScaled = true
-                            label.Font = Enum.Font.GothamBold
-                            label.Parent = frame
-                            
-                            -- Auto remove after 10 seconds
-                            task.delay(10, function()
-                                local title = char:FindFirstChild("STMC_Title")
-                                if title then title:Destroy() end
-                            end)
-                            
-                            MakeNotifi({Title = "✅ تم التنفيذ", Text = "تم عرض النص فوق رأسك لمدة 10 ثوانٍ", Time = 3})
-                        else
-                            MakeNotifi({Title = "خطأ", Text = "لا يوجد رأس للشخصية", Time = 2})
-                        end
-                    else
-                        MakeNotifi({Title = "خطأ", Text = "الشخصية غير موجودة", Time = 2})
-                    end
-                else
-                    MakeNotifi({Title = "تنبيه", Text = "الرجاء كتابة النص بعد me", Time = 2})
-                end
-            else
-                MakeNotifi({Title = "تنبيه", Text = "الأمر غير معروف: " .. commandName, Time = 3})
-            end
-        else
-            -- Not a command, send as normal chat
-            MakeNotifi({Title = "تنبيه", Text = "الأوامر يجب أن تبدأ بـ ;", Time = 2})
-        end
-    end
-    
-    -- Send button click
-    SendCmd.MouseButton1Click:Connect(function()
-        local cmd = CmdInput.Text
-        ExecuteCommand(cmd)
-        CmdInput.Text = ""
-    end)
-    
-    -- Enter key support
-    CmdInput.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            local cmd = CmdInput.Text
-            ExecuteCommand(cmd)
-            CmdInput.Text = ""
-        end
-    end)
-    
-    -- Animation: appear
-    CommandPanel.BackgroundTransparency = 1
-    CreateTween(CommandPanel, "BackgroundTransparency", 0.2, 0.3, false)
-end
-
--- Chat System
-local ChatEnabled = false
-local ChatPanel = nil
-
-local function ToggleChat()
-    ChatEnabled = not ChatEnabled
-    
-    if ChatEnabled then
-        if not ChatPanel then
-            CreateChatPanel()
-        end
-        ChatPanel.Visible = true
-        CreateTween(ChatPanel, "BackgroundTransparency", 0.15, 0.3, false)
-        MakeNotifi({Title = "💬 الشات", Text = "تم تشغيل الشات", Time = 2})
-    else
-        if ChatPanel then
-            CreateTween(ChatPanel, "BackgroundTransparency", 1, 0.3, false)
-            task.wait(0.3)
-            ChatPanel.Visible = false
-        end
-        MakeNotifi({Title = "💬 الشات", Text = "تم إيقاف الشات", Time = 2})
-    end
-end
-
-local function CreateChatPanel()
-    ChatPanel = Create("Frame", ScreenGui, {
-        Name = "ChatPanel",
-        Size = UDim2.new(0, 320, 0, 350),
-        Position = UDim2.new(0, 20, 0.5, -175),
-        BackgroundColor3 = Configs_HUB.Cor_Hub,
-        BackgroundTransparency = 0.15,
-        Active = true,
-        Draggable = true,
-        Visible = false,
-        BorderSizePixel = 0,
-        ZIndex = 40
-    })
-    Corner(ChatPanel)
-    Stroke(ChatPanel)
-    
-    -- Title
-    local ChatTitle = Create("TextLabel", ChatPanel, {
-        Size = UDim2.new(1, 0, 0, 30),
-        Position = UDim2.new(0, 0, 0, 0),
-        BackgroundTransparency = 1,
-        Text = "💬 شات STMC",
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 16,
-        TextXAlignment = Enum.TextXAlignment.Center,
-        ZIndex = 41
-    })
-    
-    -- Close button for chat
-    local CloseChat = Create("TextButton", ChatPanel, {
-        Text = "✕",
-        Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -5, 0, 0),
-        AnchorPoint = Vector2.new(1, 0),
-        BackgroundTransparency = 1,
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 20,
-        ZIndex = 42
-    })
-    CloseChat.MouseButton1Click:Connect(function()
-        ChatEnabled = false
-        CreateTween(ChatPanel, "BackgroundTransparency", 1, 0.3, false)
-        task.wait(0.3)
-        ChatPanel.Visible = false
-        MakeNotifi({Title = "💬 الشات", Text = "تم إيقاف الشات", Time = 2})
-    end)
-    
-    -- Messages display area
-    local MessagesFrame = Create("ScrollingFrame", ChatPanel, {
-        Size = UDim2.new(1, -10, 0, 250),
-        Position = UDim2.new(0, 5, 0, 35),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.2,
-        BorderSizePixel = 0,
-        ScrollingDirection = "Y",
-        AutomaticCanvasSize = "Y",
-        CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = 3,
-        ScrollBarImageColor3 = Configs_HUB.Cor_Stroke,
-        ZIndex = 41
-    })
-    Corner(MessagesFrame)
-    Stroke(MessagesFrame)
-    
-    local MsgLayout = Create("UIListLayout", MessagesFrame, {
-        Padding = UDim.new(0, 5),
-        SortOrder = Enum.SortOrder.LayoutOrder
-    })
-    Create("UIPadding", MessagesFrame, {
-        PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 8),
-        PaddingTop = UDim.new(0, 8),
-        PaddingBottom = UDim.new(0, 8)
-    })
-    
-    -- Input area
-    local InputFrame = Create("Frame", ChatPanel, {
-        Size = UDim2.new(1, -10, 0, 45),
-        Position = UDim2.new(0, 5, 1, -50),
-        BackgroundTransparency = 1,
-        ZIndex = 41
-    })
-    
-    local ChatInput = Create("TextBox", InputFrame, {
-        Size = UDim2.new(1, -90, 1, 0),
-        Position = UDim2.new(0, 0, 0, 0),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.3,
-        Text = "",
-        PlaceholderText = "اكتب رسالتك...",
-        TextColor3 = Configs_HUB.Cor_Text,
-        PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
-        Font = Configs_HUB.Text_Font,
-        TextSize = 14,
-        ClearTextOnFocus = false,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 42
-    })
-    Corner(ChatInput)
-    Stroke(ChatInput)
-    
-    local SendChatBtn = Create("TextButton", InputFrame, {
-        Size = UDim2.new(0, 80, 1, 0),
-        Position = UDim2.new(1, -5, 0, 0),
-        AnchorPoint = Vector2.new(1, 0),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        Text = "إرسال",
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 14,
-        AutoButtonColor = false,
-        ZIndex = 42
-    })
-    Corner(SendChatBtn)
-    Stroke(SendChatBtn)
-    
-    -- Function to add message to chat
-    local function AddChatMessage(sender, message, isSystem)
-        local msgFrame = Create("Frame", MessagesFrame, {
-            Size = UDim2.new(1, 0, 0, 0),
-            AutomaticSize = "Y",
-            BackgroundTransparency = 1,
-            LayoutOrder = #MessagesFrame:GetChildren()
-        })
-        
-        local senderName = isSystem and "🎯 نظام" or sender or "مجهول"
-        local msgColor = isSystem and Color3.fromRGB(255, 200, 100) or Configs_HUB.Cor_Text
-        
-        local label = Create("TextLabel", msgFrame, {
-            Size = UDim2.new(1, 0, 0, 0),
-            AutomaticSize = "Y",
-            BackgroundTransparency = 1,
-            Text = senderName .. ": " .. message,
-            TextColor3 = msgColor,
-            Font = Configs_HUB.Text_Font,
-            TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextWrapped = true,
-            ZIndex = 42
-        })
-        
-        -- Auto scroll to bottom
-        task.wait(0.05)
-        MessagesFrame.CanvasPosition = Vector2.new(0, MessagesFrame.CanvasSize.Y.Offset)
-    end
-    
-    -- Send message function
-    local function SendMessage(text)
-        if not text or text == "" then return end
-        
-        -- Check if it's a command (starts with ;)
-        if string.sub(text, 1, 1) == ";" then
-            -- Execute as command (similar to command panel)
-            local fullCmd = string.sub(text, 2)
-            local parts = {}
-            for part in string.gmatch(fullCmd, "[^%s]+") do
-                table.insert(parts, part)
-            end
-            
-            local commandName = parts[1]
-            
-            if commandName == "titler" and parts[2] == "me" then
-                -- Extract the text
-                local textStart = string.find(fullCmd, "me") + 2
-                local cmdText = string.sub(fullCmd, textStart + 1)
-                cmdText = string.gsub(cmdText, "^%s+", "")
-                
-                if cmdText and cmdText ~= "" then
-                    local char = LP.Character
-                    if char then
-                        local head = char:FindFirstChild("Head")
-                        if head then
-                            local oldTitle = char:FindFirstChild("STMC_Title")
-                            if oldTitle then oldTitle:Destroy() end
-                            
-                            local billboard = Instance.new("BillboardGui")
-                            billboard.Name = "STMC_Title"
-                            billboard.Adornee = head
-                            billboard.Size = UDim2.new(0, 300, 0, 50)
-                            billboard.StudsOffset = Vector3.new(0, 3.5, 0)
-                            billboard.AlwaysOnTop = true
-                            billboard.Parent = char
-                            
-                            local frame = Instance.new("Frame")
-                            frame.Size = UDim2.new(1, 0, 1, 0)
-                            frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-                            frame.BackgroundTransparency = 0.5
-                            frame.Parent = billboard
-                            Corner(frame)
-                            
-                            local label = Instance.new("TextLabel")
-                            label.Size = UDim2.new(1, -10, 1, -5)
-                            label.Position = UDim2.new(0, 5, 0, 2.5)
-                            label.BackgroundTransparency = 1
-                            label.Text = cmdText
-                            label.TextColor3 = Color3.fromRGB(255, 255, 100)
-                            label.TextScaled = true
-                            label.Font = Enum.Font.GothamBold
-                            label.Parent = frame
-                            
-                            task.delay(10, function()
-                                local title = char:FindFirstChild("STMC_Title")
-                                if title then title:Destroy() end
-                            end)
-                            
-                            AddChatMessage("نظام", "✅ تم عرض النص فوق رأسك", true)
-                        end
-                    end
-                else
-                    AddChatMessage("نظام", "⚠️ الرجاء كتابة النص بعد me", true)
-                end
-            else
-                AddChatMessage("نظام", "⚠️ الأمر غير معروف: " .. commandName, true)
-            end
-        else
-            -- Normal chat message - send to game chat
-            pcall(function()
-                game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents") and 
-                game.ReplicatedStorage.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest") and 
-                game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(text, "All")
-            end)
-            
-            AddChatMessage(LP.Name, text, false)
-        end
-        
-        ChatInput.Text = ""
-    end
-    
-    -- Send button click
-    SendChatBtn.MouseButton1Click:Connect(function()
-        SendMessage(ChatInput.Text)
-    end)
-    
-    -- Enter key support
-    ChatInput.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            SendMessage(ChatInput.Text)
-        end
-    end)
-    
-    -- Add welcome message
-    AddChatMessage("نظام", "✨ تم تشغيل الشات - اكتب رسائل عادية أو أوامر تبدأ بـ ;", true)
-    AddChatMessage("نظام", "📌 مثال: ;titler me مرحبا", true)
-end
-
--- =============================================
--- TABS CREATION (FULLY RESTORED + NEW)
+-- TABS CREATION (FULLY RESTORED)
 -- =============================================
 local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
 local LocalPlayerTab = MakeTab({Name = "شخصيتي 🏃‍♂️", TabTitle = true})
@@ -1838,7 +1353,7 @@ local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid:/
 local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, Image = "rbxassetid://6031075931"})
 
 -- =============================================
--- MAIN TAB (FULLY RESTORED + NEW FEATURES)
+-- MAIN TAB (FULLY RESTORED) + NEW FEATURES
 -- =============================================
 AddButton(MainTab, {
     Name = "🔓 فك حماية الطيران",
@@ -1922,27 +1437,6 @@ AddButton(MainTab, {
             else
                 MakeNotifi({Title="خطأ", Text="لا يوجد شخصية أو Humanoid", Time=2})
             end
-        end
-    end
-})
-
--- NEW: Command Executor Button
-AddButton(MainTab, {
-    Name = "⚡ تنفيذ الأوامر",
-    Callback = function()
-        CreateCommandPanel()
-    end
-})
-
--- NEW: Chat Toggle Button
-local ChatToggleButton = AddButton(MainTab, {
-    Name = "💬 الشات: تشغيل / إيقاف",
-    Callback = function()
-        ToggleChat()
-        if ChatEnabled then
-            ChatToggleButton.Text = "💬 الشات: تشغيل ✓"
-        else
-            ChatToggleButton.Text = "💬 الشات: تشغيل / إيقاف"
         end
     end
 })
@@ -3250,6 +2744,265 @@ AddButton(RightsTab, {
     end
 })
 
+
+-- =============================================
+-- 🎛️ STMC TITLE COMMAND PANEL — CLIENT ONLY
+-- لا يحتاج Script إضافي في ServerScriptService.
+-- يعتمد على نظام الأوامر/Remote الموجود أصلاً في اللعبة.
+-- لا يستخدم Roblox Chat.
+-- =============================================
+
+local STMC_CommandPanel = nil
+local STMC_CommandInput = nil
+local STMC_CommandStatus = nil
+local STMC_ChatEnabled = false
+local STMC_CommandBusy = false
+
+local function STMC_SetCommandStatus(message, isError)
+    if STMC_CommandStatus then
+        STMC_CommandStatus.Text = message or ""
+        STMC_CommandStatus.TextColor3 = isError
+            and Color3.fromRGB(255, 120, 120)
+            or Color3.fromRGB(180, 255, 180)
+    end
+end
+
+-- يحاول استخدام نظام الأوامر الموجود في اللعبة.
+-- لا يرسل أي شيء إلى TextChatService/Roblox Chat.
+local function STMC_ExecuteTitleCommand(text)
+    local commandText = ";titler me " .. text
+
+    -- النظام الموجود في السكربت يستخدم Signals/RequestCommand في بعض الميزات.
+    -- نبحث عن نفس نقطة التنفيذ الموجودة أصلاً بدل إنشاء سيرفر جديد.
+    local signals = RepStorage:FindFirstChild("Signals")
+    local requestCommand = signals and signals:FindFirstChild("RequestCommand")
+
+    if requestCommand and requestCommand:IsA("RemoteFunction") then
+        local ok = pcall(function()
+            requestCommand:InvokeServer(commandText)
+        end)
+        return ok
+    end
+
+    -- بعض الألعاب تضع RemoteFunction مباشرة داخل ReplicatedStorage.
+    local candidates = {
+        RepStorage:FindFirstChild("RequestCommand"),
+        RepStorage:FindFirstChild("Command"),
+        RepStorage:FindFirstChild("ExecuteCommand"),
+    }
+
+    for _, remote in ipairs(candidates) do
+        if remote and remote:IsA("RemoteFunction") then
+            local ok = pcall(function()
+                remote:InvokeServer(commandText)
+            end)
+            if ok then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+local function STMC_CreateCommandPanel()
+    if STMC_CommandPanel and STMC_CommandPanel.Parent then
+        return STMC_CommandPanel
+    end
+
+    STMC_CommandPanel = Create("Frame", ScreenGui, {
+        Name = "STMC_TitleCommandPanel",
+        Size = UDim2.new(0, 245, 0, 142),
+        Position = UDim2.new(0, 12, 0.5, 0),
+        AnchorPoint = Vector2.new(0, 0.5),
+        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        BackgroundTransparency = 0.08,
+        BorderSizePixel = 0,
+        Active = true,
+        Draggable = true,
+        Visible = false,
+        ZIndex = 80
+    })
+    Corner(STMC_CommandPanel)
+    Stroke(STMC_CommandPanel)
+
+    Create("TextLabel", STMC_CommandPanel, {
+        Size = UDim2.new(1, -44, 0, 28),
+        Position = UDim2.new(0, 12, 0, 7),
+        BackgroundTransparency = 1,
+        Text = "تنفيذ الأوامر",
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 18,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 81
+    })
+
+    local close = Create("TextButton", STMC_CommandPanel, {
+        Size = UDim2.new(0, 30, 0, 28),
+        Position = UDim2.new(1, -8, 0, 7),
+        AnchorPoint = Vector2.new(1, 0),
+        BackgroundTransparency = 1,
+        Text = "×",
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 24,
+        AutoButtonColor = false,
+        ZIndex = 82
+    })
+
+    close.Activated:Connect(function()
+        STMC_CommandPanel.Visible = false
+        STMC_ChatEnabled = false
+        STMC_SetCommandStatus("متوقف", false)
+    end)
+
+    Create("TextLabel", STMC_CommandPanel, {
+        Size = UDim2.new(1, -24, 0, 18),
+        Position = UDim2.new(0, 12, 0, 35),
+        BackgroundTransparency = 1,
+        Text = "يُنفذ داخليًا كـ ;titler me <النص>",
+        TextColor3 = Configs_HUB.Cor_DarkText,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 81
+    })
+
+    STMC_CommandInput = Create("TextBox", STMC_CommandPanel, {
+        Size = UDim2.new(1, -86, 0, 38),
+        Position = UDim2.new(0, 12, 0, 58),
+        BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        Text = "",
+        PlaceholderText = "اكتب النص هنا...",
+        PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        ClearTextOnFocus = false,
+        MultiLine = false,
+        ZIndex = 82
+    })
+    Corner(STMC_CommandInput)
+    Stroke(STMC_CommandInput)
+
+    local execute = Create("TextButton", STMC_CommandPanel, {
+        Size = UDim2.new(0, 62, 0, 38),
+        Position = UDim2.new(1, -12, 0, 58),
+        AnchorPoint = Vector2.new(1, 0),
+        BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0,
+        Text = "تنفيذ",
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 13,
+        AutoButtonColor = false,
+        ZIndex = 82
+    })
+    Corner(execute)
+    Stroke(execute)
+
+    STMC_CommandStatus = Create("TextLabel", STMC_CommandPanel, {
+        Size = UDim2.new(1, -24, 0, 24),
+        Position = UDim2.new(0, 12, 1, -28),
+        BackgroundTransparency = 1,
+        Text = "جاهز",
+        TextColor3 = Color3.fromRGB(180, 255, 180),
+        Font = Configs_HUB.Text_Font,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 81
+    })
+
+    local function SendTitleText()
+        if STMC_CommandBusy then return end
+
+        local value = tostring(STMC_CommandInput.Text or "")
+        value = value:gsub("[%c]", "")
+        value = value:match("^%s*(.-)%s*$") or ""
+
+        if value == "" then
+            STMC_SetCommandStatus("اكتب نصًا أولاً", true)
+            return
+        end
+
+        if #value > 80 then
+            value = value:sub(1, 80)
+            STMC_CommandInput.Text = value
+        end
+
+        STMC_CommandBusy = true
+        STMC_SetCommandStatus("جاري تنفيذ ;titler me ...", false)
+
+        local success = STMC_ExecuteTitleCommand(value)
+
+        if success then
+            STMC_CommandInput.Text = ""
+            STMC_SetCommandStatus("تم إرسال أمر الـTitle", false)
+        else
+            STMC_SetCommandStatus(
+                "نظام الأوامر غير موجود/غير متوافق في هذه اللعبة",
+                true
+            )
+        end
+
+        task.delay(0.35, function()
+            STMC_CommandBusy = false
+        end)
+    end
+
+    execute.Activated:Connect(SendTitleText)
+
+    STMC_CommandInput.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            SendTitleText()
+        end
+    end)
+
+    return STMC_CommandPanel
+end
+
+local function STMC_ToggleCommandPanel(forceState)
+    STMC_CreateCommandPanel()
+
+    if forceState == nil then
+        STMC_CommandPanel.Visible = not STMC_CommandPanel.Visible
+    else
+        STMC_CommandPanel.Visible = forceState
+    end
+
+    STMC_ChatEnabled = STMC_CommandPanel.Visible
+    STMC_SetCommandStatus(
+        STMC_CommandPanel.Visible and "جاهز" or "متوقف",
+        false
+    )
+end
+
+AddButton(MainTab, {
+    Name = "⌨️ تنفيذ الأوامر",
+    Callback = function()
+        STMC_ToggleCommandPanel()
+    end
+})
+
+AddButton(LocalPlayerTab, {
+    Name = "💬 الشات — تشغيل / إيقاف",
+    Callback = function()
+        STMC_ToggleCommandPanel()
+        MakeNotifi({
+            Title = "الشات الخاص",
+            Text = STMC_ChatEnabled
+                and "تم تشغيل لوحة الإدخال — بدون Roblox Chat"
+                or "تم إيقاف لوحة الإدخال",
+            Time = 2
+        })
+    end
+})
+
 -- =============================================
 -- FINAL INITIALIZATION
 -- =============================================
@@ -3263,4 +3016,4 @@ MakeNotifi({
     Time = 3
 })
 
-print("✅ STMC HUB (FULLY FIXED + CHAT & COMMANDS) Loaded Successfully!")
+print("✅ STMC HUB (FULLY FIXED) Loaded Successfully!")
