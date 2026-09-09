@@ -1552,7 +1552,8 @@ local ESP_ShowNames = true
 local ESP_ShowBody = true
 local ESP_ShowHealth = true
 local ESP_ShowDistance = true
-local ESP_MaxDistance = 500
+local ESP_MaxDistance = 250
+local ESP_UpdateInterval = 0.20 -- خفيف على الهاتف
 
 local ESP_FOLDER_NAME = "STMC_ESP_RADAR"
 
@@ -1872,24 +1873,57 @@ AddButton(ESPTab, {
     end
 })
 
-AddButton(ESPTab, {
-    Name = "📡 مدى الرادار: 500 ↔ 1000",
-    Callback = function()
-        ESP_MaxDistance = (ESP_MaxDistance == 500) and 1000 or 500
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LP and player.Character then
-                local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
-                if folder then
-                    local billboard = folder:FindFirstChild("NameBillboard")
-                    if billboard and billboard:IsA("BillboardGui") then
-                        billboard.MaxDistance = ESP_MaxDistance
-                    end
+-- إدخال يدوي لمدى الرادار: رقم واحد يحدده المستخدم.
+local ESP_DistanceBox = Create("TextBox", ESPTab, {
+    Size = UDim2.new(1, 0, 0, 30),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25,
+    BorderSizePixel = 0,
+    Text = tostring(ESP_MaxDistance),
+    PlaceholderText = "اكتب مدى الرادار بالمتر (مثال: 250)",
+    TextColor3 = Configs_HUB.Cor_Text,
+    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+    TextSize = 13,
+    Font = Configs_HUB.Text_Font,
+    ClearTextOnFocus = false,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    ZIndex = 20
+})
+Corner(ESP_DistanceBox)
+Stroke(ESP_DistanceBox)
+
+local function ApplyESPDistance(value)
+    value = math.floor(tonumber(value) or 250)
+    value = math.clamp(value, 10, 5000)
+    ESP_MaxDistance = value
+    ESP_DistanceBox.Text = tostring(value)
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LP and player.Character then
+            local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
+            if folder then
+                local billboard = folder:FindFirstChild("NameBillboard")
+                if billboard and billboard:IsA("BillboardGui") then
+                    billboard.MaxDistance = ESP_MaxDistance
                 end
             end
         end
-        MakeNotifi({Title="ESP", Text="مدى الرادار: " .. ESP_MaxDistance .. " studs", Time=2})
+    end
+    MakeNotifi({Title="ESP", Text="مدى الرادار صار: " .. ESP_MaxDistance .. " متر", Time=2})
+end
+
+ESP_DistanceBox.FocusLost:Connect(function()
+    ApplyESPDistance(ESP_DistanceBox.Text)
+end)
+
+AddButton(ESPTab, {
+    Name = "📡 تطبيق مدى الرادار",
+    Callback = function()
+        ApplyESPDistance(ESP_DistanceBox.Text)
     end
 })
+
+AddTextLabel(ESPTab, "⚡ نسخة خفيفة للهاتف • افتراضي: 250 متر • اكتب الرقم ثم اضغط تطبيق")
 
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
@@ -1909,32 +1943,64 @@ RunService.Heartbeat:Connect(function(dt)
     if not ESP_Active then return end
 
     ESP_UpdateClock += dt
-    if ESP_UpdateClock < 0.08 then return end
+    if ESP_UpdateClock < ESP_UpdateInterval then return end
     ESP_UpdateClock = 0
 
+    -- تحديث خفيف: لا نعيد بناء الـESP كل مرة؛ نحدّث النص والمسافة فقط.
+    local myCharacter = LP.Character
+    local myRoot = GetCharacterRoot(myCharacter)
+    if not myRoot then return end
+
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LP and player.Character then
+        if player ~= LP then
             local character = player.Character
-            local head = character:FindFirstChild("Head")
-            local folder = character:FindFirstChild(ESP_FOLDER_NAME)
+            local folder = character and character:FindFirstChild(ESP_FOLDER_NAME)
+            local head = character and character:FindFirstChild("Head")
 
-            if head then
-                if not folder then
-                    CreateESP(player)
-                else
-                    if ESP_ShowNames then
-                        CreateESPName(player)
-                    else
-                        local billboard = folder:FindFirstChild("NameBillboard")
-                        if billboard then billboard.Enabled = false end
+            if character and head and folder then
+                local billboard = folder:FindFirstChild("NameBillboard")
+                local root = GetCharacterRoot(character)
+
+                if billboard and billboard:IsA("BillboardGui") then
+                    billboard.Adornee = head
+                    billboard.Size = UDim2.new(0, 150, 0, 38)
+                    billboard.StudsOffsetWorldSpace = Vector3.new(0, 3.15, 0)
+                    billboard.MaxDistance = ESP_MaxDistance
+                    billboard.Enabled = ESP_ShowNames
+
+                    local distance = root and (root.Position - myRoot.Position).Magnitude or math.huge
+                    -- إخفاء مبكر لتقليل أي معالجة إضافية خارج المدى.
+                    if distance > ESP_MaxDistance then
+                        billboard.Enabled = false
                     end
 
-                    if ESP_ShowBody then
-                        CreateESPBody(player)
-                    else
-                        local highlight = folder:FindFirstChild("BodyHighlight")
-                        if highlight then highlight.Enabled = false end
+                    local card = billboard:FindFirstChild("Card")
+                    if card then
+                        local nameLabel = card:FindFirstChild("PlayerName")
+                        local infoLabel = card:FindFirstChild("Info")
+                        local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+                        if nameLabel then
+                            nameLabel.Text = player.DisplayName ~= "" and player.DisplayName or player.Name
+                        end
+
+                        if infoLabel then
+                            local infoParts = {}
+                            if ESP_ShowHealth and humanoid then
+                                table.insert(infoParts, "HP " .. math.max(0, math.floor(humanoid.Health + 0.5)))
+                            end
+                            if ESP_ShowDistance and distance < math.huge then
+                                table.insert(infoParts, math.floor(distance + 0.5) .. "m")
+                            end
+                            infoLabel.Text = table.concat(infoParts, "  •  ")
+                            infoLabel.Visible = (#infoParts > 0)
+                        end
                     end
+                end
+
+                local highlight = folder:FindFirstChild("BodyHighlight")
+                if highlight and highlight:IsA("Highlight") then
+                    highlight.Enabled = ESP_ShowBody and distance <= ESP_MaxDistance
                 end
             end
         end
