@@ -1,6 +1,6 @@
 -- =============================================
--- STMC HUB: IraqHope (FULLY FIXED VERSION)
--- Original Code Fully Preserved & Corrected
+-- MONETOR X UI — FULLY REDESIGNED
+-- All original features preserved.
 -- =============================================
 
 local Players = game:GetService("Players")
@@ -12,15 +12,32 @@ local RunService = game:GetService("RunService")
 local RepStorage = game:GetService("ReplicatedStorage")
 local LogService = game:GetService("LogService")
 local MarketplaceService = game:GetService("MarketplaceService")
+local HttpService = game:GetService("HttpService")
+
+-- =============================================
+-- NEW COLOR SCHEME (Purple + Dark)
+-- =============================================
+local Colors = {
+    Background = Color3.fromRGB(18, 18, 22),
+    Sidebar = Color3.fromRGB(26, 26, 34),
+    Primary = Color3.fromRGB(139, 0, 255),
+    PrimaryDark = Color3.fromRGB(80, 0, 180),
+    PrimaryLight = Color3.fromRGB(180, 100, 255),
+    Text = Color3.fromRGB(255, 255, 255),
+    TextDim = Color3.fromRGB(200, 200, 210),
+    Stroke = Color3.fromRGB(160, 80, 255),
+    Card = Color3.fromRGB(30, 30, 38),
+    CardHover = Color3.fromRGB(50, 50, 65),
+}
 
 local Configs_HUB = {
-    Cor_Hub = Color3.fromRGB(15, 15, 15),
-    Cor_Options = Color3.fromRGB(30, 30, 30),
-    Cor_Stroke = Color3.fromRGB(255, 255, 255),
-    Cor_Text = Color3.fromRGB(255, 255, 255),
-    Cor_DarkText = Color3.fromRGB(180, 180, 180),
-    Corner_Radius = UDim.new(0, 15),
-    Text_Font = Enum.Font.FredokaOne
+    Cor_Hub = Colors.Background,
+    Cor_Options = Colors.Card,
+    Cor_Stroke = Colors.Stroke,
+    Cor_Text = Colors.Text,
+    Cor_DarkText = Colors.TextDim,
+    Corner_Radius = UDim.new(0, 10),
+    Text_Font = Enum.Font.GothamBold,
 }
 
 -- =============================================
@@ -57,20 +74,19 @@ local function Stroke(parent, props)
     local new = Create("UIStroke", parent)
     new.Color = Configs_HUB.Cor_Stroke
     new.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    new.Thickness = 2
+    new.Thickness = 1.5
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(180, 180, 180)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 15, 15)),
-        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(90, 90, 90)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+        ColorSequenceKeypoint.new(0, Colors.Primary),
+        ColorSequenceKeypoint.new(0.3, Colors.PrimaryLight),
+        ColorSequenceKeypoint.new(0.7, Colors.PrimaryDark),
+        ColorSequenceKeypoint.new(1, Colors.Primary),
     }
     gradient.Rotation = 0
     gradient.Parent = new
     coroutine.wrap(function()
         while new.Parent do
-            gradient.Rotation = (gradient.Rotation + 2) % 360
+            gradient.Rotation = (gradient.Rotation + 1.5) % 360
             RunService.RenderStepped:Wait()
         end
     end)()
@@ -80,7 +96,7 @@ end
 
 local function CreateTween(instance, prop, value, time, tweenWait)
     local tween = TweenService:Create(instance,
-    TweenInfo.new(time, Enum.EasingStyle.Linear),
+    TweenInfo.new(time, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
     {[prop] = value})
     tween:Play()
     if tweenWait then tween.Completed:Wait() end
@@ -88,21 +104,21 @@ end
 
 local function TextSetColor(instance)
     instance.MouseEnter:Connect(function()
-        CreateTween(instance, "TextColor3", Color3.fromRGB(180, 180, 180), 0.4, false)
+        CreateTween(instance, "TextColor3", Colors.PrimaryLight, 0.2, false)
     end)
     instance.MouseLeave:Connect(function()
-        CreateTween(instance, "TextColor3", Configs_HUB.Cor_Text, 0.4, false)
+        CreateTween(instance, "TextColor3", Configs_HUB.Cor_Text, 0.2, false)
     end)
 end
 
 -- =============================================
 -- SCREEN GUI SETUP
 -- =============================================
-local ScreenGui = Create("ScreenGui", CoreGui, { Name = "STMC_Hub" })
+local ScreenGui = Create("ScreenGui", CoreGui, { Name = "MONETOR_X" })
 
 local ClickSound = Instance.new("Sound", ScreenGui)
 ClickSound.SoundId = "rbxassetid://88442833509532"
-ClickSound.Volume = 0.5
+ClickSound.Volume = 0.4
 
 local function PlaySound() 
     pcall(function() ClickSound:Play() end) 
@@ -143,7 +159,7 @@ Create("UIPadding", Menu_Notifi, { PaddingLeft = UDim.new(0, 25), PaddingTop = U
 Create("UIListLayout", Menu_Notifi, { Padding = UDim.new(0, 15), VerticalAlignment = "Bottom" })
 
 function MakeNotifi(Configs)
-    local Title = Configs.Title or "STMC HUB"
+    local Title = Configs.Title or "MONETOR X"
     local text = Configs.Text or "تم التنفيذ"
     local timewait = Configs.Time or 5
     
@@ -155,7 +171,7 @@ function MakeNotifi(Configs)
     })
     local Frame2 = Create("Frame", Frame1, {
         Size = UDim2.new(0, Menu_Notifi.Size.X.Offset - 50, 0, 0),
-        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        BackgroundColor3 = Colors.Card,
         Position = UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0),
         AutomaticSize = "Y"
     }) 
@@ -170,7 +186,7 @@ function MakeNotifi(Configs)
         TextSize = 20,
         Position = UDim2.new(0, 20, 0, 5),
         TextXAlignment = "Left",
-        TextColor3 = Configs_HUB.Cor_Text
+        TextColor3 = Colors.PrimaryLight,
     })
     
     local CloseNotifi = Create("TextButton", Frame2, {
@@ -200,7 +216,7 @@ function MakeNotifi(Configs)
     
     local FrameSize = Create("Frame", Frame2, {
         Size = UDim2.new(1, 0, 0, 2),
-        BackgroundColor3 = Configs_HUB.Cor_Stroke,
+        BackgroundColor3 = Colors.Primary,
         Position = UDim2.new(0, 2, 0, 30),
         BorderSizePixel = 0
     }) 
@@ -230,7 +246,7 @@ function MakeNotifi(Configs)
 end
 
 -- =============================================
--- BYPASS SYSTEM (FULLY RESTORED)
+-- BYPASS SYSTEM
 -- =============================================
 local BypassEnabled = false
 
@@ -337,7 +353,7 @@ end
 
 local function FullBypass()
     if BypassEnabled then
-        MakeNotifi({Title = "STMC HUB", Text = "الحماية مكسورة مسبقاً", Time = 2})
+        MakeNotifi({Title = "MONETOR X", Text = "الحماية مكسورة مسبقاً", Time = 2})
         return
     end
     local remotes = FindAllACERemotes()
@@ -349,7 +365,7 @@ local function FullBypass()
     DisableSprintMovementScans()
     DisableLogs()
     BypassEnabled = true
-    MakeNotifi({ Title = "STMC HUB", Text = "تم فك الحماية بنجاح", Time = 2 })
+    MakeNotifi({ Title = "MONETOR X", Text = "تم فك الحماية بنجاح", Time = 2 })
 end
 
 local function MonitorNewRemotes()
@@ -405,7 +421,7 @@ FullBypass()
 MonitorNewRemotes()
 
 -- =============================================
--- FLIGHT SYSTEM (FULLY RESTORED)
+-- FLIGHT SYSTEM
 -- =============================================
 local MainFlyButton = nil
 local Flying = false
@@ -420,20 +436,19 @@ local FlyPanelCreated = false
 local function UpdateMainFlyButton()
     if MainFlyButton then
         if Flying then
-            MainFlyButton.Text = "🛬 هبوط الطيران"
+            MainFlyButton:GetChildren()[1].Text = "🛬 هبوط الطيران"
         else
-            MainFlyButton.Text = "🛩️ تشغيل وضع طيران"
+            MainFlyButton:GetChildren()[1].Text = "🛩️ تشغيل وضع طيران"
         end
     end
 end
 
--- Fly Control Panel (new)
 local FlyPanel = Create("Frame", ScreenGui, {
     Name = "FlyControlPanel",
     Size = UDim2.new(0, 200, 0, 120),
     Position = UDim2.new(0.5, -100, 0.2, 0),
-    BackgroundColor3 = Configs_HUB.Cor_Hub,
-    BackgroundTransparency = 0.2,
+    BackgroundColor3 = Colors.Card,
+    BackgroundTransparency = 0.1,
     Active = true,
     Draggable = true,
     Visible = false,
@@ -447,7 +462,7 @@ local FlyPanelTitle = Create("TextLabel", FlyPanel, {
     Size = UDim2.new(1, 0, 0, 25),
     BackgroundTransparency = 1,
     Text = "التحكم بالطيران",
-    TextColor3 = Configs_HUB.Cor_Text,
+    TextColor3 = Colors.PrimaryLight,
     Font = Configs_HUB.Text_Font,
     TextSize = 18,
     TextXAlignment = Enum.TextXAlignment.Center,
@@ -469,7 +484,7 @@ local FlySpeedLabel = Create("TextLabel", FlyPanel, {
 local FlyIncButton = Create("TextButton", FlyPanel, {
     Size = UDim2.new(0.45, 0, 0, 30),
     Position = UDim2.new(0.05, 0, 0, 55),
-    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundColor3 = Colors.PrimaryDark,
     Text = "+10",
     TextColor3 = Configs_HUB.Cor_Text,
     Font = Configs_HUB.Text_Font,
@@ -483,7 +498,7 @@ Stroke(FlyIncButton)
 local FlyDecButton = Create("TextButton", FlyPanel, {
     Size = UDim2.new(0.45, 0, 0, 30),
     Position = UDim2.new(0.5, 0, 0, 55),
-    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundColor3 = Colors.PrimaryDark,
     Text = "-10",
     TextColor3 = Configs_HUB.Cor_Text,
     Font = Configs_HUB.Text_Font,
@@ -497,7 +512,7 @@ Stroke(FlyDecButton)
 local FlyStopButton = Create("TextButton", FlyPanel, {
     Size = UDim2.new(1, -10, 0, 30),
     Position = UDim2.new(0, 5, 0, 90),
-    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundColor3 = Colors.PrimaryDark,
     Text = "🛬 هبوط",
     TextColor3 = Color3.fromRGB(255, 100, 100),
     Font = Configs_HUB.Text_Font,
@@ -668,66 +683,49 @@ for _, child in ipairs(PlayerGui:GetChildren()) do
 end
 
 -- =============================================
--- MAIN UI & INTERFACE (FULLY RESTORED)
+-- MAIN UI — REDESIGNED WITH SIDEBAR
 -- =============================================
 local Menu = Create("Frame", ScreenGui, {
-    Size = UDim2.new(0, 530, 0, 320),
-    Position = UDim2.new(0.5, -265, 0.5, -160),
-    BackgroundColor3 = Configs_HUB.Cor_Hub,
-    BackgroundTransparency = 1,
+    Name = "MainUI",
+    Size = UDim2.new(0, 620, 0, 400),
+    Position = UDim2.new(0.5, -310, 0.5, -200),
+    BackgroundColor3 = Colors.Background,
+    BackgroundTransparency = 0.15,
     Active = true,
     Draggable = true,
     BorderSizePixel = 0,
     ClipsDescendants = true,
     ZIndex = 1
 })
-Corner(Menu)
+Corner(Menu, { CornerRadius = UDim.new(0, 12) })
 Stroke(Menu)
-
-local Image = Create("ImageLabel", Menu, {
-    Size = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 1,
-    Image = "rbxassetid://114192101892854",
-    ImageTransparency = 1,
-    ScaleType = Enum.ScaleType.Crop,
-    ZIndex = 0
-})
-Corner(Image)
-
-local IntroSound = Instance.new("Sound")
-IntroSound.SoundId = "rbxassetid://8426701399"
-IntroSound.Volume = 2
-IntroSound.Parent = ScreenGui
-pcall(function() IntroSound:Play() end)
 
 local Effect = Create("Frame", ScreenGui, {
     Size = UDim2.new(0, 10, 0, 10),
     Position = UDim2.new(0.5, 0, 0.5, 0),
     AnchorPoint = Vector2.new(0.5, 0.5),
-    BackgroundColor3 = Configs_HUB.Cor_Stroke,
+    BackgroundColor3 = Colors.Primary,
     BackgroundTransparency = 0,
     BorderSizePixel = 0,
     ClipsDescendants = true,
     ZIndex = 100
 })
 local EffectCorner = Instance.new("UICorner"); EffectCorner.CornerRadius = UDim.new(0, 18); EffectCorner.Parent = Effect
-local EffectStroke = Instance.new("UIStroke"); EffectStroke.Color = Configs_HUB.Cor_Stroke; EffectStroke.Thickness = 2; EffectStroke.Transparency = 0; EffectStroke.Parent = Effect
+local EffectStroke = Instance.new("UIStroke"); EffectStroke.Color = Colors.Primary; EffectStroke.Thickness = 2; EffectStroke.Transparency = 0; EffectStroke.Parent = Effect
 
 local EffectGrow = TweenService:Create(Effect, TweenInfo.new(0.55, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-    Size = UDim2.new(0, 560, 0, 350),
+    Size = UDim2.new(0, 660, 0, 430),
     BackgroundTransparency = 0.75
 })
 EffectGrow:Play()
 
 task.wait(0.12)
-local MenuAppear = TweenService:Create(Menu, TweenInfo.new(0.7, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0.3})
+local MenuAppear = TweenService:Create(Menu, TweenInfo.new(0.7, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0.15})
 MenuAppear:Play()
-local ImageAppear = TweenService:Create(Image, TweenInfo.new(0.65, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {ImageTransparency = 0})
-ImageAppear:Play()
 
 task.wait(0.35)
 local EffectOut = TweenService:Create(Effect, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-    Size = UDim2.new(0, 590, 0, 350),
+    Size = UDim2.new(0, 690, 0, 430),
     BackgroundTransparency = 1
 })
 EffectOut:Play()
@@ -735,91 +733,59 @@ local StrokeOut = TweenService:Create(EffectStroke, TweenInfo.new(0.25, Enum.Eas
 StrokeOut:Play()
 EffectOut.Completed:Wait()
 Effect:Destroy()
-IntroSound.Ended:Connect(function() IntroSound:Destroy() end)
 
 local TopBar = Create("Frame", Menu, {
-    BackgroundTransparency = 1,
-    Size = UDim2.new(1, 0, 0, 30),
+    BackgroundTransparency = 0,
+    BackgroundColor3 = Colors.Sidebar,
+    Size = UDim2.new(1, 0, 0, 38),
     Position = UDim2.new(0, 0, 0, 0),
-    Visible = false,
     BorderSizePixel = 0,
     ZIndex = 10
 })
+Corner(TopBar, { CornerRadius = UDim.new(0, 12) })
+local topStroke = Stroke(TopBar, { Thickness = 1, Color = Colors.PrimaryLight })
+topStroke.Transparency = 0.5
+
 local ButtonsFrame = Create("Frame", TopBar, {
-    Size = UDim2.new(0, 40, 1, -5),
-    Position = UDim2.new(1, -10, 0, 2.5),
+    Size = UDim2.new(0, 70, 1, -6),
+    Position = UDim2.new(1, -12, 0, 3),
     AnchorPoint = Vector2.new(1, 0),
     BackgroundTransparency = 1,
     ZIndex = 15
 })
-Create("ImageLabel", TopBar, {
-    Size = UDim2.new(0, 24, 0, 24),
-    Position = UDim2.new(0, 8, 0.5, 0),
-    AnchorPoint = Vector2.new(0, 0.5),
-    BackgroundTransparency = 1,
-    Image = "rbxassetid://89949755377207",
-    ImageColor3 = Color3.fromRGB(255, 255, 255),
-    ZIndex = 20
-})
-local NameFrame = Create("Frame", TopBar, {
-    Size = UDim2.new(0, 0, 0, 25),
-    AutomaticSize = Enum.AutomaticSize.X,
-    Position = UDim2.new(0, 38, 0.5, 0),
-    AnchorPoint = Vector2.new(0, 0.5),
-    BackgroundColor3 = Configs_HUB.Cor_Options,
-    BackgroundTransparency = 0.15,
-    ZIndex = 11
-})
-Corner(NameFrame); Stroke(NameFrame)
-local Title = Create("TextLabel", NameFrame, {
+
+local TitleLabel = Create("TextLabel", TopBar, {
     Size = UDim2.new(0, 0, 1, 0),
     AutomaticSize = Enum.AutomaticSize.X,
-    Position = UDim2.new(0, 10, 0, 0),
+    Position = UDim2.new(0, 12, 0, 0),
     BackgroundTransparency = 1,
-    TextColor3 = Color3.fromRGB(255, 255, 255),
+    TextColor3 = Colors.PrimaryLight,
     Font = Configs_HUB.Text_Font,
     TextXAlignment = Enum.TextXAlignment.Left,
     TextYAlignment = Enum.TextYAlignment.Center,
-    Text = "STMC HUB: MAX",
-    TextSize = 20,
+    Text = "MONETOR X",
+    TextSize = 22,
     ZIndex = 12
 })
-local Padding = Instance.new("UIPadding"); Padding.PaddingLeft = UDim.new(0, 10); Padding.PaddingRight = UDim.new(0, 10); Padding.Parent = NameFrame
-local TextGradient = Instance.new("UIGradient"); TextGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(180, 180, 180)),
-    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(90, 90, 90)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
-}
-TextGradient.Parent = Title
-task.spawn(function()
-    local speed = 0.008; local offset = 0
-    while Title and Title.Parent do
-        offset = offset + speed
-        if offset >= 1 then offset = 0 end
-        TextGradient.Offset = Vector2.new(-offset, 0)
-        RunService.RenderStepped:Wait()
-    end
-end)
 
 local Minimize_BTN = Create("TextButton", ButtonsFrame, {
-    Text = "-",
+    Text = "−",
     TextColor3 = Configs_HUB.Cor_Text,
     Size = UDim2.new(0.5, 0, 1, 0),
     BackgroundTransparency = 1,
     Font = Configs_HUB.Text_Font,
     TextYAlignment = "Bottom",
-    TextSize = 25
+    TextSize = 24
 })
 local IsMinimized = false
 Minimize_BTN.MouseButton1Click:Connect(function()
-    Minimize_BTN.Text = not IsMinimized and "+" or "-"
+    Minimize_BTN.Text = not IsMinimized and "+" or "−"
     if IsMinimized then
         IsMinimized = false
-        CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.15, false)
+        CreateTween(Menu, "Size", UDim2.new(0, 620, 0, 400), 0.2, false)
     else
         IsMinimized = true
-        CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 25), 0.15, true)
+        CreateTween(Menu, "Size", UDim2.new(0, 620, 0, 38), 0.2, true)
     end
 end)
 
@@ -832,14 +798,14 @@ local Close_Button = Create("TextButton", ButtonsFrame, {
     Position = UDim2.new(1, 0, 0, 0),
     BackgroundTransparency = 1,
     Font = Configs_HUB.Text_Font,
-    TextSize = 25
+    TextSize = 26
 })
 local function CreateClose()
     IsMinimized = false
-    CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, false)
+    CreateTween(Menu, "Size", UDim2.new(0, 620, 0, 400), 0.3, false)
     local CloseGui = Create("TextButton", Menu, {
         BackgroundTransparency = 0.5,
-        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        BackgroundColor3 = Colors.Background,
         Size = UDim2.new(1, 0, 1, 0),
         AutoButtonColor = false,
         Text = "",
@@ -851,7 +817,7 @@ local function CreateClose()
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
         Transparency = 1,
-        BackgroundColor3 = Configs_HUB.Cor_Hub
+        BackgroundColor3 = Colors.Card
     })
     Corner(CloseMenu); Stroke(CloseMenu)
     Create("TextLabel", CloseMenu, {
@@ -866,10 +832,10 @@ local function CreateClose()
     local Confirm = Create("TextButton", CloseMenu, {
         Size = UDim2.new(0.35, 0, 0.3, 0),
         Position = UDim2.new(0.1, 0, 0.5, 0),
-        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        BackgroundColor3 = Colors.PrimaryDark,
         Text = "نعم",
         Font = Configs_HUB.Text_Font,
-        TextColor3 = Color3.fromRGB(240, 0, 0),
+        TextColor3 = Color3.fromRGB(255, 100, 100),
         TextSize = 20
     })
     Corner(Confirm); Stroke(Confirm)
@@ -877,10 +843,10 @@ local function CreateClose()
         Size = UDim2.new(0.35, 0, 0.3, 0),
         Position = UDim2.new(0.9, 0, 0.5, 0),
         AnchorPoint = Vector2.new(1, 0),
-        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        BackgroundColor3 = Colors.PrimaryDark,
         Text = "لا",
         Font = Configs_HUB.Text_Font,
-        TextColor3 = Color3.fromRGB(0, 240, 0),
+        TextColor3 = Colors.PrimaryLight,
         TextSize = 20
     })
     Corner(Cancel); Stroke(Cancel)
@@ -909,174 +875,223 @@ local function CreateClose()
 end
 Close_Button.MouseButton1Click:Connect(CreateClose)
 
-local AnimMenu = Create("Frame", ScreenGui, {
-    Position = UDim2.new(0.5, 0, 0.5, 0),
-    AnchorPoint = Vector2.new(0.5, 0.5),
-    Size = UDim2.new(0, 0, 0, 100),
-    BackgroundColor3 = Configs_HUB.Cor_Hub
+local Sidebar = Create("Frame", Menu, {
+    Name = "Sidebar",
+    Size = UDim2.new(0, 160, 1, -38),
+    Position = UDim2.new(0, 0, 0, 38),
+    BackgroundColor3 = Colors.Sidebar,
+    BackgroundTransparency = 0.1,
+    BorderSizePixel = 0,
+    ZIndex = 5
 })
-Corner(AnimMenu, {CornerRadius = UDim.new(0, 6)})
-Stroke(AnimMenu)
-local PlayerHead = Create("ImageLabel", AnimMenu, {
+Corner(Sidebar, { CornerRadius = UDim.new(0, 0) })
+
+local SidebarList = Create("UIListLayout", Sidebar, {
+    Padding = UDim.new(0, 8),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    VerticalAlignment = Enum.VerticalAlignment.Top,
+    HorizontalAlignment = Enum.HorizontalAlignment.Center
+})
+Create("UIPadding", Sidebar, { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12) })
+
+local ContentContainer = Create("ScrollingFrame", Menu, {
+    Name = "ContentContainer",
+    Size = UDim2.new(1, -160, 1, -38),
+    Position = UDim2.new(0, 160, 0, 38),
     BackgroundTransparency = 1,
-    Size = UDim2.new(0, 55, 0, 55),
-    Position = UDim2.new(0.5, -27.5, 0, 8),
-    Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LP.UserId .. "&width=420&height=420&format=png"
+    ScrollBarThickness = 3,
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ClipsDescendants = true,
+    ZIndex = 2,
+    BorderSizePixel = 0,
 })
-Corner(PlayerHead, {CornerRadius = UDim.new(1, 0)})
-Stroke(PlayerHead)
-local Anim_Credits = Create("TextLabel", AnimMenu, {
-    Text = "مرحبا بك في STMC MAX " .. LP.Name,
-    BackgroundTransparency = 1,
-    Size = UDim2.new(1, 0, 0, 25),
-    Position = UDim2.new(0, 0, 0, 68),
-    Visible = false,
-    Font = Configs_HUB.Text_Font,
-    TextTransparency = 1,
-    TextColor3 = Configs_HUB.Cor_Text,
-    TextXAlignment = Enum.TextXAlignment.Center,
-    TextYAlignment = Enum.TextYAlignment.Center,
-    TextSize = 15
+Corner(ContentContainer, { CornerRadius = UDim.new(0, 0) })
+Create("UIPadding", ContentContainer, { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12) })
+local ContentList = Create("UIListLayout", ContentContainer, {
+    Padding = UDim.new(0, 10),
+    SortOrder = Enum.SortOrder.LayoutOrder
 })
-CreateTween(AnimMenu, "Size", UDim2.new(0, 180, 0, 100), 0.5, true)
-Anim_Credits.Visible = true
-for i = 1, 0, -0.1 do task.wait() Anim_Credits.TextTransparency = i end
-task.wait(1)
-for i = 0, 1, 0.1 do task.wait() Anim_Credits.TextTransparency = i end
-Anim_Credits:Destroy(); PlayerHead:Destroy(); AnimMenu:Destroy()
 
-CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 35), 0.5, true)
-TopBar.Visible = true
-CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, true)
-Menu.Draggable = true
-
-local ScrollBar = Create("ScrollingFrame", Menu, {
-    Size = UDim2.new(0, 140, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
-    Position = UDim2.new(0, 0, 1, 0),
-    AnchorPoint = Vector2.new(0, 1),
-    CanvasSize = UDim2.new(),
-    ScrollingDirection = "Y",
-    AutomaticCanvasSize = "Y",
-    BackgroundTransparency = 1,
-    ScrollBarThickness = 2
-})
-Create("UIPadding", ScrollBar, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
-Create("UIListLayout", ScrollBar, { Padding = UDim.new(0, 14) })
-
-local Containers = Create("Frame", Menu, {
-    Size = UDim2.new(1, -tonumber(ScrollBar.Size.X.Offset + 2), 1, -tonumber(TopBar.Size.Y.Offset + 2)),
-    AnchorPoint = Vector2.new(1, 1),
-    Position = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 1
-})
-Corner(Containers); Stroke(Containers)
-
-local firstVisible = true; local FirstTab = true; local textsize = 15; local textcolor = Configs_HUB.Cor_Text
-Menu:GetPropertyChangedSignal("Size"):Connect(function()
-    if Menu.Size.Y.Offset > 70 then ScrollBar.Visible = true; Containers.Visible = true else ScrollBar.Visible = false; Containers.Visible = false end
-end)
+-- =============================================
+-- TAB SYSTEM
+-- =============================================
+local Tabs = {}
+local currentTab = nil
+local firstTab = true
 
 function MakeTab(Configs)
     local TabName = Configs.Name or "Tab"
     local TabTitle = Configs.TabTitle or false
-    local TabImage = Configs.Image or nil
-    
-    local Frame = Create("Frame", ScrollBar, { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1 }) Corner(Frame) Stroke(Frame)
-    local TextButton = Create("TextButton", Frame, { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "" })
-    if TabImage then Create("ImageLabel", Frame, { Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10), BackgroundTransparency = 1, Image = TabImage, Name = "TabIcon" }) end
-    local textOffset = TabImage and 30 or 5
-    local TextLabel = Create("TextLabel", Frame, {
-        Size = UDim2.new(1, -textOffset, 1, 0),
-        Position = UDim2.new(0, textOffset, 0, 0),
-        BackgroundTransparency = 1,
-        Font = Configs_HUB.Text_Font,
-        TextColor3 = textcolor,
-        TextSize = textsize,
-        Text = TabName,
-        TextXAlignment = Enum.TextXAlignment.Left
+    local Icon = Configs.Icon or nil
+
+    local btn = Create("TextButton", Sidebar, {
+        Size = UDim2.new(1, 0, 0, 34),
+        BackgroundColor3 = Colors.Sidebar,
+        BackgroundTransparency = 0.3,
+        Text = "",
+        AutoButtonColor = false,
+        ZIndex = 6,
+        LayoutOrder = #Tabs + 1
     })
-    local Container = Create("ScrollingFrame", Containers, {
+    Corner(btn, { CornerRadius = UDim.new(0, 6) })
+    local btnStroke = Stroke(btn, { Thickness = 1, Color = Colors.Primary })
+    btnStroke.Transparency = 0.6
+
+    local btnText = Create("TextLabel", btn, {
         Size = UDim2.new(1, 0, 1, 0),
-        ScrollingDirection = "Y",
-        AutomaticCanvasSize = "Y",
-        CanvasSize = UDim2.new(),
         BackgroundTransparency = 1,
-        ScrollBarThickness = 2,
-        Visible = firstVisible
+        Text = TabName,
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextYAlignment = Enum.TextYAlignment.Center,
     })
-    Corner(Container); Stroke(Container)
-    Create("UIPadding", Container, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
-    Create("UIListLayout", Container, { Padding = UDim.new(0, 5) })
-    if TabTitle then
-        Create("TextLabel", Container, {
+
+    if Icon then
+        local iconImg = Create("ImageLabel", btn, {
+            Size = UDim2.new(0, 18, 0, 18),
+            Position = UDim2.new(0, 6, 0.5, 0),
+            AnchorPoint = Vector2.new(0, 0.5),
             BackgroundTransparency = 1,
-            Text = "#" .. string.gsub(TabName, " ", "-"),
-            TextSize = 25,
-            Font = Configs_HUB.Text_Font,
-            TextXAlignment = "Left",
-            TextColor3 = Configs_HUB.Cor_Text,
-            Size = UDim2.new(1, 0, 0, 30),
-            Position = UDim2.new(0, 30, 0, 0),
-            Name = "Frame"
+            Image = Icon,
+            ImageColor3 = Colors.PrimaryLight,
         })
+        btnText.TextXAlignment = Enum.TextXAlignment.Left
+        btnText.Position = UDim2.new(0, 30, 0, 0)
+        btnText.Size = UDim2.new(1, -36, 1, 0)
     end
-    TextButton.MouseButton1Click:Connect(function()
-        for _, container in pairs(Containers:GetChildren()) do if container:IsA("ScrollingFrame") then container.Visible = false end end
-        for _, frame in pairs(ScrollBar:GetChildren()) do
-            if frame:IsA("Frame") and frame:FindFirstChild("TextLabel") and frame.TextLabel ~= TextLabel then
-                CreateTween(frame.TextLabel, "TextColor3", Configs_HUB.Cor_DarkText, 0.3, false)
-                frame.TextLabel.TextSize = 14
-            end
+
+    local content = Create("ScrollingFrame", ContentContainer, {
+        Size = UDim2.new(1, 0, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        ScrollBarThickness = 0,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        Visible = firstTab,
+        ClipsDescendants = true,
+        ZIndex = 3,
+        BorderSizePixel = 0,
+        LayoutOrder = #Tabs + 1
+    })
+    local contentPadding = Create("UIPadding", content, { PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4), PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4) })
+    local contentList = Create("UIListLayout", content, {
+        Padding = UDim.new(0, 8),
+        SortOrder = Enum.SortOrder.LayoutOrder
+    })
+
+    if TabTitle then
+        local titleFrame = Create("Frame", content, {
+            Size = UDim2.new(1, 0, 0, 32),
+            BackgroundTransparency = 1,
+            LayoutOrder = 0
+        })
+        Create("TextLabel", titleFrame, {
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 1,
+            Text = TabName,
+            TextColor3 = Colors.PrimaryLight,
+            Font = Configs_HUB.Text_Font,
+            TextSize = 20,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Center,
+        })
+        local line = Create("Frame", titleFrame, {
+            Size = UDim2.new(1, -10, 0, 2),
+            Position = UDim2.new(0, 5, 1, -2),
+            BackgroundColor3 = Colors.PrimaryLight,
+            BackgroundTransparency = 0.3,
+            BorderSizePixel = 0,
+        })
+        Corner(line, { CornerRadius = UDim.new(0, 2) })
+    end
+
+    table.insert(Tabs, { Button = btn, Content = content, Name = TabName })
+
+    btn.MouseButton1Click:Connect(function()
+        for _, tab in ipairs(Tabs) do
+            tab.Content.Visible = false
+            tab.Button.BackgroundTransparency = 0.3
+            tab.Button.BackgroundColor3 = Colors.Sidebar
         end
-        Container.Visible = true
-        CreateTween(TextLabel, "TextColor3", Configs_HUB.Cor_Text, 0.3, false)
-        TextLabel.TextSize = 15
+        content.Visible = true
+        btn.BackgroundTransparency = 0.1
+        btn.BackgroundColor3 = Colors.PrimaryDark
+        currentTab = TabName
     end)
-    firstVisible = false; FirstTab = false; textsize = 14; textcolor = Configs_HUB.Cor_DarkText
-    return Container
+
+    if firstTab then
+        btn.BackgroundTransparency = 0.1
+        btn.BackgroundColor3 = Colors.PrimaryDark
+        firstTab = false
+    end
+
+    return content
 end
 
+-- =============================================
+-- UI COMPONENTS
+-- =============================================
 function AddButton(parent, Configs)
     local ButtonName = Configs.Name or "Button!!"
     local Callback = Configs.Callback or function() end
-    
-    local TextButton = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 25),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.5,
-        Name = "Frame",
+
+    local btn = Create("TextButton", parent, {
+        Size = UDim2.new(1, 0, 0, 32),
+        BackgroundColor3 = Colors.Card,
+        BackgroundTransparency = 0.1,
         Text = "",
-        AutoButtonColor = false
+        AutoButtonColor = false,
+        LayoutOrder = parent:FindFirstChild("UIListLayout") and (#parent:GetChildren() + 1) or 0,
+        ZIndex = 4,
     })
-    Corner(TextButton); Stroke(TextButton)
-    local TextLabel = Create("TextLabel", TextButton, {
-        TextSize = 14,
-        TextColor3 = Configs_HUB.Cor_Text,
-        Text = ButtonName,
-        Size = UDim2.new(1, 0, 1, 0),
-        Position = UDim2.new(0, 35, 0, 0),
-        BackgroundTransparency = 1,
-        TextXAlignment = "Left",
-        Font = Configs_HUB.Text_Font
-    })
-    local ImageLabel = Create("ImageLabel", TextButton, {
+    Corner(btn, { CornerRadius = UDim.new(0, 6) })
+    local btnStroke = Stroke(btn, { Thickness = 1, Color = Colors.Primary })
+    btnStroke.Transparency = 0.4
+
+    local icon = Create("ImageLabel", btn, {
         Image = "rbxassetid://99956220697276",
         Size = UDim2.new(0, 20, 0, 20),
-        Position = UDim2.new(0, 5, 0, 2.5),
+        Position = UDim2.new(0, 8, 0.5, 0),
+        AnchorPoint = Vector2.new(0, 0.5),
         BackgroundTransparency = 1,
-        ImageColor3 = Configs_HUB.Cor_Stroke
+        ImageColor3 = Colors.PrimaryLight,
+        ZIndex = 5
     })
-    TextButton.MouseButton1Click:Connect(function()
+
+    local label = Create("TextLabel", btn, {
+        Size = UDim2.new(1, -36, 1, 0),
+        Position = UDim2.new(0, 36, 0, 0),
+        BackgroundTransparency = 1,
+        Text = ButtonName,
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Center,
+        ZIndex = 5
+    })
+    TextSetColor(label)
+
+    btn.MouseButton1Click:Connect(function()
         pcall(Callback)
-        CreateTween(ImageLabel, "ImageColor3", Color3.fromRGB(30, 140, 200), 0.2, true)
-        CreateTween(ImageLabel, "ImageColor3", Configs_HUB.Cor_Stroke, 0.2, false)
+        CreateTween(icon, "ImageColor3", Color3.fromRGB(255, 255, 255), 0.15, true)
+        CreateTween(icon, "ImageColor3", Colors.PrimaryLight, 0.15, false)
     end)
-    TextSetColor(TextLabel)
-    return TextButton
+
+    btn.MouseEnter:Connect(function()
+        CreateTween(btn, "BackgroundTransparency", 0, 0.15, false)
+    end)
+    btn.MouseLeave:Connect(function()
+        CreateTween(btn, "BackgroundTransparency", 0.1, 0.15, false)
+    end)
+
+    return btn
 end
 
 function AddTextLabel(parent, text)
-    local Label = Create("TextLabel", parent, {
+    local label = Create("TextLabel", parent, {
         Size = UDim2.new(1, 0, 0, 100),
         BackgroundTransparency = 1,
         Text = text or "Loading...",
@@ -1087,9 +1102,10 @@ function AddTextLabel(parent, text)
         TextYAlignment = Enum.TextYAlignment.Top,
         TextWrapped = true,
         TextScaled = false,
-        AutomaticSize = Enum.AutomaticSize.Y
+        AutomaticSize = Enum.AutomaticSize.Y,
+        LayoutOrder = parent:FindFirstChild("UIListLayout") and (#parent:GetChildren() + 1) or 0,
     })
-    return { Update = function(self, newText) Label.Text = newText end, Label = Label }
+    return { Update = function(self, newText) label.Text = newText end, Label = label }
 end
 
 function AddPlayerProfile(parent)
@@ -1110,7 +1126,7 @@ function AddPlayerProfile(parent)
         return "User: " .. LP.Name .. "\n" ..
                "Map Name: " .. placeName .. "\n" ..
                "Account Age: " .. LP.AccountAge .. " days\n" ..
-               "Script: STMC Hub (MAX)\n" ..
+               "Script: MONETOR X\n" ..
                "Exploit: " .. tostring(exploit) .. "\n" ..
                "Ping: " .. math.floor(LP:GetNetworkPing() * 1000) .. " ms\n" ..
                "FPS: " .. fps .. "\n" ..
@@ -1127,127 +1143,108 @@ function AddPlayerProfile(parent)
     return Label
 end
 
--- =============================================
--- UPDATED AddDropdown WITH SEARCH FEATURE
--- =============================================
 function AddDropdown(parent, Configs)
     local DropdownName = Configs.Name or "Dropdown!!"
     local Options = Configs.Options or {"1", "2", "3"}
     local Default = Configs.Default or Options[1]
     local Callback = Configs.Callback or function() end
     local Searchable = Configs.Searchable or false
-    
+
     local MainFrame = Create("Frame", parent, {
-        Size = UDim2.new(1, 0, 0, 25),
+        Size = UDim2.new(1, 0, 0, 32),
         BackgroundTransparency = 1,
-        Name = "DropdownContainer"
+        LayoutOrder = parent:FindFirstChild("UIListLayout") and (#parent:GetChildren() + 1) or 0,
     })
-    
+
     local TextButton = Create("TextButton", MainFrame, {
-        Size = UDim2.new(1, 0, 0, 25),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        Name = "Header",
+        Size = UDim2.new(1, 0, 0, 32),
+        BackgroundColor3 = Colors.Card,
         Text = "",
-        AutoButtonColor = false
-    }) 
-    
-    local dropdownStroke = Stroke(TextButton, { Color = Configs_HUB.Cor_Stroke, Thickness = 2 })
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Configs_HUB.Cor_Stroke),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 100, 255)),
-        ColorSequenceKeypoint.new(1, Configs_HUB.Cor_Stroke)
-    }
-    gradient.Rotation = 0
-    gradient.Parent = dropdownStroke
-    coroutine.wrap(function()
-        while dropdownStroke.Parent do
-            gradient.Rotation = (gradient.Rotation + 1) % 360
-            RunService.RenderStepped:Wait()
-        end
-    end)()
-    Corner(TextButton)
-    
+        AutoButtonColor = false,
+        ZIndex = 4,
+    })
+    Corner(TextButton, { CornerRadius = UDim.new(0, 6) })
+    Stroke(TextButton)
+
     local TextLabel = Create("TextLabel", TextButton, {
-        TextSize = 12,
+        TextSize = 13,
         TextColor3 = Configs_HUB.Cor_Text,
         Text = DropdownName,
-        Size = UDim2.new(1, -30, 1, 0),
-        Position = UDim2.new(0, 10, 0, 0),
+        Size = UDim2.new(1, -40, 1, 0),
+        Position = UDim2.new(0, 12, 0, 0),
         BackgroundTransparency = 1,
         TextXAlignment = "Left",
         Font = Configs_HUB.Text_Font
     })
     TextSetColor(TextLabel)
-    
+
     local Arrow = Create("ImageLabel", TextButton, {
         Image = "rbxassetid://6031090998",
-        Size = UDim2.new(0, 20, 0, 20),
-        Position = UDim2.new(1, -25, 0.5, 0),
+        Size = UDim2.new(0, 18, 0, 18),
+        Position = UDim2.new(1, -22, 0.5, 0),
         AnchorPoint = Vector2.new(0, 0.5),
         BackgroundTransparency = 1,
         ImageColor3 = Configs_HUB.Cor_Text
     })
-    
+
     local DropdownFrame = Create("ScrollingFrame", MainFrame, {
         Size = UDim2.new(1, 0, 0, 0),
-        Position = UDim2.new(0, 0, 0, 28),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
+        Position = UDim2.new(0, 0, 0, 34),
+        BackgroundColor3 = Colors.Card,
         BackgroundTransparency = 0.1,
         ClipsDescendants = true,
         Visible = false,
         ScrollBarThickness = 3,
-        ScrollBarImageColor3 = Configs_HUB.Cor_Stroke,
+        ScrollBarImageColor3 = Colors.Primary,
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         ZIndex = 20
     })
-    Corner(DropdownFrame)
+    Corner(DropdownFrame, { CornerRadius = UDim.new(0, 6) })
     Stroke(DropdownFrame)
-    
+
     local DropdownList = Create("UIListLayout", DropdownFrame, {
         Padding = UDim.new(0, 2),
         SortOrder = Enum.SortOrder.LayoutOrder
     })
-    
     Create("UIPadding", DropdownFrame, {
         PaddingLeft = UDim.new(0, 4),
         PaddingRight = UDim.new(0, 4),
         PaddingTop = UDim.new(0, 4),
         PaddingBottom = UDim.new(0, 4)
     })
-    
+
     local SearchBox
     if Searchable then
         SearchBox = Create("TextBox", DropdownFrame, {
-            Size = UDim2.new(1, 0, 0, 25),
-            BackgroundColor3 = Configs_HUB.Cor_Hub,
+            Size = UDim2.new(1, 0, 0, 28),
+            BackgroundColor3 = Colors.Sidebar,
             TextColor3 = Configs_HUB.Cor_Text,
             PlaceholderText = "ابحث...",
             Font = Configs_HUB.Text_Font,
             TextSize = 12,
             TextXAlignment = Enum.TextXAlignment.Left,
             ClearTextOnFocus = false,
-            ZIndex = 25
+            ZIndex = 25,
+            LayoutOrder = -1
         })
-        Corner(SearchBox)
+        Corner(SearchBox, { CornerRadius = UDim.new(0, 4) })
         Stroke(SearchBox)
-        SearchBox.LayoutOrder = -1
     end
-    
+
     local Selected = Default
     local expanded = false
     local currentSearchText = ""
-    
+
     local function GetTargetHeight()
         local count = #Options
-        local totalH = count * 22 + 8
+        local totalH = count * 24 + 8
         if Searchable then
-            totalH = totalH + 30
+            totalH = totalH + 32
         end
         return math.min(totalH, 150)
     end
-    
+
     local function UpdateButtons()
         for _, child in ipairs(DropdownFrame:GetChildren()) do
             if child:IsA("TextButton") then
@@ -1264,11 +1261,11 @@ function AddDropdown(parent, Configs)
         else
             filteredOptions = Options
         end
-        
+
         for _, option in ipairs(filteredOptions) do
             local btn = Create("TextButton", DropdownFrame, {
-                Size = UDim2.new(1, 0, 0, 20),
-                BackgroundColor3 = Configs_HUB.Cor_Hub,
+                Size = UDim2.new(1, 0, 0, 22),
+                BackgroundColor3 = Colors.Sidebar,
                 Text = option,
                 TextColor3 = Configs_HUB.Cor_Text,
                 TextSize = 12,
@@ -1276,7 +1273,7 @@ function AddDropdown(parent, Configs)
                 AutoButtonColor = false,
                 ZIndex = 21
             })
-            Corner(btn)
+            Corner(btn, { CornerRadius = UDim.new(0, 4) })
             btn.MouseButton1Click:Connect(function()
                 Selected = option
                 TextLabel.Text = DropdownName .. ": " .. option
@@ -1286,40 +1283,40 @@ function AddDropdown(parent, Configs)
                 if SearchBox then SearchBox.Text = "" end
                 CreateTween(DropdownFrame, "Size", UDim2.new(1, 0, 0, 0), 0.2, true)
                 DropdownFrame.Visible = false
-                CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 25), 0.2, false)
+                CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 32), 0.2, false)
             end)
         end
-        
+
         if expanded then
             local targetH = GetTargetHeight()
             DropdownFrame.Size = UDim2.new(1, 0, 0, targetH)
-            MainFrame.Size = UDim2.new(1, 0, 0, 28 + targetH)
+            MainFrame.Size = UDim2.new(1, 0, 0, 34 + targetH)
         end
     end
-    
+
     UpdateButtons()
-    
+
     if SearchBox then
         SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
             currentSearchText = SearchBox.Text
             UpdateButtons()
         end)
     end
-    
+
     TextButton.MouseButton1Click:Connect(function()
         expanded = not expanded
         if expanded then
             DropdownFrame.Visible = true
             local targetH = GetTargetHeight()
             CreateTween(DropdownFrame, "Size", UDim2.new(1, 0, 0, targetH), 0.2, false)
-            CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 28 + targetH), 0.2, false)
+            CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 34 + targetH), 0.2, false)
         else
             CreateTween(DropdownFrame, "Size", UDim2.new(1, 0, 0, 0), 0.2, true)
             DropdownFrame.Visible = false
-            CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 25), 0.2, false)
+            CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 32), 0.2, false)
         end
     end)
-    
+
     return {
         Update = function(self, newOptions)
             Options = newOptions
@@ -1332,22 +1329,19 @@ function AddDropdown(parent, Configs)
 end
 
 -- =============================================
--- TABS CREATION (FULLY RESTORED)
+-- TABS CREATION
 -- =============================================
-local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
-local LocalPlayerTab = MakeTab({Name = "شخصيتي 🏃‍♂️", TabTitle = true})
-local ESPTab = MakeTab({Name = "رادار 👁️", TabTitle = true})
-local TeleportTab = MakeTab({Name = "الانتقال ⚡", TabTitle = true})
-local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
-local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, Image = "rbxassetid://6031075931"})
+local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true, Icon = "rbxassetid://6031075931"})
+local LocalPlayerTab = MakeTab({Name = "شخصيتي", TabTitle = true, Icon = "rbxassetid://6031075931"})
+local ESPTab = MakeTab({Name = "الرادار", TabTitle = true, Icon = "rbxassetid://6031075931"})
+local TeleportTab = MakeTab({Name = "الانتقال", TabTitle = true, Icon = "rbxassetid://6031075931"})
+local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Icon = "rbxassetid://6031075931"})
+local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, Icon = "rbxassetid://6031075931"})
+local CombatTab = MakeTab({Name = "قتال", TabTitle = true, Icon = "rbxassetid://6031075931"})
 
 -- =============================================
--- 🎛️ STMC TITLE COMMAND PANEL — CLIENT ONLY
--- لا يحتاج Script إضافي في ServerScriptService.
--- يعتمد على نظام الأوامر/Remote الموجود أصلاً في اللعبة.
--- لا يستخدم Roblox Chat.
+-- STMC TITLE COMMAND PANEL
 -- =============================================
-
 local STMC_CommandPanel = nil
 local STMC_CommandInput = nil
 local STMC_CommandStatus = nil
@@ -1363,10 +1357,7 @@ local function STMC_SetCommandStatus(message, isError)
     end
 end
 
--- يحاول استخدام نظام الأوامر الموجود في اللعبة.
--- لا يرسل أي شيء إلى TextChatService/Roblox Chat.
 local function STMC_ExecuteTitleCommand(text)
-    -- المسار الرئيسي المؤكد من لعبتك: HDAdminHDClient → Signals → RequestCommand
     local commandText = ";titler me " .. text
     local hdClient = RepStorage:WaitForChild("HDAdminHDClient", 5)
     if not hdClient then return false, "HDAdminHDClient غير موجود" end
@@ -1398,8 +1389,8 @@ local function STMC_CreateCommandPanel()
         Size = UDim2.new(0, 245, 0, 142),
         Position = UDim2.new(0, 12, 0.5, 0),
         AnchorPoint = Vector2.new(0, 0.5),
-        BackgroundColor3 = Configs_HUB.Cor_Hub,
-        BackgroundTransparency = 0.08,
+        BackgroundColor3 = Colors.Card,
+        BackgroundTransparency = 0.1,
         BorderSizePixel = 0,
         Active = true,
         Draggable = true,
@@ -1414,7 +1405,7 @@ local function STMC_CreateCommandPanel()
         Position = UDim2.new(0, 12, 0, 7),
         BackgroundTransparency = 1,
         Text = "تنفيذ الأوامر",
-        TextColor3 = Configs_HUB.Cor_Text,
+        TextColor3 = Colors.PrimaryLight,
         Font = Configs_HUB.Text_Font,
         TextSize = 18,
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -1455,7 +1446,7 @@ local function STMC_CreateCommandPanel()
     STMC_CommandInput = Create("TextBox", STMC_CommandPanel, {
         Size = UDim2.new(1, -86, 0, 38),
         Position = UDim2.new(0, 12, 0, 58),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundColor3 = Colors.Sidebar,
         BackgroundTransparency = 0.1,
         BorderSizePixel = 0,
         Text = "",
@@ -1476,8 +1467,8 @@ local function STMC_CreateCommandPanel()
         Size = UDim2.new(0, 62, 0, 38),
         Position = UDim2.new(1, -12, 0, 58),
         AnchorPoint = Vector2.new(1, 0),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.05,
+        BackgroundColor3 = Colors.PrimaryDark,
+        BackgroundTransparency = 0.1,
         BorderSizePixel = 0,
         Text = "تنفيذ",
         TextColor3 = Configs_HUB.Cor_Text,
@@ -1584,7 +1575,7 @@ AddButton(LocalPlayerTab, {
 })
 
 -- =============================================
--- MAIN TAB (FULLY RESTORED) + NEW FEATURES
+-- MAIN TAB CONTENT
 -- =============================================
 AddButton(MainTab, {
     Name = "🔓 فك حماية الطيران",
@@ -1655,7 +1646,6 @@ AddButton(MainTab, {
     Callback = function()
         local selected = RespawnKillDropdown.GetSelected()
         if selected == "رفريش (Respawn)" then
-            -- نرسل أمر ;refresh مباشرة عبر HDAdmin
             pcall(function()
                 local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
                 if hdClient then
@@ -1687,7 +1677,7 @@ AddButton(MainTab, {
 })
 
 -- =============================================
--- LOCAL PLAYER TAB (FULLY RESTORED)
+-- LOCAL PLAYER TAB CONTENT
 -- =============================================
 local SpeedEnabled = false
 local JumpEnabled = false
@@ -1790,7 +1780,7 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 -- =============================================
--- ESP TAB (RADAR LITE) — ثابت الحجم + تحديث سريع + استهداف دائم
+-- RADAR TAB CONTENT (LITE)
 -- =============================================
 local ESP_Active = false
 local ESP_ShowNames = true
@@ -1802,7 +1792,7 @@ local ESP_MaxDistance = 250
 local ESP_UpdateInterval = 0.08
 local ESP_TARGET_DISTANCE = 1000000000
 
-local ESP_FOLDER_NAME = "STMC_ESP_RADAR"
+local ESP_FOLDER_NAME = "MONETOR_ESP_RADAR"
 local ESP_TargetUserId = nil
 local ESP_TargetName = nil
 local ESP_TargetOnline = false
@@ -1813,9 +1803,9 @@ local function GetESPColor(player)
         if player.Team and player.Team.TeamColor then
             return player.Team.TeamColor.Color
         end
-        return Color3.fromRGB(0, 170, 255)
+        return Color3.fromRGB(139, 0, 255)
     end)
-    return ok and color or Color3.fromRGB(0, 170, 255)
+    return ok and color or Color3.fromRGB(139, 0, 255)
 end
 
 local function GetCharacterRoot(character)
@@ -1853,7 +1843,7 @@ local function RemoveESP(player)
         pcall(function() folder:Destroy() end)
     end
 
-    local oldName = character:FindFirstChild("STMC_ESP_Name", true)
+    local oldName = character:FindFirstChild("MONETOR_ESP_Name", true)
     if oldName then
         pcall(function() oldName:Destroy() end)
     end
@@ -2240,7 +2230,7 @@ AddButton(ESPTab, {
 
 local ESP_DistanceBox = Create("TextBox", ESPTab, {
     Size = UDim2.new(1, 0, 0, 30),
-    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundColor3 = Colors.Card,
     BackgroundTransparency = 0.25,
     BorderSizePixel = 0,
     Text = tostring(ESP_MaxDistance),
@@ -2251,7 +2241,8 @@ local ESP_DistanceBox = Create("TextBox", ESPTab, {
     Font = Configs_HUB.Text_Font,
     ClearTextOnFocus = false,
     TextXAlignment = Enum.TextXAlignment.Center,
-    ZIndex = 20
+    ZIndex = 20,
+    LayoutOrder = 99
 })
 Corner(ESP_DistanceBox)
 Stroke(ESP_DistanceBox)
@@ -2387,14 +2378,8 @@ RunService.Heartbeat:Connect(function(dt)
 end)
 
 -- =============================================
--- END OF LIGHT RADAR
+-- COMBAT TAB CONTENT
 -- =============================================
-
--- =============================================
--- ⚔️ COMBAT TAB (قتال) — دم حديد + درع + قوة خارقة + Auto Refresh
--- =============================================
-local CombatTab = MakeTab({Name = "قتال ⚔️", TabTitle = true})
-
 local GodMode = false
 local ShieldMode = false
 local SuperDamage = false
@@ -2406,9 +2391,6 @@ local godConnection = nil
 local shieldConnection = nil
 local aimbotConnection = nil
 
--- =============================================
--- 🔄 Auto Refresh (رفريش تلقائي عند الدمج/الضرر)
--- =============================================
 local AutoRefreshEnabled = false
 local AutoRefreshConnection = nil
 local REFRESH_THRESHOLD = 50
@@ -2452,10 +2434,10 @@ local AutoRefreshButton = AddButton(CombatTab, {
         AutoRefreshEnabled = not AutoRefreshEnabled
 
         if AutoRefreshEnabled then
-            AutoRefreshButton.Text = "🔄 رفريش تلقائي — إيقاف"
+            AutoRefreshButton:GetChildren()[1].Text = "🔄 رفريش تلقائي — إيقاف"
             MakeNotifi({Title="Auto Refresh", Text="تم التفعيل — إذا نزل دمك تحت 50% راح ينرسل ;refresh", Time=4})
         else
-            AutoRefreshButton.Text = "🔄 رفريش تلقائي — تشغيل"
+            AutoRefreshButton:GetChildren()[1].Text = "🔄 رفريش تلقائي — تشغيل"
             MakeNotifi({Title="Auto Refresh", Text="تم إيقاف الرفريش التلقائي", Time=2})
         end
     end
@@ -2467,15 +2449,12 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- =============================================
--- الدوال القتالية الأخرى
--- =============================================
 local function CreateShield()
     if LP.Character then
-        local shield = LP.Character:FindFirstChild("STMC_Shield")
+        local shield = LP.Character:FindFirstChild("MONETOR_Shield")
         if not shield then
             shield = Instance.new("ForceField")
-            shield.Name = "STMC_Shield"
+            shield.Name = "MONETOR_Shield"
             shield.Visible = true
             shield.Parent = LP.Character
         end
@@ -2484,7 +2463,7 @@ end
 
 local function RemoveShield()
     if LP.Character then
-        local shield = LP.Character:FindFirstChild("STMC_Shield")
+        local shield = LP.Character:FindFirstChild("MONETOR_Shield")
         if shield then
             shield:Destroy()
         end
@@ -2630,7 +2609,7 @@ LP.CharacterAdded:Connect(function(character)
 end)
 
 -- =============================================
--- TELEPORT TAB (FULLY RESTORED) with Searchable Dropdown
+-- TELEPORT TAB CONTENT
 -- =============================================
 local TPSelectedPlayer = ""
 
@@ -2664,7 +2643,7 @@ AddButton(TeleportTab, {
 })
 
 -- =============================================
--- TROLL TAB (FULLY RESTORED) with Searchable Player Dropdown
+-- TROLL TAB CONTENT
 -- =============================================
 local selectedPlayerName = ""
 local playerDropdown = nil
@@ -2830,53 +2809,119 @@ Players.PlayerAdded:Connect(UpdatePlayerList)
 Players.PlayerRemoved:Connect(UpdatePlayerList)
 
 -- =============================================
--- RIGHTS TAB (FULLY RESTORED)
+-- RIGHTS TAB CONTENT
 -- =============================================
-AddPlayerProfile(RightsTab)
+local devInfo = {
+    Name = "monetor",
+    Roblox = "@sjbcjjs0",
+    Telegram = "@Speed_loder",
+    TelegramLink = "https://t.me/Speed_loder",
+    TikTok = "@monetor_",
+    TikTokLink = "https://www.tiktok.com/@monetor_"
+}
+
+local infoFrame = Create("Frame", RightsTab, {
+    Size = UDim2.new(1, 0, 0, 200),
+    BackgroundTransparency = 1,
+    AutomaticSize = Enum.AutomaticSize.Y,
+    LayoutOrder = 0,
+})
+local infoList = Create("UIListLayout", infoFrame, {
+    Padding = UDim.new(0, 12),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    VerticalAlignment = Enum.VerticalAlignment.Top,
+})
+Create("UIPadding", infoFrame, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
+
+local avatarFrame = Create("Frame", infoFrame, {
+    Size = UDim2.new(0, 80, 0, 80),
+    BackgroundTransparency = 1,
+    LayoutOrder = 0,
+})
+local avatarImage = Create("ImageLabel", avatarFrame, {
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundTransparency = 1,
+    Image = "rbxassetid://6031090998",
+    ScaleType = Enum.ScaleType.Fit,
+})
+Corner(avatarImage, { CornerRadius = UDim.new(1, 0) })
+Stroke(avatarImage, { Color = Colors.PrimaryLight, Thickness = 2 })
+
+task.spawn(function()
+    local success, userId = pcall(function()
+        return Players:GetUserIdFromNameAsync("sjbcjjs0")
+    end)
+    if success and userId then
+        local url = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. userId .. "&width=420&height=420&format=png"
+        avatarImage.Image = url
+    else
+        avatarImage.Image = "rbxassetid://6031090998"
+        avatarImage.ImageColor3 = Colors.PrimaryLight
+    end
+end)
+
+local infoText = "Developer: " .. devInfo.Name .. "\n" ..
+                 "Roblox: " .. devInfo.Roblox .. "\n" ..
+                 "Telegram: " .. devInfo.Telegram .. "\n" ..
+                 "TikTok: " .. devInfo.TikTok
+
+local infoLabel = Create("TextLabel", infoFrame, {
+    Size = UDim2.new(1, 0, 0, 100),
+    BackgroundTransparency = 1,
+    Text = infoText,
+    TextColor3 = Configs_HUB.Cor_Text,
+    TextSize = 14,
+    Font = Configs_HUB.Text_Font,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Top,
+    TextWrapped = true,
+    AutomaticSize = Enum.AutomaticSize.Y,
+    LayoutOrder = 1,
+})
 
 AddButton(RightsTab, {
-    Name = "📢 أنظم قناتنا التليكرام",
+    Name = "📋 نسخ رابط التليجرام",
     Callback = function()
         pcall(function()
             if setclipboard then
-                setclipboard('https://t.me/StealthTechMasterComunity')
+                setclipboard(devInfo.TelegramLink)
             end
         end)
-        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ رابط التليجرام", Time = 2})
+        MakeNotifi({Title = "MONETOR X", Text = "تم نسخ رابط التليجرام", Time = 2})
     end
 })
 
 AddButton(RightsTab, {
-    Name = "👤 حساب مطور عبود Telegram",
+    Name = "📋 نسخ رابط تيك توك",
     Callback = function()
         pcall(function()
             if setclipboard then
-                setclipboard('Messi_zx')
+                setclipboard(devInfo.TikTokLink)
             end
         end)
-        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ حساب عبود", Time = 2})
+        MakeNotifi({Title = "MONETOR X", Text = "تم نسخ رابط تيك توك", Time = 2})
     end
 })
 
 AddButton(RightsTab, {
-    Name = "👤 حساب مطور 1ua10 TIK TOK",
+    Name = "📋 نسخ حساب روبلوكس",
     Callback = function()
         pcall(function()
             if setclipboard then
-                setclipboard('1ua10')
+                setclipboard(devInfo.Roblox)
             end
         end)
-        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ حساب 1ua10", Time = 2})
+        MakeNotifi({Title = "MONETOR X", Text = "تم نسخ حساب روبلوكس", Time = 2})
     end
 })
 
 AddButton(RightsTab, {
-    Name = "🏷️ تم صنع السكربت بواسطة STMC",
+    Name = "🏷️ حقوق MONETOR X",
     Callback = function()
         MakeNotifi({
-            Title = "حقوق STMC",
-            Text = "تم صنع السكربت بواسطة StealthTechmaster\nكلان STMC\nهذا السكربت مخصص لـ عراق هوب\nتيك توك: 1ua10\nتليجرام: @StealthTechMasterComunity",
-            Time = 6
+            Title = "حقوق MONETOR X",
+            Text = "تم تطوير هذا السكربت بواسطة monetor\nتابعنا على التليجرام و التيكتوك",
+            Time = 5
         })
     end
 })
@@ -2889,9 +2934,9 @@ pcall(FullBypass)
 
 task.wait(0.5)
 MakeNotifi({
-    Title = "STMC MAX",
+    Title = "MONETOR X",
     Text = "تم التفعيل بنجاح! استمتع بالمميزات الجديدة 🔥",
     Time = 3
 })
 
-print("✅ STMC HUB (FULLY FIXED) Loaded Successfully!")
+print("✅ MONETOR X UI Loaded Successfully!")
