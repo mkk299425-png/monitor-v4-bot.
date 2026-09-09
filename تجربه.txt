@@ -1377,44 +1377,26 @@ end
 -- يحاول استخدام نظام الأوامر الموجود في اللعبة.
 -- لا يرسل أي شيء إلى TextChatService/Roblox Chat.
 local function STMC_ExecuteTitleCommand(text)
+    -- المسار الرئيسي المؤكد من لعبتك: HDAdminHDClient → Signals → RequestCommand
     local commandText = ";titler me " .. text
+    local hdClient = RepStorage:WaitForChild("HDAdminHDClient", 5)
+    if not hdClient then return false, "HDAdminHDClient غير موجود" end
 
-    -- المسار 1: واجهة HDAdmin الموجودة في سكربت STMC نفسه
-    local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
-    local hdSignals = hdClient and hdClient:FindFirstChild("Signals")
-    local remote = hdSignals and hdSignals:FindFirstChild("RequestCommand")
-    if remote and remote:IsA("RemoteFunction") then
-        local ok = pcall(function() remote:InvokeServer(commandText) end)
-        if ok then return true, "HDAdminHDClient.Signals.RequestCommand" end
+    local signals = hdClient:WaitForChild("Signals", 5)
+    if not signals then return false, "HDAdmin Signals غير موجود" end
+
+    local requestCommand = signals:WaitForChild("RequestCommand", 5)
+    if not requestCommand or not requestCommand:IsA("RemoteFunction") then
+        return false, "HDAdmin RequestCommand غير متاح"
     end
 
-    -- المسار 2: Signals/RequestCommand
-    local signals = RepStorage:FindFirstChild("Signals")
-    remote = signals and signals:FindFirstChild("RequestCommand")
-    if remote and remote:IsA("RemoteFunction") then
-        local ok = pcall(function() remote:InvokeServer(commandText) end)
-        if ok then return true, "Signals.RequestCommand" end
+    local ok, err = pcall(function()
+        requestCommand:InvokeServer(commandText)
+    end)
+    if ok then
+        return true, "HDAdminHDClient.Signals.RequestCommand"
     end
-
-    -- المسار 3: RemoteFunction معروف مباشرة في ReplicatedStorage
-    for _, name in ipairs({"RequestCommand", "HDAdminCommand", "Command", "ExecuteCommand"}) do
-        remote = RepStorage:FindFirstChild(name)
-        if remote and remote:IsA("RemoteFunction") then
-            local ok = pcall(function() remote:InvokeServer(commandText) end)
-            if ok then return true, name end
-        end
-    end
-
-    -- المسار 4: البحث داخل HDAdminHDClient عن Signals/RequestCommand
-    if hdClient then
-        local found = hdClient:FindFirstChild("RequestCommand", true)
-        if found and found:IsA("RemoteFunction") then
-            local ok = pcall(function() found:InvokeServer(commandText) end)
-            if ok then return true, "HDAdminHDClient.RequestCommand" end
-        end
-    end
-
-    return false, "لم يتم العثور على واجهة HDAdmin للأوامر"
+    return false, "فشل تنفيذ HDAdmin: " .. tostring(err)
 end
 
 local function STMC_CreateCommandPanel()
