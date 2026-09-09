@@ -1545,126 +1545,409 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 -- =============================================
--- ESP TAB (RADAR) (FULLY RESTORED) + ESP NAMES
+-- ESP TAB (RADAR) (UPGRADED) — ثابت الحجم + جسم + اسم + صحة + مسافة
 -- =============================================
 local ESP_Active = false
+local ESP_ShowNames = true
+local ESP_ShowBody = true
+local ESP_ShowHealth = true
+local ESP_ShowDistance = true
+local ESP_MaxDistance = 500
+
+local ESP_FOLDER_NAME = "STMC_ESP_RADAR"
+
+local function GetESPColor(player)
+    local ok, color = pcall(function()
+        if player.Team and player.Team.TeamColor then
+            return player.Team.TeamColor.Color
+        end
+        return Color3.fromRGB(0, 170, 255)
+    end)
+    return ok and color or Color3.fromRGB(0, 170, 255)
+end
+
+local function GetCharacterRoot(character)
+    return character and (character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso"))
+end
+
+local function GetOrCreateESPFolder(character)
+    if not character then return nil end
+    local folder = character:FindFirstChild(ESP_FOLDER_NAME)
+    if folder and folder:IsA("Folder") then
+        return folder
+    end
+
+    if folder then
+        pcall(function() folder:Destroy() end)
+    end
+
+    folder = Instance.new("Folder")
+    folder.Name = ESP_FOLDER_NAME
+    folder.Parent = character
+    return folder
+end
+
+local function RemoveESP(player)
+    if not player or not player.Character then return end
+
+    local character = player.Character
+    local folder = character:FindFirstChild(ESP_FOLDER_NAME)
+    if folder then
+        pcall(function() folder:Destroy() end)
+    end
+
+    -- تنظيف التسمية القديمة حتى لو كانت من نسخة الرادار السابقة.
+    local oldName = character:FindFirstChild("STMC_ESP_Name", true)
+    if oldName then
+        pcall(function() oldName:Destroy() end)
+    end
+end
+
+local function ClearAllESP()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LP then
+            RemoveESP(player)
+        end
+    end
+end
+
+local function CreateESPName(player)
+    if not ESP_Active or not ESP_ShowNames or player == LP then return end
+
+    local character = player.Character
+    if not character then return end
+
+    local head = character:FindFirstChild("Head")
+    if not head then return end
+
+    local folder = GetOrCreateESPFolder(character)
+    if not folder then return end
+
+    local billboard = folder:FindFirstChild("NameBillboard")
+    if billboard and not billboard:IsA("BillboardGui") then
+        pcall(function() billboard:Destroy() end)
+        billboard = nil
+    end
+
+    if not billboard then
+        billboard = Instance.new("BillboardGui")
+        billboard.Name = "NameBillboard"
+        billboard.Adornee = head
+        billboard.Parent = folder
+
+        -- مهم: Offset فقط = حجم ثابت على الشاشة ولا يكبر/يصغر مع المسافة.
+        billboard.Size = UDim2.fromOffset(190, 52)
+        billboard.StudsOffsetWorldSpace = Vector3.new(0, 2.75, 0)
+        billboard.AlwaysOnTop = true
+        billboard.LightInfluence = 0
+        billboard.MaxDistance = ESP_MaxDistance
+        billboard.ResetOnSpawn = false
+        billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+        local card = Instance.new("Frame")
+        card.Name = "Card"
+        card.Size = UDim2.fromScale(1, 1)
+        card.BackgroundColor3 = Color3.fromRGB(5, 8, 12)
+        card.BackgroundTransparency = 0.22
+        card.BorderSizePixel = 0
+        card.Parent = billboard
+
+        local cardCorner = Instance.new("UICorner")
+        cardCorner.CornerRadius = UDim.new(0, 8)
+        cardCorner.Parent = card
+
+        local cardStroke = Instance.new("UIStroke")
+        cardStroke.Name = "Accent"
+        cardStroke.Thickness = 1.5
+        cardStroke.Transparency = 0.05
+        cardStroke.Parent = card
+
+        local padding = Instance.new("UIPadding")
+        padding.PaddingLeft = UDim.new(0, 8)
+        padding.PaddingRight = UDim.new(0, 8)
+        padding.PaddingTop = UDim.new(0, 4)
+        padding.PaddingBottom = UDim.new(0, 4)
+        padding.Parent = card
+
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Name = "PlayerName"
+        nameLabel.Size = UDim2.new(1, 0, 0, 24)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        nameLabel.TextStrokeTransparency = 0.15
+        nameLabel.Font = Enum.Font.GothamBold
+        nameLabel.TextSize = 16
+        nameLabel.TextScaled = false
+        nameLabel.TextWrapped = false
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Center
+        nameLabel.TextYAlignment = Enum.TextYAlignment.Center
+        nameLabel.Text = player.DisplayName ~= "" and player.DisplayName or player.Name
+        nameLabel.Parent = card
+
+        local infoLabel = Instance.new("TextLabel")
+        infoLabel.Name = "Info"
+        infoLabel.Size = UDim2.new(1, 0, 0, 18)
+        infoLabel.Position = UDim2.new(0, 0, 0, 25)
+        infoLabel.BackgroundTransparency = 1
+        infoLabel.TextColor3 = Color3.fromRGB(215, 225, 235)
+        infoLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        infoLabel.TextStrokeTransparency = 0.35
+        infoLabel.Font = Enum.Font.GothamMedium
+        infoLabel.TextSize = 12
+        infoLabel.TextScaled = false
+        infoLabel.TextWrapped = false
+        infoLabel.TextXAlignment = Enum.TextXAlignment.Center
+        infoLabel.TextYAlignment = Enum.TextYAlignment.Center
+        infoLabel.Text = ""
+        infoLabel.Parent = card
+    end
+
+    billboard.Adornee = head
+    billboard.MaxDistance = ESP_MaxDistance
+    billboard.Enabled = ESP_ShowNames
+
+    local card = billboard:FindFirstChild("Card")
+    if not card then return end
+
+    local nameLabel = card:FindFirstChild("PlayerName")
+    local infoLabel = card:FindFirstChild("Info")
+    local accent = card:FindFirstChild("Accent")
+
+    if nameLabel then
+        nameLabel.Text = player.DisplayName ~= "" and player.DisplayName or player.Name
+    end
+
+    local color = GetESPColor(player)
+    if accent and accent:IsA("UIStroke") then
+        accent.Color = color
+    end
+    if nameLabel and nameLabel:IsA("TextLabel") then
+        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local root = GetCharacterRoot(character)
+    local infoParts = {}
+
+    if ESP_ShowHealth and humanoid then
+        table.insert(infoParts, "HP " .. math.max(0, math.floor(humanoid.Health + 0.5)))
+    end
+
+    if ESP_ShowDistance and root and LP.Character then
+        local myRoot = GetCharacterRoot(LP.Character)
+        if myRoot then
+            local distance = math.floor((root.Position - myRoot.Position).Magnitude + 0.5)
+            table.insert(infoParts, distance .. "m")
+        end
+    end
+
+    if infoLabel then
+        infoLabel.Text = table.concat(infoParts, "  •  ")
+        infoLabel.Visible = (#infoParts > 0)
+    end
+end
+
+local function CreateESPBody(player)
+    if not ESP_Active or not ESP_ShowBody or player == LP then return end
+
+    local character = player.Character
+    if not character then return end
+
+    local root = GetCharacterRoot(character)
+    if not root then return end
+
+    local folder = GetOrCreateESPFolder(character)
+    if not folder then return end
+
+    local highlight = folder:FindFirstChild("BodyHighlight")
+    if highlight and not highlight:IsA("Highlight") then
+        pcall(function() highlight:Destroy() end)
+        highlight = nil
+    end
+
+    if not highlight then
+        highlight = Instance.new("Highlight")
+        highlight.Name = "BodyHighlight"
+        highlight.Adornee = character
+        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        highlight.FillTransparency = 0.82
+        highlight.OutlineTransparency = 0.04
+        highlight.Parent = folder
+    end
+
+    local color = GetESPColor(player)
+    highlight.FillColor = color
+    highlight.OutlineColor = color
+    highlight.Enabled = ESP_ShowBody
+end
+
+local function CreateESP(player)
+    if player == LP then return end
+    if not ESP_Active then return end
+
+    RemoveESP(player)
+    if not player.Character then return end
+
+    -- نعيد إنشاء العناصر الحالية بدون أي اعتماد على حجم العالم.
+    CreateESPBody(player)
+    CreateESPName(player)
+end
 
 AddButton(ESPTab, {
-    Name = "👁️ تفعيل كشف اللاعبين (ESP)",
+    Name = "👁️ تفعيل الرادار المطور",
     Callback = function()
         ESP_Active = true
-        MakeNotifi({Title="ESP", Text="تم تفعيل الرادار", Time=2})
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LP then
+                task.spawn(function()
+                    CreateESP(player)
+                end)
+            end
+        end
+        MakeNotifi({Title="ESP", Text="تم تفعيل الرادار: اسم ثابت + جسم + صحة + مسافة", Time=3})
     end
 })
 
 AddButton(ESPTab, {
-    Name = "❌ إيقاف كشف اللاعبين (ESP)",
+    Name = "❌ إيقاف الرادار",
     Callback = function()
         ESP_Active = false
-        -- عند الإيقاف، نقوم بحذف جميع اللوحات (BillboardGui) التي أنشأناها
-        for _, player in pairs(Players:GetPlayers()) do
+        ClearAllESP()
+        MakeNotifi({Title="ESP", Text="تم إيقاف الرادار وتنظيف جميع العلامات", Time=2})
+    end
+})
+
+AddButton(ESPTab, {
+    Name = "🏷️ الاسم: تشغيل / إيقاف",
+    Callback = function()
+        ESP_ShowNames = not ESP_ShowNames
+        for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LP and player.Character then
-                local head = player.Character:FindFirstChild("Head")
-                if head then
-                    local esp = head:FindFirstChild("STMC_ESP_Name")
-                    if esp then
-                        esp:Destroy()
+                local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
+                if ESP_ShowNames then
+                    if ESP_Active then CreateESPName(player) end
+                elseif folder then
+                    local billboard = folder:FindFirstChild("NameBillboard")
+                    if billboard and billboard:IsA("BillboardGui") then
+                        billboard.Enabled = false
                     end
                 end
             end
         end
-        MakeNotifi({Title="ESP", Text="تم إيقاف الرادار", Time=2})
+        MakeNotifi({Title="ESP", Text="إظهار الأسماء: " .. (ESP_ShowNames and "تشغيل" or "إيقاف"), Time=2})
     end
 })
 
--- دالة لإنشاء الاسم فوق رأس اللاعب
-local function CreateESPName(player)
-    if player == LP then return end
-    local character = player.Character
-    if not character then return end
-    
-    local head = character:WaitForChild("Head", 5)
-    if not head then return end
-    
-    -- التحقق من عدم وجود ESP سابقاً
-    local existing = head:FindFirstChild("STMC_ESP_Name")
-    if existing then existing:Destroy() end
-    
-    -- إنشاء BillboardGui بحيث يكون الاسم فوق الرأس مباشرة
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "STMC_ESP_Name"
-    billboard.Size = UDim2.new(4, 0, 0.8, 0)
-    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-    billboard.AlwaysOnTop = true
-    billboard.LightInfluence = 1.0
-    billboard.MaxDistance = 500
-    billboard.Adornee = head
-    billboard.Parent = head
-    
-    -- خلفية شفافة تماماً
-    local frame = Instance.new("Frame")
-    frame.Name = "Background"
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.Position = UDim2.new(0, 0, 0, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0.7
-    frame.BorderSizePixel = 0
-    frame.Parent = billboard
-    
-    -- حواف دائرية للخلفية
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 4)
-    corner.Parent = frame
-    
-    -- نص اسم اللاعب
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Name = "PlayerName"
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
-    textLabel.Position = UDim2.new(0, 5, 0, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = player.Name
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    textLabel.TextStrokeTransparency = 0
-    textLabel.Font = Enum.Font.FredokaOne
-    textLabel.TextSize = 16
-    textLabel.TextScaled = false
-    textLabel.TextWrapped = false
-    textLabel.TextXAlignment = Enum.TextXAlignment.Center
-    textLabel.TextYAlignment = Enum.TextYAlignment.Center
-    textLabel.Parent = frame
-end
+AddButton(ESPTab, {
+    Name = "🧍 الجسم: تشغيل / إيقاف",
+    Callback = function()
+        ESP_ShowBody = not ESP_ShowBody
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LP and player.Character then
+                if ESP_Active and ESP_ShowBody then
+                    CreateESPBody(player)
+                else
+                    local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
+                    if folder then
+                        local highlight = folder:FindFirstChild("BodyHighlight")
+                        if highlight then pcall(function() highlight:Destroy() end) end
+                    end
+                end
+            end
+        end
+        MakeNotifi({Title="ESP", Text="إظهار الجسم: " .. (ESP_ShowBody and "تشغيل" or "إيقاف"), Time=2})
+    end
+})
 
--- مراقبة اللاعبين وإنشاء/حذف الأسماء حسب حالة ESP
+AddButton(ESPTab, {
+    Name = "❤️ الصحة: تشغيل / إيقاف",
+    Callback = function()
+        ESP_ShowHealth = not ESP_ShowHealth
+        MakeNotifi({Title="ESP", Text="إظهار الصحة: " .. (ESP_ShowHealth and "تشغيل" or "إيقاف"), Time=2})
+    end
+})
+
+AddButton(ESPTab, {
+    Name = "📏 المسافة: تشغيل / إيقاف",
+    Callback = function()
+        ESP_ShowDistance = not ESP_ShowDistance
+        MakeNotifi({Title="ESP", Text="إظهار المسافة: " .. (ESP_ShowDistance and "تشغيل" or "إيقاف"), Time=2})
+    end
+})
+
+AddButton(ESPTab, {
+    Name = "📡 مدى الرادار: 500 ↔ 1000",
+    Callback = function()
+        ESP_MaxDistance = (ESP_MaxDistance == 500) and 1000 or 500
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LP and player.Character then
+                local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
+                if folder then
+                    local billboard = folder:FindFirstChild("NameBillboard")
+                    if billboard and billboard:IsA("BillboardGui") then
+                        billboard.MaxDistance = ESP_MaxDistance
+                    end
+                end
+            end
+        end
+        MakeNotifi({Title="ESP", Text="مدى الرادار: " .. ESP_MaxDistance .. " studs", Time=2})
+    end
+})
+
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
-        task.wait(1)
+        task.wait(0.75)
         if ESP_Active then
-            CreateESPName(player)
+            CreateESP(player)
         end
     end)
 end)
 
--- حلقة ديناميكية للتحقق من الأسماء الموجودة وحذفها إذا توقف ESP، وإنشاؤها إذا كان مفعلاً
-RunService.Heartbeat:Connect(function()
-    for _, player in pairs(Players:GetPlayers()) do
+Players.PlayerRemoving:Connect(function(player)
+    RemoveESP(player)
+end)
+
+local ESP_UpdateClock = 0
+RunService.Heartbeat:Connect(function(dt)
+    if not ESP_Active then return end
+
+    ESP_UpdateClock += dt
+    if ESP_UpdateClock < 0.08 then return end
+    ESP_UpdateClock = 0
+
+    for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LP and player.Character then
-            local head = player.Character:FindFirstChild("Head")
+            local character = player.Character
+            local head = character:FindFirstChild("Head")
+            local folder = character:FindFirstChild(ESP_FOLDER_NAME)
+
             if head then
-                local esp = head:FindFirstChild("STMC_ESP_Name")
-                if ESP_Active then
-                    if not esp then
-                        CreateESPName(player)
-                    end
+                if not folder then
+                    CreateESP(player)
                 else
-                    if esp then
-                        esp:Destroy()
+                    if ESP_ShowNames then
+                        CreateESPName(player)
+                    else
+                        local billboard = folder:FindFirstChild("NameBillboard")
+                        if billboard then billboard.Enabled = false end
+                    end
+
+                    if ESP_ShowBody then
+                        CreateESPBody(player)
+                    else
+                        local highlight = folder:FindFirstChild("BodyHighlight")
+                        if highlight then highlight.Enabled = false end
                     end
                 end
             end
         end
     end
 end)
+
+-- =============================================
+-- END OF UPGRADED RADAR
+-- =============================================
 
 -- =============================================
 -- TELEPORT TAB (FULLY RESTORED) with Searchable Dropdown
