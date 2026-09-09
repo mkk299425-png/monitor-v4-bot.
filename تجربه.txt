@@ -1635,49 +1635,32 @@ local function CreateESPName(player)
         billboard.Adornee = head
         billboard.Parent = folder
 
-        -- مهم: Offset فقط = حجم ثابت على الشاشة ولا يكبر/يصغر مع المسافة.
-        billboard.Size = UDim2.fromOffset(190, 52)
-        billboard.StudsOffsetWorldSpace = Vector3.new(0, 2.75, 0)
+        -- حجم شاشة ثابت 100%: لا يعتمد على المسافة أو حجم الشخصية.
+        billboard.Size = UDim2.fromOffset(150, 38)
+        billboard.StudsOffsetWorldSpace = Vector3.new(0, 3.15, 0)
         billboard.AlwaysOnTop = true
         billboard.LightInfluence = 0
         billboard.MaxDistance = ESP_MaxDistance
         billboard.ResetOnSpawn = false
+        billboard.Enabled = true
         billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
         local card = Instance.new("Frame")
         card.Name = "Card"
         card.Size = UDim2.fromScale(1, 1)
-        card.BackgroundColor3 = Color3.fromRGB(5, 8, 12)
-        card.BackgroundTransparency = 0.22
+        card.BackgroundTransparency = 1
         card.BorderSizePixel = 0
         card.Parent = billboard
 
-        local cardCorner = Instance.new("UICorner")
-        cardCorner.CornerRadius = UDim.new(0, 8)
-        cardCorner.Parent = card
-
-        local cardStroke = Instance.new("UIStroke")
-        cardStroke.Name = "Accent"
-        cardStroke.Thickness = 1.5
-        cardStroke.Transparency = 0.05
-        cardStroke.Parent = card
-
-        local padding = Instance.new("UIPadding")
-        padding.PaddingLeft = UDim.new(0, 8)
-        padding.PaddingRight = UDim.new(0, 8)
-        padding.PaddingTop = UDim.new(0, 4)
-        padding.PaddingBottom = UDim.new(0, 4)
-        padding.Parent = card
-
         local nameLabel = Instance.new("TextLabel")
         nameLabel.Name = "PlayerName"
-        nameLabel.Size = UDim2.new(1, 0, 0, 24)
+        nameLabel.Size = UDim2.new(1, 0, 0, 20)
         nameLabel.BackgroundTransparency = 1
         nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
         nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         nameLabel.TextStrokeTransparency = 0.15
         nameLabel.Font = Enum.Font.GothamBold
-        nameLabel.TextSize = 16
+        nameLabel.TextSize = 14
         nameLabel.TextScaled = false
         nameLabel.TextWrapped = false
         nameLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -1687,14 +1670,14 @@ local function CreateESPName(player)
 
         local infoLabel = Instance.new("TextLabel")
         infoLabel.Name = "Info"
-        infoLabel.Size = UDim2.new(1, 0, 0, 18)
-        infoLabel.Position = UDim2.new(0, 0, 0, 25)
+        infoLabel.Size = UDim2.new(1, 0, 0, 16)
+        infoLabel.Position = UDim2.new(0, 0, 0, 20)
         infoLabel.BackgroundTransparency = 1
         infoLabel.TextColor3 = Color3.fromRGB(215, 225, 235)
         infoLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         infoLabel.TextStrokeTransparency = 0.35
         infoLabel.Font = Enum.Font.GothamMedium
-        infoLabel.TextSize = 12
+        infoLabel.TextSize = 11
         infoLabel.TextScaled = false
         infoLabel.TextWrapped = false
         infoLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -1712,7 +1695,15 @@ local function CreateESPName(player)
 
     local nameLabel = card:FindFirstChild("PlayerName")
     local infoLabel = card:FindFirstChild("Info")
-    local accent = card:FindFirstChild("Accent")
+    local accent = nameLabel and nameLabel:FindFirstChild("NameStroke")
+
+    if nameLabel and not accent then
+        accent = Instance.new("UIStroke")
+        accent.Name = "NameStroke"
+        accent.Thickness = 0.9
+        accent.Transparency = 0.15
+        accent.Parent = nameLabel
+    end
 
     if nameLabel then
         nameLabel.Text = player.DisplayName ~= "" and player.DisplayName or player.Name
