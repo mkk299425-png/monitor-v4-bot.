@@ -1379,37 +1379,42 @@ end
 local function STMC_ExecuteTitleCommand(text)
     local commandText = ";titler me " .. text
 
-    -- النظام الموجود في السكربت يستخدم Signals/RequestCommand في بعض الميزات.
-    -- نبحث عن نفس نقطة التنفيذ الموجودة أصلاً بدل إنشاء سيرفر جديد.
-    local signals = RepStorage:FindFirstChild("Signals")
-    local requestCommand = signals and signals:FindFirstChild("RequestCommand")
-
-    if requestCommand and requestCommand:IsA("RemoteFunction") then
-        local ok = pcall(function()
-            requestCommand:InvokeServer(commandText)
-        end)
-        return ok
+    -- المسار 1: واجهة HDAdmin الموجودة في سكربت STMC نفسه
+    local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
+    local hdSignals = hdClient and hdClient:FindFirstChild("Signals")
+    local remote = hdSignals and hdSignals:FindFirstChild("RequestCommand")
+    if remote and remote:IsA("RemoteFunction") then
+        local ok = pcall(function() remote:InvokeServer(commandText) end)
+        if ok then return true, "HDAdminHDClient.Signals.RequestCommand" end
     end
 
-    -- بعض الألعاب تضع RemoteFunction مباشرة داخل ReplicatedStorage.
-    local candidates = {
-        RepStorage:FindFirstChild("RequestCommand"),
-        RepStorage:FindFirstChild("Command"),
-        RepStorage:FindFirstChild("ExecuteCommand"),
-    }
+    -- المسار 2: Signals/RequestCommand
+    local signals = RepStorage:FindFirstChild("Signals")
+    remote = signals and signals:FindFirstChild("RequestCommand")
+    if remote and remote:IsA("RemoteFunction") then
+        local ok = pcall(function() remote:InvokeServer(commandText) end)
+        if ok then return true, "Signals.RequestCommand" end
+    end
 
-    for _, remote in ipairs(candidates) do
+    -- المسار 3: RemoteFunction معروف مباشرة في ReplicatedStorage
+    for _, name in ipairs({"RequestCommand", "HDAdminCommand", "Command", "ExecuteCommand"}) do
+        remote = RepStorage:FindFirstChild(name)
         if remote and remote:IsA("RemoteFunction") then
-            local ok = pcall(function()
-                remote:InvokeServer(commandText)
-            end)
-            if ok then
-                return true
-            end
+            local ok = pcall(function() remote:InvokeServer(commandText) end)
+            if ok then return true, name end
         end
     end
 
-    return false
+    -- المسار 4: البحث داخل HDAdminHDClient عن Signals/RequestCommand
+    if hdClient then
+        local found = hdClient:FindFirstChild("RequestCommand", true)
+        if found and found:IsA("RemoteFunction") then
+            local ok = pcall(function() found:InvokeServer(commandText) end)
+            if ok then return true, "HDAdminHDClient.RequestCommand" end
+        end
+    end
+
+    return false, "لم يتم العثور على واجهة HDAdmin للأوامر"
 end
 
 local function STMC_CreateCommandPanel()
@@ -1468,7 +1473,7 @@ local function STMC_CreateCommandPanel()
         Size = UDim2.new(1, -24, 0, 18),
         Position = UDim2.new(0, 12, 0, 35),
         BackgroundTransparency = 1,
-        Text = "يُنفذ داخليًا كـ ;titler me <النص>",
+        Text = "لو شات Roblox مقفول، هذه اللوحة تعمل بشكل مستقل",
         TextColor3 = Configs_HUB.Cor_DarkText,
         Font = Configs_HUB.Text_Font,
         TextSize = 11,
@@ -1545,16 +1550,13 @@ local function STMC_CreateCommandPanel()
         STMC_CommandBusy = true
         STMC_SetCommandStatus("جاري تنفيذ ;titler me ...", false)
 
-        local success = STMC_ExecuteTitleCommand(value)
+        local success, route = STMC_ExecuteTitleCommand(value)
 
         if success then
             STMC_CommandInput.Text = ""
-            STMC_SetCommandStatus("تم إرسال أمر الـTitle", false)
+            STMC_SetCommandStatus("تم التنفيذ عبر " .. tostring(route), false)
         else
-            STMC_SetCommandStatus(
-                "نظام الأوامر غير موجود/غير متوافق في هذه اللعبة",
-                true
-            )
+            STMC_SetCommandStatus(route or "تعذر الوصول إلى HDAdmin", true)
         end
 
         task.delay(0.35, function()
@@ -1609,6 +1611,7 @@ AddButton(LocalPlayerTab, {
         })
     end
 })
+
 
 
 -- =============================================
