@@ -1545,7 +1545,7 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 -- =============================================
--- ESP TAB (RADAR) - تم التعديل: اسم فوق الشخص فقط
+-- ESP TAB (RADAR) (FULLY RESTORED) + ESP NAMES
 -- =============================================
 local ESP_Active = false
 
@@ -1594,10 +1594,10 @@ local function CreateESPName(player)
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "STMC_ESP_Name"
     billboard.Size = UDim2.new(4, 0, 0.8, 0)
-    billboard.StudsOffset = Vector3.new(0, 2.5, 0) -- رفع الاسم قليلاً فوق الرأس
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
     billboard.AlwaysOnTop = true
     billboard.LightInfluence = 1.0
-    billboard.MaxDistance = 500 -- المسافة التي يظهر بها الاسم
+    billboard.MaxDistance = 500
     billboard.Adornee = head
     billboard.Parent = head
     
@@ -1607,7 +1607,7 @@ local function CreateESPName(player)
     frame.Size = UDim2.new(1, 0, 1, 0)
     frame.Position = UDim2.new(0, 0, 0, 0)
     frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0.7 -- شفافية الخلفية لتكون واضحة وليست نشازة
+    frame.BackgroundTransparency = 0.7
     frame.BorderSizePixel = 0
     frame.Parent = billboard
     
@@ -1620,14 +1620,14 @@ local function CreateESPName(player)
     local textLabel = Instance.new("TextLabel")
     textLabel.Name = "PlayerName"
     textLabel.Size = UDim2.new(1, 0, 1, 0)
-    textLabel.Position = UDim2.new(0, 5, 0, 0) -- حشوة بسيطة من اليسار
+    textLabel.Position = UDim2.new(0, 5, 0, 0)
     textLabel.BackgroundTransparency = 1
     textLabel.Text = player.Name
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- لون النص أبيض ليكون واضحاً
-    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0) -- حدود سوداء للنص لضمان الوضوح على أي خلفية
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     textLabel.TextStrokeTransparency = 0
     textLabel.Font = Enum.Font.FredokaOne
-    textLabel.TextSize = 16 -- حجم مناسب وواضح
+    textLabel.TextSize = 16
     textLabel.TextScaled = false
     textLabel.TextWrapped = false
     textLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -1638,7 +1638,7 @@ end
 -- مراقبة اللاعبين وإنشاء/حذف الأسماء حسب حالة ESP
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
-        task.wait(1) -- انتظار حتى تتكون الشخصية بالكامل
+        task.wait(1)
         if ESP_Active then
             CreateESPName(player)
         end
@@ -1674,7 +1674,7 @@ local TPSelectedPlayer = ""
 local TPDropdown = AddDropdown(TeleportTab, {
     Name = "اختر لاعب للانتقال إليه",
     Options = {},
-    Searchable = true, -- Enable search for player list
+    Searchable = true,
     Callback = function(value)
         TPSelectedPlayer = value
     end
@@ -1753,7 +1753,7 @@ end
 playerDropdown = AddDropdown(TrollTab, {
     Name = "اختر لاعب",
     Options = {},
-    Searchable = true, -- Enable search
+    Searchable = true,
     Callback = function(value)
         selectedPlayerName = value
     end
