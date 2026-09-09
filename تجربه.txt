@@ -2448,163 +2448,160 @@ local shieldConnection = nil
 local aimbotConnection = nil
 
 -- =============================================
---  Auto Refresh (رفريش تلقائي عند انخفاض دم اللاعب)
--- يراقب Humanoid.Health مباشرة بدل الفحص في كل Heartbeat.
--- عند النزول إلى 50% أو أقل يرسل ;refresh مرة واحدة،
--- ثم يعيد تسليح المراقبة بعد الرفريش/تغير الشخصية.
-
+--  Auto Refresh (رفريش تلقائي عند الدمج/الضرر)
+-- =============================================
 local AutoRefreshEnabled = false
+local AutoRefreshButton = nil
 local AutoRefreshConnection = nil
-local CharacterRefreshConnection = nil
-
+local AutoRefreshCharacterConnection = nil
+local AutoRefreshHealthConnection = nil
 local REFRESH_THRESHOLD = 50
-local RefreshCooldown = false
+local AutoRefreshTriggered = false
+local LastRefreshTime = 0
+local REFRESH_COOLDOWN = 0.15
 
-local function DisconnectAutoRefresh()
+local function GetAutoRefreshHumanoid()
+    local character = LP.Character
+    if not character then return nil end
+    return character:FindFirstChildOfClass("Humanoid")
+end
+
+local function SendRefreshCommand()
+    local ok, success, message = pcall(function()
+        local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
+        if not hdClient then return false, "HDAdminHDClient غير موجود" end
+
+        local signals = hdClient:FindFirstChild("Signals")
+        if not signals then return false, "HDAdmin Signals غير موجود" end
+
+        local requestCommand = signals:FindFirstChild("RequestCommand")
+        if not requestCommand or not requestCommand:IsA("RemoteFunction") then
+            return false, "RequestCommand غير موجود"
+        end
+
+        requestCommand:InvokeServer(";refresh")
+        return true, "تم إرسال ;refresh"
+    end)
+
+    if not ok then
+        return false, tostring(success)
+    end
+    return success == true, message or (success and "تم إرسال ;refresh" or "تعذر إرسال ;refresh")
+end
+
+local function GetAutoRefreshButtonLabel()
+    return AutoRefreshButton and AutoRefreshButton:FindFirstChild("TextLabel")
+end
+
+local function SetAutoRefreshButtonText(text)
+    if not AutoRefreshButton then return end
+    local label = GetAutoRefreshButtonLabel()
+    if label then
+        label.Text = text
+    end
+end
+
+local function CheckHealthAndRefresh()
+    if not AutoRefreshEnabled then return end
+
+    local humanoid = GetAutoRefreshHumanoid()
+    if not humanoid or humanoid.MaxHealth <= 0 or humanoid.Health <= 0 then
+        AutoRefreshTriggered = false
+        return
+    end
+
+    local healthPercent = (humanoid.Health / humanoid.MaxHealth) * 100
+
+    -- افحص كل فريم، لكن نفّذ مرة واحدة فقط عند عبور حاجز 50%.
+    if healthPercent <= REFRESH_THRESHOLD then
+        if not AutoRefreshTriggered and (os.clock() - LastRefreshTime) >= REFRESH_COOLDOWN then
+            AutoRefreshTriggered = true
+            LastRefreshTime = os.clock()
+
+            local success, message = SendRefreshCommand()
+            MakeNotifi({
+                Title = success and "Auto Refresh" or "Auto Refresh — خطأ",
+                Text = success
+                    and ("تم إرسال ;refresh فوراً — الدم: " .. math.floor(healthPercent) .. "%")
+                    or ("تعذر إرسال ;refresh: " .. tostring(message)),
+                Time = success and 2 or 3
+            })
+        end
+    else
+        -- يسمح بتشغيل جديد بعد أن يرتفع الدم فوق 50%.
+        AutoRefreshTriggered = false
+    end
+end
+
+local function DisconnectAutoRefreshConnections()
     if AutoRefreshConnection then
         AutoRefreshConnection:Disconnect()
         AutoRefreshConnection = nil
     end
+    if AutoRefreshCharacterConnection then
+        AutoRefreshCharacterConnection:Disconnect()
+        AutoRefreshCharacterConnection = nil
+    end
+    if AutoRefreshHealthConnection then
+        AutoRefreshHealthConnection:Disconnect()
+        AutoRefreshHealthConnection = nil
+    end
 end
 
-local function SendRefreshCommand()
-    local success, err = pcall(function()
-        local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
-        if not hdClient then
-            error("HDAdminHDClient غير موجود")
-        end
+local function StartAutoRefreshMonitor()
+    DisconnectAutoRefreshConnections()
+    AutoRefreshTriggered = false
+    LastRefreshTime = 0
 
-        local signals = hdClient:FindFirstChild("Signals")
-        if not signals then
-            error("HDAdmin Signals غير موجود")
-        end
+    -- RenderStepped = فحص على مستوى الفريمات للمراقبة الأسرع على الهاتف.
+    AutoRefreshConnection = RunService.RenderStepped:Connect(CheckHealthAndRefresh)
 
-        local requestCommand = signals:FindFirstChild("RequestCommand")
-        if not requestCommand or not requestCommand:IsA("RemoteFunction") then
-            error("RequestCommand غير متاح")
-        end
-
-        requestCommand:InvokeServer(";refresh")
-    end)
-
-    if not success then
-        MakeNotifi({
-            Title = "Auto Refresh",
-            Text = "فشل إرسال ;refresh: " .. tostring(err),
-            Time = 3
-        })
-        return false
-    end
-
-    return true
-end
-
-local function MonitorHealth(character)
-    DisconnectAutoRefresh()
-
-    if not AutoRefreshEnabled or not character then
-        return
-    end
-
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then
-        humanoid = character:WaitForChild("Humanoid", 5)
-    end
-
-    if not humanoid then
-        MakeNotifi({
-            Title = "Auto Refresh",
-            Text = "لم يتم العثور على Humanoid",
-            Time = 2
-        })
-        return
-    end
-
-    RefreshCooldown = false
-
-    AutoRefreshConnection = humanoid.HealthChanged:Connect(function(health)
-        if not AutoRefreshEnabled then return end
-        if humanoid.MaxHealth <= 0 then return end
-        if health <= 0 then return end
-        if RefreshCooldown then return end
-
-        local healthPercent = (health / humanoid.MaxHealth) * 100
-
-        if healthPercent <= REFRESH_THRESHOLD then
-            RefreshCooldown = true
-
-            local sent = SendRefreshCommand()
-
-            if sent then
-                MakeNotifi({
-                    Title = "Auto Refresh",
-                    Text = "الدم وصل " .. math.floor(healthPercent) .. "% — تم إرسال ;refresh",
-                    Time = 3
-                })
+    AutoRefreshCharacterConnection = LP.CharacterAdded:Connect(function(character)
+        AutoRefreshTriggered = false
+        local humanoid = character:WaitForChild("Humanoid", 5)
+        if humanoid and AutoRefreshEnabled then
+            -- HealthChanged يلتقط نزول الدم فور تغيّره، وRenderStepped يبقى كشبكة احتياط.
+            if AutoRefreshHealthConnection then
+                AutoRefreshHealthConnection:Disconnect()
             end
-
-            -- يمنع التكرار أثناء نفس حالة الضرر.
-            -- CharacterAdded يعيد التسليح بعد الرفريش.
-            task.delay(3, function()
-                if AutoRefreshEnabled and LP.Character ~= character then
-                    RefreshCooldown = false
-                elseif AutoRefreshEnabled and LP.Character == character then
-                    -- إذا لم يحدث رفريش فعلي، ننتظر رجوع الدم فوق العتبة
-                    -- قبل السماح بتشغيل جديد.
-                    if humanoid.Health / math.max(humanoid.MaxHealth, 1) > (REFRESH_THRESHOLD / 100) then
-                        RefreshCooldown = false
-                    end
-                end
+            AutoRefreshHealthConnection = humanoid.HealthChanged:Connect(function()
+                CheckHealthAndRefresh()
             end)
-        elseif healthPercent > REFRESH_THRESHOLD then
-            RefreshCooldown = false
         end
     end)
+
+    local humanoid = GetAutoRefreshHumanoid()
+    if humanoid then
+        AutoRefreshHealthConnection = humanoid.HealthChanged:Connect(function()
+            CheckHealthAndRefresh()
+        end)
+    end
 end
 
-local AutoRefreshButton = AddButton(CombatTab, {
+AutoRefreshButton = AddButton(CombatTab, {
     Name = " رفريش تلقائي — تشغيل",
     Callback = function()
         AutoRefreshEnabled = not AutoRefreshEnabled
 
         if AutoRefreshEnabled then
-            AutoRefreshButton.Text = " رفريش تلقائي — إيقاف"
-
+            SetAutoRefreshButtonText(" رفريش تلقائي — إيقاف")
+            StartAutoRefreshMonitor()
             MakeNotifi({
                 Title = "Auto Refresh",
-                Text = "تم التفعيل — عند نزول دمك إلى 50% أو أقل راح ينرسل ;refresh",
+                Text = "تم التفعيل — يراقب الدم كل فريم، وعند 50% أو أقل يرسل ;refresh فوراً",
                 Time = 4
             })
-
-            if LP.Character then
-                MonitorHealth(LP.Character)
-            end
+            CheckHealthAndRefresh()
         else
-            AutoRefreshButton.Text = " رفريش تلقائي — تشغيل"
-
-            DisconnectAutoRefresh()
-            RefreshCooldown = false
-
-            MakeNotifi({
-                Title = "Auto Refresh",
-                Text = "تم إيقاف الرفريش التلقائي",
-                Time = 2
-            })
+            SetAutoRefreshButtonText(" رفريش تلقائي — تشغيل")
+            DisconnectAutoRefreshConnections()
+            AutoRefreshTriggered = false
+            MakeNotifi({Title="Auto Refresh", Text="تم إيقاف الرفريش التلقائي", Time=2})
         end
     end
 })
 
-if CharacterRefreshConnection then
-    CharacterRefreshConnection:Disconnect()
-end
-
-CharacterRefreshConnection = LP.CharacterAdded:Connect(function(character)
-    if AutoRefreshEnabled then
-        task.wait(0.5)
-        MonitorHealth(character)
-    end
-end)
-
+-- =============================================
 -- الدوال القتالية الأخرى
 -- =============================================
 local function CreateShield()
