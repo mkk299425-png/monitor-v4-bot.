@@ -1342,6 +1342,248 @@ local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid:/
 local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, Image = "rbxassetid://6031075931"})
 
 -- =============================================
+-- 🎛️ STMC TITLE COMMAND PANEL — CLIENT ONLY
+-- لا يحتاج Script إضافي في ServerScriptService.
+-- يعتمد على نظام الأوامر/Remote الموجود أصلاً في اللعبة.
+-- لا يستخدم Roblox Chat.
+-- =============================================
+
+local STMC_CommandPanel = nil
+local STMC_CommandInput = nil
+local STMC_CommandStatus = nil
+local STMC_ChatEnabled = false
+local STMC_CommandBusy = false
+
+local function STMC_SetCommandStatus(message, isError)
+    if STMC_CommandStatus then
+        STMC_CommandStatus.Text = message or ""
+        STMC_CommandStatus.TextColor3 = isError
+            and Color3.fromRGB(255, 120, 120)
+            or Color3.fromRGB(180, 255, 180)
+    end
+end
+
+-- يحاول استخدام نظام الأوامر الموجود في اللعبة.
+-- لا يرسل أي شيء إلى TextChatService/Roblox Chat.
+local function STMC_ExecuteTitleCommand(text)
+    -- المسار الرئيسي المؤكد من لعبتك: HDAdminHDClient → Signals → RequestCommand
+    local commandText = ";titler me " .. text
+    local hdClient = RepStorage:WaitForChild("HDAdminHDClient", 5)
+    if not hdClient then return false, "HDAdminHDClient غير موجود" end
+
+    local signals = hdClient:WaitForChild("Signals", 5)
+    if not signals then return false, "HDAdmin Signals غير موجود" end
+
+    local requestCommand = signals:WaitForChild("RequestCommand", 5)
+    if not requestCommand or not requestCommand:IsA("RemoteFunction") then
+        return false, "HDAdmin RequestCommand غير متاح"
+    end
+
+    local ok, err = pcall(function()
+        requestCommand:InvokeServer(commandText)
+    end)
+    if ok then
+        return true, "HDAdminHDClient.Signals.RequestCommand"
+    end
+    return false, "فشل تنفيذ HDAdmin: " .. tostring(err)
+end
+
+local function STMC_CreateCommandPanel()
+    if STMC_CommandPanel and STMC_CommandPanel.Parent then
+        return STMC_CommandPanel
+    end
+
+    STMC_CommandPanel = Create("Frame", ScreenGui, {
+        Name = "STMC_TitleCommandPanel",
+        Size = UDim2.new(0, 245, 0, 142),
+        Position = UDim2.new(0, 12, 0.5, 0),
+        AnchorPoint = Vector2.new(0, 0.5),
+        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        BackgroundTransparency = 0.08,
+        BorderSizePixel = 0,
+        Active = true,
+        Draggable = true,
+        Visible = false,
+        ZIndex = 80
+    })
+    Corner(STMC_CommandPanel)
+    Stroke(STMC_CommandPanel)
+
+    Create("TextLabel", STMC_CommandPanel, {
+        Size = UDim2.new(1, -44, 0, 28),
+        Position = UDim2.new(0, 12, 0, 7),
+        BackgroundTransparency = 1,
+        Text = "تنفيذ الأوامر",
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 18,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 81
+    })
+
+    local close = Create("TextButton", STMC_CommandPanel, {
+        Size = UDim2.new(0, 30, 0, 28),
+        Position = UDim2.new(1, -8, 0, 7),
+        AnchorPoint = Vector2.new(1, 0),
+        BackgroundTransparency = 1,
+        Text = "×",
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 24,
+        AutoButtonColor = false,
+        ZIndex = 82
+    })
+
+    close.Activated:Connect(function()
+        STMC_CommandPanel.Visible = false
+        STMC_ChatEnabled = false
+        STMC_SetCommandStatus("متوقف", false)
+    end)
+
+    Create("TextLabel", STMC_CommandPanel, {
+        Size = UDim2.new(1, -24, 0, 18),
+        Position = UDim2.new(0, 12, 0, 35),
+        BackgroundTransparency = 1,
+        Text = "لو شات Roblox مقفول، هذه اللوحة تعمل بشكل مستقل",
+        TextColor3 = Configs_HUB.Cor_DarkText,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 81
+    })
+
+    STMC_CommandInput = Create("TextBox", STMC_CommandPanel, {
+        Size = UDim2.new(1, -86, 0, 38),
+        Position = UDim2.new(0, 12, 0, 58),
+        BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        Text = "",
+        PlaceholderText = "اكتب النص هنا...",
+        PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        ClearTextOnFocus = false,
+        MultiLine = false,
+        ZIndex = 82
+    })
+    Corner(STMC_CommandInput)
+    Stroke(STMC_CommandInput)
+
+    local execute = Create("TextButton", STMC_CommandPanel, {
+        Size = UDim2.new(0, 62, 0, 38),
+        Position = UDim2.new(1, -12, 0, 58),
+        AnchorPoint = Vector2.new(1, 0),
+        BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0,
+        Text = "تنفيذ",
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 13,
+        AutoButtonColor = false,
+        ZIndex = 82
+    })
+    Corner(execute)
+    Stroke(execute)
+
+    STMC_CommandStatus = Create("TextLabel", STMC_CommandPanel, {
+        Size = UDim2.new(1, -24, 0, 24),
+        Position = UDim2.new(0, 12, 1, -28),
+        BackgroundTransparency = 1,
+        Text = "جاهز",
+        TextColor3 = Color3.fromRGB(180, 255, 180),
+        Font = Configs_HUB.Text_Font,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 81
+    })
+
+    local function SendTitleText()
+        if STMC_CommandBusy then return end
+
+        local value = tostring(STMC_CommandInput.Text or "")
+        value = value:gsub("[%c]", "")
+        value = value:match("^%s*(.-)%s*$") or ""
+
+        if value == "" then
+            STMC_SetCommandStatus("اكتب نصًا أولاً", true)
+            return
+        end
+
+        if #value > 80 then
+            value = value:sub(1, 80)
+            STMC_CommandInput.Text = value
+        end
+
+        STMC_CommandBusy = true
+        STMC_SetCommandStatus("جاري تنفيذ ;titler me ...", false)
+
+        local success, route = STMC_ExecuteTitleCommand(value)
+
+        if success then
+            STMC_CommandInput.Text = ""
+            STMC_SetCommandStatus("تم التنفيذ عبر " .. tostring(route), false)
+        else
+            STMC_SetCommandStatus(route or "تعذر الوصول إلى HDAdmin", true)
+        end
+
+        task.delay(0.35, function()
+            STMC_CommandBusy = false
+        end)
+    end
+
+    execute.Activated:Connect(SendTitleText)
+
+    STMC_CommandInput.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            SendTitleText()
+        end
+    end)
+
+    return STMC_CommandPanel
+end
+
+local function STMC_ToggleCommandPanel(forceState)
+    STMC_CreateCommandPanel()
+
+    if forceState == nil then
+        STMC_CommandPanel.Visible = not STMC_CommandPanel.Visible
+    else
+        STMC_CommandPanel.Visible = forceState
+    end
+
+    STMC_ChatEnabled = STMC_CommandPanel.Visible
+    STMC_SetCommandStatus(
+        STMC_CommandPanel.Visible and "جاهز" or "متوقف",
+        false
+    )
+end
+
+AddButton(MainTab, {
+    Name = "⌨️ تنفيذ الأوامر",
+    Callback = function()
+        STMC_ToggleCommandPanel()
+    end
+})
+
+AddButton(LocalPlayerTab, {
+    Name = "💬 الشات — تشغيل / إيقاف",
+    Callback = function()
+        STMC_ToggleCommandPanel()
+        MakeNotifi({
+            Title = "الشات الخاص",
+            Text = STMC_ChatEnabled
+                and "تم تشغيل لوحة الإدخال — بدون Roblox Chat"
+                or "تم إيقاف لوحة الإدخال",
+            Time = 2
+        })
+    end
+})
+
+-- =============================================
 -- MAIN TAB (FULLY RESTORED) + NEW FEATURES
 -- =============================================
 AddButton(MainTab, {
