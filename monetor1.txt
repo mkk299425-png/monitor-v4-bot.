@@ -2153,6 +2153,346 @@ end)
 -- =============================================
 
 -- =============================================
+-- ⚔️ COMBAT TAB (قتال) — دم حديد + درع + قوة خارقة + تتبع المهاجم
+-- =============================================
+local CombatTab = MakeTab({Name = "قتال ⚔️", TabTitle = true})
+
+-- المتغيرات
+local GodMode = false
+local ShieldMode = false
+local SuperDamage = false
+local AimbotMode = false
+local CombatSpeed = false
+local CombatJump = false
+
+local godConnection = nil
+local shieldConnection = nil
+local aimbotConnection = nil
+
+-- =============================================
+-- 🎯 تتبّع المهاجم (بدون Dropdown وبدون Target يدوي)
+-- =============================================
+local AttackerFollowEnabled = false
+local CurrentAttacker = nil
+local CurrentAttackerUserId = nil
+local AttackerFollowConnection = nil
+local AttackerHealthConnection = nil
+
+local FOLLOW_DISTANCE = 3 -- المسافة الثابتة خلف المهاجم
+
+local function GetRoot(character)
+    return character and (character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso"))
+end
+
+local function StopAttackerFollow(silent)
+    if AttackerFollowConnection then
+        AttackerFollowConnection:Disconnect()
+        AttackerFollowConnection = nil
+    end
+    if AttackerHealthConnection then
+        AttackerHealthConnection:Disconnect()
+        AttackerHealthConnection = nil
+    end
+    CurrentAttacker = nil
+    CurrentAttackerUserId = nil
+    if not silent then
+        MakeNotifi({Title="تتبّع المهاجم", Text="⏸️ بانتظار مهاجم...", Time=2})
+    end
+end
+
+local function StartAttackerFollow(player)
+    if not player or player == LP then return end
+    if not AttackerFollowEnabled then return end
+
+    CurrentAttacker = player
+    CurrentAttackerUserId = player.UserId
+
+    MakeNotifi({
+        Title = "🎯 تتبّع المهاجم",
+        Text = "تم تحديد المهاجم: " .. player.Name .. " — جاري التتبع من الخلف",
+        Time = 4
+    })
+
+    -- نراقب موت المهاجم
+    if AttackerHealthConnection then AttackerHealthConnection:Disconnect() end
+    AttackerHealthConnection = player.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if AttackerFollowEnabled and CurrentAttackerUserId == player.UserId then
+            CurrentAttacker = player
+        end
+    end)
+
+    -- نراقب خروج اللاعب
+    local function onPlayerRemoving(plr)
+        if plr == player and AttackerFollowEnabled then
+            StopAttackerFollow(false)
+            MakeNotifi({Title="تتبّع المهاجم", Text="خرج المهاجم من السيرفر — بانتظار مهاجم جديد...", Time=3})
+        end
+    end
+    Players.PlayerRemoving:Connect(onPlayerRemoving)
+
+    -- التتبع المستمر
+    if AttackerFollowConnection then AttackerFollowConnection:Disconnect() end
+    AttackerFollowConnection = RunService.Heartbeat:Connect(function()
+        if not AttackerFollowEnabled then
+            StopAttackerFollow(true)
+            return
+        end
+
+        if not CurrentAttacker or not CurrentAttacker.Character then
+            -- المهاجم مات أو اختفت شخصيته
+            StopAttackerFollow(false)
+            return
+        end
+
+        local myChar = LP.Character
+        local myRoot = GetRoot(myChar)
+        local attackerRoot = GetRoot(CurrentAttacker.Character)
+
+        if not myRoot or not attackerRoot then
+            return
+        end
+
+        -- نحدد موقع خلف المهاجم
+        local lookVector = CurrentAttacker.Character:FindFirstChildOfClass("Humanoid") and CurrentAttacker.Character:FindFirstChildOfClass("Humanoid").MoveDirection or Vector3.zero
+        local direction = lookVector.Magnitude > 0.1 and lookVector.Unit or attackerRoot.CFrame.LookVector
+        local targetPosition = attackerRoot.Position - direction * FOLLOW_DISTANCE
+
+        -- ننقل الشخصية خلف المهاجم
+        myRoot.CFrame = CFrame.lookAt(targetPosition, attackerRoot.Position)
+    end)
+end
+
+-- زر: تفعيل/إيقاف تتبع المهاجم
+local AttackerFollowButton = AddButton(CombatTab, {
+    Name = "🎯 تتبّع المهاجم — تشغيل",
+    Callback = function()
+        AttackerFollowEnabled = not AttackerFollowEnabled
+
+        if AttackerFollowEnabled then
+            AttackerFollowButton.Text = "🎯 تتبّع المهاجم — إيقاف"
+            MakeNotifi({Title="تتبّع المهاجم", Text="تم التفعيل — بانتظار مهاجم...", Time=3})
+        else
+            AttackerFollowButton.Text = "🎯 تتبّع المهاجم — تشغيل"
+            StopAttackerFollow(false)
+        end
+    end
+})
+
+-- ربط الضرر: نراقب تغير الـHealth لتحديد المهاجم
+local function CheckForAttackerDamage()
+    if not AttackerFollowEnabled then return end
+    if not LP.Character or not LP.Character:FindFirstChildOfClass("Humanoid") then return end
+
+    local myHumanoid = LP.Character:FindFirstChildOfClass("Humanoid")
+    local currentHealth = myHumanoid.Health
+    local maxHealth = myHumanoid.MaxHealth
+
+    -- إذا انخفضت الصحة، نبحث عن أقرب لاعب
+    if currentHealth < maxHealth then
+        local myRoot = GetRoot(LP.Character)
+        if not myRoot then return end
+
+        local nearestPlayer = nil
+        local nearestDistance = math.huge
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LP and player.Character then
+                local root = GetRoot(player.Character)
+                if root then
+                    local distance = (root.Position - myRoot.Position).Magnitude
+                    if distance < nearestDistance then
+                        nearestDistance = distance
+                        nearestPlayer = player
+                    end
+                end
+            end
+        end
+
+        if nearestPlayer and nearestDistance < 50 then
+            StartAttackerFollow(nearestPlayer)
+        end
+    end
+end
+
+-- مراقبة الصحة لتحديد المهاجم
+RunService.Heartbeat:Connect(function()
+    if AttackerFollowEnabled then
+        CheckForAttackerDamage()
+    end
+end)
+
+-- =============================================
+-- الدوال القتالية الأخرى (God Mode, Shield, etc.)
+-- =============================================
+-- دالة لإنشاء الدرع
+local function CreateShield()
+    if LP.Character then
+        local shield = LP.Character:FindFirstChild("STMC_Shield")
+        if not shield then
+            shield = Instance.new("ForceField")
+            shield.Name = "STMC_Shield"
+            shield.Visible = true
+            shield.Parent = LP.Character
+        end
+    end
+end
+
+local function RemoveShield()
+    if LP.Character then
+        local shield = LP.Character:FindFirstChild("STMC_Shield")
+        if shield then
+            shield:Destroy()
+        end
+    end
+end
+
+-- زر: دم حديد (God Mode)
+AddButton(CombatTab, {
+    Name = "🩸 دم حديد (God Mode) - تشغيل",
+    Callback = function()
+        GodMode = true
+        if godConnection then godConnection:Disconnect() end
+        godConnection = RunService.Heartbeat:Connect(function()
+            if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+                if LP.Character.Humanoid.Health < LP.Character.Humanoid.MaxHealth then
+                    LP.Character.Humanoid.Health = LP.Character.Humanoid.MaxHealth
+                end
+            end
+        end)
+        MakeNotifi({Title="قتال", Text="🩸 تم تفعيل الدم الحديد — ما تموت!", Time=3})
+    end
+})
+
+AddButton(CombatTab, {
+    Name = "🩸 دم حديد - إيقاف",
+    Callback = function()
+        GodMode = false
+        if godConnection then godConnection:Disconnect() godConnection = nil end
+        MakeNotifi({Title="قتال", Text="تم إيقاف الدم الحديد", Time=2})
+    end
+})
+
+-- زر: درع قوي
+AddButton(CombatTab, {
+    Name = "🛡️ درع قوي (ForceField) - تشغيل",
+    Callback = function()
+        ShieldMode = true
+        CreateShield()
+        MakeNotifi({Title="قتال", Text="🛡️ تم تفعيل الدرع — محمي من الضربات!", Time=3})
+    end
+})
+
+AddButton(CombatTab, {
+    Name = "🛡️ درع قوي - إيقاف",
+    Callback = function()
+        ShieldMode = false
+        RemoveShield()
+        MakeNotifi({Title="قتال", Text="تم إيقاف الدرع", Time=2})
+    end
+})
+
+-- زر: قوة ضربة سوبر
+AddButton(CombatTab, {
+    Name = "💥 قوة ضربة سوبر - تشغيل",
+    Callback = function()
+        SuperDamage = true
+        if LP.Character then
+            for _, tool in ipairs(LP.Character:GetChildren()) do
+                if tool:IsA("Tool") and tool:FindFirstChild("Handle") then
+                    local handle = tool.Handle
+                    if handle:IsA("BasePart") then
+                        handle.Touched:Connect(function(hit)
+                            if SuperDamage then
+                                local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
+                                if humanoid and humanoid ~= LP.Character.Humanoid then
+                                    humanoid.Health = 0
+                                end
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+        MakeNotifi({Title="قتال", Text="💥 ضربتك صارت تقتل بضربة وحدة!", Time=3})
+    end
+})
+
+AddButton(CombatTab, {
+    Name = "💥 قوة ضربة سوبر - إيقاف",
+    Callback = function()
+        SuperDamage = false
+        MakeNotifi({Title="قتال", Text="تم إيقاف قوة الضربة", Time=2})
+    end
+})
+
+-- زر: سرعة قتالية
+AddButton(CombatTab, {
+    Name = "⚡ سرعة قتالية - تشغيل",
+    Callback = function()
+        CombatSpeed = true
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            LP.Character.Humanoid.WalkSpeed = 150
+        end
+        MakeNotifi({Title="قتال", Text="⚡ سرعتك صارت 150 — ما يلحقونك!", Time=3})
+    end
+})
+
+AddButton(CombatTab, {
+    Name = "⚡ سرعة قتالية - إيقاف",
+    Callback = function()
+        CombatSpeed = false
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            LP.Character.Humanoid.WalkSpeed = 16
+        end
+        MakeNotifi({Title="قتال", Text="تم إرجاع السرعة", Time=2})
+    end
+})
+
+-- زر: قفز خارق
+AddButton(CombatTab, {
+    Name = "🦘 قفز خارق - تشغيل",
+    Callback = function()
+        CombatJump = true
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            LP.Character.Humanoid.JumpPower = 300
+        end
+        MakeNotifi({Title="قتال", Text="🦘 قفزك صار خارق — تقفز فوق البنايات!", Time=3})
+    end
+})
+
+AddButton(CombatTab, {
+    Name = "🦘 قفز خارق - إيقاف",
+    Callback = function()
+        CombatJump = false
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            LP.Character.Humanoid.JumpPower = 50
+        end
+        MakeNotifi({Title="قتال", Text="تم إرجاع القفز", Time=2})
+    end
+})
+
+-- تحديث مستمر للسرعة والقفز
+RunService.Stepped:Connect(function()
+    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+        if CombatSpeed then
+            LP.Character.Humanoid.WalkSpeed = 150
+        end
+        if CombatJump then
+            LP.Character.Humanoid.JumpPower = 300
+        end
+    end
+end)
+
+-- عند تغيير الشخصية، نعيد تفعيل الدرع إذا كان مفعلاً
+LP.CharacterAdded:Connect(function(character)
+    task.wait(0.5)
+    if ShieldMode then
+        CreateShield()
+    end
+end)
+
+-- =============================================
 -- TELEPORT TAB (FULLY RESTORED) with Searchable Dropdown
 -- =============================================
 local TPSelectedPlayer = ""
