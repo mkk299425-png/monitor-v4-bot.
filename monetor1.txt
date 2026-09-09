@@ -1,5 +1,5 @@
 -- =============================================
--- STMC HUB: IraqHope (FULLY FIXED VERSION)
+-- MONETOR X (FULLY FIXED VERSION)
 -- Original Code Fully Preserved & Corrected
 -- =============================================
 
@@ -143,7 +143,7 @@ Create("UIPadding", Menu_Notifi, { PaddingLeft = UDim.new(0, 25), PaddingTop = U
 Create("UIListLayout", Menu_Notifi, { Padding = UDim.new(0, 15), VerticalAlignment = "Bottom" })
 
 function MakeNotifi(Configs)
-    local Title = Configs.Title or "STMC HUB"
+    local Title = Configs.Title or "Monetor X"
     local text = Configs.Text or "تم التنفيذ"
     local timewait = Configs.Time or 5
     
@@ -337,7 +337,7 @@ end
 
 local function FullBypass()
     if BypassEnabled then
-        MakeNotifi({Title = "STMC HUB", Text = "الحماية مكسورة مسبقاً", Time = 2})
+        MakeNotifi({Title = "Monetor X", Text = "الحماية مكسورة مسبقاً", Time = 2})
         return
     end
     local remotes = FindAllACERemotes()
@@ -349,7 +349,7 @@ local function FullBypass()
     DisableSprintMovementScans()
     DisableLogs()
     BypassEnabled = true
-    MakeNotifi({ Title = "STMC HUB", Text = "تم فك الحماية بنجاح", Time = 2 })
+    MakeNotifi({ Title = "Monetor X", Text = "تم فك الحماية بنجاح", Time = 2 })
 end
 
 local function MonitorNewRemotes()
@@ -527,8 +527,6 @@ FlyDecButton.Activated:Connect(function()
     MakeNotifi({Title="Fly", Text="سرعة الطيران: "..FlySpeed, Time=1})
 end)
 
--- Connection is created after the flight functions below.
--- This button is a true toggle: fly <-> land.
 local function stopFly()
     if not Flying then
         FlyPanel.Visible = FlyPanelCreated
@@ -561,7 +559,6 @@ local function stopFly()
     end
 
     currentRoot = nil
-    -- Keep the small flight panel open after landing.
     FlyPanel.Visible = true
     FlyPanelCreated = true
     FlyStopButton.Text = "🛩️ تشغيل الطيران"
@@ -626,8 +623,6 @@ local function startFly()
     MakeNotifi({Title = "Fly", Text = "تم تشغيل الطيران", Time = 2})
 end
 
--- IMPORTANT: bind the panel button after both functions exist.
--- Activated works for mouse, touch and controller.
 FlyStopButton.Activated:Connect(function()
     if Flying then
         stopFly()
@@ -785,7 +780,7 @@ local Title = Create("TextLabel", NameFrame, {
     Font = Configs_HUB.Text_Font,
     TextXAlignment = Enum.TextXAlignment.Left,
     TextYAlignment = Enum.TextYAlignment.Center,
-    Text = "STMC HUB: MAX",
+    Text = "Monetor X",
     TextSize = 20,
     ZIndex = 12
 })
@@ -1115,7 +1110,7 @@ function AddPlayerProfile(parent)
         return "User: " .. LP.Name .. "\n" ..
                "Map Name: " .. placeName .. "\n" ..
                "Account Age: " .. LP.AccountAge .. " days\n" ..
-               "Script: STMC Hub (MAX)\n" ..
+               "Script: Monetor X\n" ..
                "Exploit: " .. tostring(exploit) .. "\n" ..
                "Ping: " .. math.floor(LP:GetNetworkPing() * 1000) .. " ms\n" ..
                "FPS: " .. fps .. "\n" ..
@@ -1140,7 +1135,7 @@ function AddDropdown(parent, Configs)
     local Options = Configs.Options or {"1", "2", "3"}
     local Default = Configs.Default or Options[1]
     local Callback = Configs.Callback or function() end
-    local Searchable = Configs.Searchable or false -- If true, adds a search TextBox inside dropdown
+    local Searchable = Configs.Searchable or false
     
     local MainFrame = Create("Frame", parent, {
         Size = UDim2.new(1, 0, 0, 25),
@@ -1222,7 +1217,6 @@ function AddDropdown(parent, Configs)
         PaddingBottom = UDim.new(0, 4)
     })
     
-    -- Search TextBox (if Searchable)
     local SearchBox
     if Searchable then
         SearchBox = Create("TextBox", DropdownFrame, {
@@ -1238,7 +1232,6 @@ function AddDropdown(parent, Configs)
         })
         Corner(SearchBox)
         Stroke(SearchBox)
-        -- Put SearchBox as first element in layout
         SearchBox.LayoutOrder = -1
     end
     
@@ -1250,19 +1243,17 @@ function AddDropdown(parent, Configs)
         local count = #Options
         local totalH = count * 22 + 8
         if Searchable then
-            totalH = totalH + 30 -- extra for search box
+            totalH = totalH + 30
         end
         return math.min(totalH, 150)
     end
     
     local function UpdateButtons()
-        -- Clear existing buttons (except search box)
         for _, child in ipairs(DropdownFrame:GetChildren()) do
             if child:IsA("TextButton") then
                 child:Destroy()
             end
         end
-        -- Filter options based on currentSearchText
         local filteredOptions = {}
         if currentSearchText ~= "" then
             for _, option in ipairs(Options) do
@@ -1299,7 +1290,6 @@ function AddDropdown(parent, Configs)
             end)
         end
         
-        -- Update height if expanded
         if expanded then
             local targetH = GetTargetHeight()
             DropdownFrame.Size = UDim2.new(1, 0, 0, targetH)
@@ -1309,7 +1299,6 @@ function AddDropdown(parent, Configs)
     
     UpdateButtons()
     
-    -- If search box exists, connect TextChanged
     if SearchBox then
         SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
             currentSearchText = SearchBox.Text
@@ -1594,8 +1583,6 @@ AddButton(LocalPlayerTab, {
     end
 })
 
-
-
 -- =============================================
 -- MAIN TAB (FULLY RESTORED) + NEW FEATURES
 -- =============================================
@@ -1660,7 +1647,7 @@ local RespawnKillDropdown = AddDropdown(MainTab, {
     Name = "اختر الأمر",
     Options = {"رفريش (Respawn)", "موت سريع (Kill)"},
     Default = "رفريش (Respawn)",
-    Searchable = false -- No search needed
+    Searchable = false
 })
 
 AddButton(MainTab, {
@@ -1668,12 +1655,26 @@ AddButton(MainTab, {
     Callback = function()
         local selected = RespawnKillDropdown.GetSelected()
         if selected == "رفريش (Respawn)" then
-            if LP.Character then
-                LP.Character:BreakJoints()
-                MakeNotifi({Title="أمر", Text="تم تنفيذ الرفريش", Time=2})
-            else
-                MakeNotifi({Title="خطأ", Text="لا يوجد شخصية حالياً", Time=2})
-            end
+            -- نرسل أمر ;refresh مباشرة عبر HDAdmin
+            pcall(function()
+                local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
+                if hdClient then
+                    local signals = hdClient:FindFirstChild("Signals")
+                    if signals then
+                        local requestCommand = signals:FindFirstChild("RequestCommand")
+                        if requestCommand then
+                            requestCommand:InvokeServer(";refresh")
+                            MakeNotifi({Title="أمر", Text="تم إرسال ;refresh بنجاح", Time=2})
+                        else
+                            MakeNotifi({Title="خطأ", Text="RequestCommand غير موجود", Time=2})
+                        end
+                    else
+                        MakeNotifi({Title="خطأ", Text="HDAdmin Signals غير موجود", Time=2})
+                    end
+                else
+                    MakeNotifi({Title="خطأ", Text="HDAdminHDClient غير موجود", Time=2})
+                end
+            end)
         elseif selected == "موت سريع (Kill)" then
             if LP.Character and LP.Character:FindFirstChild("Humanoid") then
                 LP.Character.Humanoid.Health = 0
@@ -1798,7 +1799,6 @@ local ESP_ShowHealth = true
 local ESP_ShowDistance = true
 local ESP_MaxDistance = 250
 
--- الرادار يتحدث تلقائياً بسرعة جيدة، بدون إعادة بناء العناصر كل مرة.
 local ESP_UpdateInterval = 0.08
 local ESP_TARGET_DISTANCE = 1000000000
 
@@ -1936,7 +1936,6 @@ local function CreateESPName(player)
         billboard.Adornee = head
         billboard.Parent = folder
 
-        -- ثابت على الشاشة: Offset فقط، بدون Scale.
         billboard.Size = UDim2.new(0, 150, 0, 38)
         billboard.StudsOffsetWorldSpace = Vector3.new(0, 3.15, 0)
         billboard.AlwaysOnTop = true
@@ -2058,7 +2057,6 @@ local function CreateESP(player)
     if player == LP or not ESP_Active then return end
     if not player.Character then return end
 
-    -- لا نعيد البناء إذا كانت العناصر موجودة.
     CreateESPBody(player)
     CreateESPName(player)
 end
@@ -2186,7 +2184,6 @@ AddButton(ESPTab, {
     end
 })
 
--- قائمة جميع أعضاء السيرفر + الاستهداف الدائم.
 ESP_TargetDropdown = AddDropdown(ESPTab, {
     Name = "🎯 اختر المستهدف",
     Options = {"لا يوجد لاعبين"},
@@ -2204,7 +2201,6 @@ ESP_TargetDropdown = AddDropdown(ESPTab, {
         ESP_TargetName = targetPlayer.Name
         ESP_TargetOnline = true
 
-        -- المستهدف لا يخضع لمدى الرادار.
         if ESP_Active then
             CreateESP(targetPlayer)
         end
@@ -2295,7 +2291,6 @@ AddTextLabel(ESPTab, "⚡ LITE للموبايل • افتراضي 250 متر �
 Players.PlayerAdded:Connect(function(player)
     UpdateRadarTargetList()
 
-    -- إذا كان هذا هو المستهدف القديم، نرجّع الاستهداف تلقائياً عند دخوله.
     if ESP_TargetUserId and player.UserId == ESP_TargetUserId then
         ESP_TargetName = player.Name
         ESP_TargetOnline = true
@@ -2385,7 +2380,6 @@ RunService.Heartbeat:Connect(function(dt)
                     highlight.Enabled = ESP_ShowBody and (target or distance <= ESP_MaxDistance)
                 end
             elseif target and character and head then
-                -- في حال اختفى المجلد لأي سبب، نعيده فقط عند الحاجة.
                 CreateESP(player)
             end
         end
@@ -2397,11 +2391,10 @@ end)
 -- =============================================
 
 -- =============================================
--- ⚔️ COMBAT TAB (قتال) — دم حديد + درع + قوة خارقة + تتبع المهاجم
+-- ⚔️ COMBAT TAB (قتال) — دم حديد + درع + قوة خارقة + Auto Refresh
 -- =============================================
 local CombatTab = MakeTab({Name = "قتال ⚔️", TabTitle = true})
 
--- المتغيرات
 local GodMode = false
 local ShieldMode = false
 local SuperDamage = false
@@ -2414,162 +2407,69 @@ local shieldConnection = nil
 local aimbotConnection = nil
 
 -- =============================================
--- 🎯 تتبّع المهاجم (بدون Dropdown وبدون Target يدوي)
+-- 🔄 Auto Refresh (رفريش تلقائي عند الدمج/الضرر)
 -- =============================================
-local AttackerFollowEnabled = false
-local CurrentAttacker = nil
-local CurrentAttackerUserId = nil
-local AttackerFollowConnection = nil
-local AttackerHealthConnection = nil
+local AutoRefreshEnabled = false
+local AutoRefreshConnection = nil
+local REFRESH_THRESHOLD = 50
 
-local FOLLOW_DISTANCE = 3 -- المسافة الثابتة خلف المهاجم
-
-local function GetRoot(character)
-    return character and (character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso"))
-end
-
-local function StopAttackerFollow(silent)
-    if AttackerFollowConnection then
-        AttackerFollowConnection:Disconnect()
-        AttackerFollowConnection = nil
-    end
-    if AttackerHealthConnection then
-        AttackerHealthConnection:Disconnect()
-        AttackerHealthConnection = nil
-    end
-    CurrentAttacker = nil
-    CurrentAttackerUserId = nil
-    if not silent then
-        MakeNotifi({Title="تتبّع المهاجم", Text="⏸️ بانتظار مهاجم...", Time=2})
-    end
-end
-
-local function StartAttackerFollow(player)
-    if not player or player == LP then return end
-    if not AttackerFollowEnabled then return end
-
-    CurrentAttacker = player
-    CurrentAttackerUserId = player.UserId
-
-    MakeNotifi({
-        Title = "🎯 تتبّع المهاجم",
-        Text = "تم تحديد المهاجم: " .. player.Name .. " — جاري التتبع من الخلف",
-        Time = 4
-    })
-
-    -- نراقب موت المهاجم
-    if AttackerHealthConnection then AttackerHealthConnection:Disconnect() end
-    AttackerHealthConnection = player.CharacterAdded:Connect(function()
-        task.wait(0.5)
-        if AttackerFollowEnabled and CurrentAttackerUserId == player.UserId then
-            CurrentAttacker = player
+local function SendRefreshCommand()
+    pcall(function()
+        local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
+        if hdClient then
+            local signals = hdClient:FindFirstChild("Signals")
+            if signals then
+                local requestCommand = signals:FindFirstChild("RequestCommand")
+                if requestCommand then
+                    requestCommand:InvokeServer(";refresh")
+                end
+            end
         end
     end)
-
-    -- نراقب خروج اللاعب
-    local function onPlayerRemoving(plr)
-        if plr == player and AttackerFollowEnabled then
-            StopAttackerFollow(false)
-            MakeNotifi({Title="تتبّع المهاجم", Text="خرج المهاجم من السيرفر — بانتظار مهاجم جديد...", Time=3})
-        end
-    end
-    Players.PlayerRemoving:Connect(onPlayerRemoving)
-
-    -- التتبع المستمر
-    if AttackerFollowConnection then AttackerFollowConnection:Disconnect() end
-    AttackerFollowConnection = RunService.Heartbeat:Connect(function()
-        if not AttackerFollowEnabled then
-            StopAttackerFollow(true)
-            return
-        end
-
-        if not CurrentAttacker or not CurrentAttacker.Character then
-            -- المهاجم مات أو اختفت شخصيته
-            StopAttackerFollow(false)
-            return
-        end
-
-        local myChar = LP.Character
-        local myRoot = GetRoot(myChar)
-        local attackerRoot = GetRoot(CurrentAttacker.Character)
-
-        if not myRoot or not attackerRoot then
-            return
-        end
-
-        -- نحدد موقع خلف المهاجم
-        local lookVector = CurrentAttacker.Character:FindFirstChildOfClass("Humanoid") and CurrentAttacker.Character:FindFirstChildOfClass("Humanoid").MoveDirection or Vector3.zero
-        local direction = lookVector.Magnitude > 0.1 and lookVector.Unit or attackerRoot.CFrame.LookVector
-        local targetPosition = attackerRoot.Position - direction * FOLLOW_DISTANCE
-
-        -- ننقل الشخصية خلف المهاجم
-        myRoot.CFrame = CFrame.lookAt(targetPosition, attackerRoot.Position)
-    end)
 end
 
--- زر: تفعيل/إيقاف تتبع المهاجم
-local AttackerFollowButton = AddButton(CombatTab, {
-    Name = "🎯 تتبّع المهاجم — تشغيل",
+local function CheckHealthAndRefresh()
+    if not AutoRefreshEnabled then return end
+    if not LP.Character or not LP.Character:FindFirstChildOfClass("Humanoid") then return end
+
+    local humanoid = LP.Character:FindFirstChildOfClass("Humanoid")
+    local healthPercent = (humanoid.Health / humanoid.MaxHealth) * 100
+
+    if healthPercent < REFRESH_THRESHOLD and healthPercent > 0 then
+        SendRefreshCommand()
+        MakeNotifi({
+            Title = "🔄 Auto Refresh",
+            Text = "تم إرسال ;refresh تلقائياً — الدم كان " .. math.floor(healthPercent) .. "%",
+            Time = 3
+        })
+        task.wait(2)
+    end
+end
+
+local AutoRefreshButton = AddButton(CombatTab, {
+    Name = "🔄 رفريش تلقائي — تشغيل",
     Callback = function()
-        AttackerFollowEnabled = not AttackerFollowEnabled
+        AutoRefreshEnabled = not AutoRefreshEnabled
 
-        if AttackerFollowEnabled then
-            AttackerFollowButton.Text = "🎯 تتبّع المهاجم — إيقاف"
-            MakeNotifi({Title="تتبّع المهاجم", Text="تم التفعيل — بانتظار مهاجم...", Time=3})
+        if AutoRefreshEnabled then
+            AutoRefreshButton.Text = "🔄 رفريش تلقائي — إيقاف"
+            MakeNotifi({Title="Auto Refresh", Text="تم التفعيل — إذا نزل دمك تحت 50% راح ينرسل ;refresh", Time=4})
         else
-            AttackerFollowButton.Text = "🎯 تتبّع المهاجم — تشغيل"
-            StopAttackerFollow(false)
+            AutoRefreshButton.Text = "🔄 رفريش تلقائي — تشغيل"
+            MakeNotifi({Title="Auto Refresh", Text="تم إيقاف الرفريش التلقائي", Time=2})
         end
     end
 })
 
--- ربط الضرر: نراقب تغير الـHealth لتحديد المهاجم
-local function CheckForAttackerDamage()
-    if not AttackerFollowEnabled then return end
-    if not LP.Character or not LP.Character:FindFirstChildOfClass("Humanoid") then return end
-
-    local myHumanoid = LP.Character:FindFirstChildOfClass("Humanoid")
-    local currentHealth = myHumanoid.Health
-    local maxHealth = myHumanoid.MaxHealth
-
-    -- إذا انخفضت الصحة، نبحث عن أقرب لاعب
-    if currentHealth < maxHealth then
-        local myRoot = GetRoot(LP.Character)
-        if not myRoot then return end
-
-        local nearestPlayer = nil
-        local nearestDistance = math.huge
-
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LP and player.Character then
-                local root = GetRoot(player.Character)
-                if root then
-                    local distance = (root.Position - myRoot.Position).Magnitude
-                    if distance < nearestDistance then
-                        nearestDistance = distance
-                        nearestPlayer = player
-                    end
-                end
-            end
-        end
-
-        if nearestPlayer and nearestDistance < 50 then
-            StartAttackerFollow(nearestPlayer)
-        end
-    end
-end
-
--- مراقبة الصحة لتحديد المهاجم
 RunService.Heartbeat:Connect(function()
-    if AttackerFollowEnabled then
-        CheckForAttackerDamage()
+    if AutoRefreshEnabled then
+        CheckHealthAndRefresh()
     end
 end)
 
 -- =============================================
--- الدوال القتالية الأخرى (God Mode, Shield, etc.)
+-- الدوال القتالية الأخرى
 -- =============================================
--- دالة لإنشاء الدرع
 local function CreateShield()
     if LP.Character then
         local shield = LP.Character:FindFirstChild("STMC_Shield")
@@ -2591,7 +2491,6 @@ local function RemoveShield()
     end
 end
 
--- زر: دم حديد (God Mode)
 AddButton(CombatTab, {
     Name = "🩸 دم حديد (God Mode) - تشغيل",
     Callback = function()
@@ -2617,7 +2516,6 @@ AddButton(CombatTab, {
     end
 })
 
--- زر: درع قوي
 AddButton(CombatTab, {
     Name = "🛡️ درع قوي (ForceField) - تشغيل",
     Callback = function()
@@ -2636,7 +2534,6 @@ AddButton(CombatTab, {
     end
 })
 
--- زر: قوة ضربة سوبر
 AddButton(CombatTab, {
     Name = "💥 قوة ضربة سوبر - تشغيل",
     Callback = function()
@@ -2670,7 +2567,6 @@ AddButton(CombatTab, {
     end
 })
 
--- زر: سرعة قتالية
 AddButton(CombatTab, {
     Name = "⚡ سرعة قتالية - تشغيل",
     Callback = function()
@@ -2693,7 +2589,6 @@ AddButton(CombatTab, {
     end
 })
 
--- زر: قفز خارق
 AddButton(CombatTab, {
     Name = "🦘 قفز خارق - تشغيل",
     Callback = function()
@@ -2716,7 +2611,6 @@ AddButton(CombatTab, {
     end
 })
 
--- تحديث مستمر للسرعة والقفز
 RunService.Stepped:Connect(function()
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
         if CombatSpeed then
@@ -2728,7 +2622,6 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- عند تغيير الشخصية، نعيد تفعيل الدرع إذا كان مفعلاً
 LP.CharacterAdded:Connect(function(character)
     task.wait(0.5)
     if ShieldMode then
@@ -2942,52 +2835,51 @@ Players.PlayerRemoved:Connect(UpdatePlayerList)
 AddPlayerProfile(RightsTab)
 
 AddButton(RightsTab, {
-    Name = "📢 أنظم قناتنا التليكرام",
+    Name = "📢 قناة Monetor X على التليجرام",
     Callback = function()
         pcall(function()
             if setclipboard then
-                setclipboard('https://t.me/StealthTechMasterComunity')
+                setclipboard('https://t.me/Speed_loder')
             end
         end)
-        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ رابط التليجرام", Time = 2})
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ رابط قناة التليجرام", Time = 2})
     end
 })
 
 AddButton(RightsTab, {
-    Name = "👤 حساب مطور عبود Telegram",
+    Name = "👤 حساب Monetor X على التليجرام",
     Callback = function()
         pcall(function()
             if setclipboard then
-                setclipboard('Messi_zx')
+                setclipboard('@LXEKE')
             end
         end)
-        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ حساب عبود", Time = 2})
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ حساب @monetor_", Time = 2})
     end
 })
 
 AddButton(RightsTab, {
-    Name = "👤 حساب مطور 1ua10 TIK TOK",
+    Name = "👤 حساب Monetor X على تيك توك",
     Callback = function()
         pcall(function()
             if setclipboard then
-                setclipboard('1ua10')
+                setclipboard('@monetor_')
             end
         end)
-        MakeNotifi({Title = "STMC HUB", Text = "تم نسخ حساب 1ua10", Time = 2})
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ حساب @monetor_", Time = 2})
     end
 })
 
 AddButton(RightsTab, {
-    Name = "🏷️ تم صنع السكربت بواسطة STMC",
+    Name = "🏷️ حقوق Monetor X",
     Callback = function()
         MakeNotifi({
-            Title = "حقوق STMC",
-            Text = "تم صنع السكربت بواسطة StealthTechmaster\nكلان STMC\nهذا السكربت مخصص لـ عراق هوب\nتيك توك: 1ua10\nتليجرام: @StealthTechMasterComunity",
+            Title = "حقوق Monetor X",
+            Text = "تم صنع السكربت بواسطة Monetor X\nتيك توك: @monetor_\nتليجرام: @LXEKE\nقناة التليجرام: https://t.me/Speed_loder",
             Time = 6
         })
     end
 })
-
 
 -- =============================================
 -- FINAL INITIALIZATION
@@ -2997,9 +2889,9 @@ pcall(FullBypass)
 
 task.wait(0.5)
 MakeNotifi({
-    Title = "STMC MAX",
-    Text = "تم التفعيل بنجاح! استمتع بالمميزات الجديدة 🔥",
+    Title = "Monetor X",
+    Text = "تم تفعيل Monetor X بنجاح! استمتع بالمميزات الجديدة 🔥",
     Time = 3
 })
 
-print("✅ STMC HUB (FULLY FIXED) Loaded Successfully!")
+print("✅ Monetor X Loaded Successfully!")
