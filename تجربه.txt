@@ -1635,8 +1635,10 @@ local function CreateESPName(player)
         billboard.Adornee = head
         billboard.Parent = folder
 
-        -- حجم شاشة ثابت 100%: لا يعتمد على المسافة أو حجم الشخصية.
-        billboard.Size = UDim2.fromOffset(150, 38)
+        -- حجم شاشة ثابت 100%: Offset فقط، بدون Scale نهائياً.
+        -- النتيجة: الاسم يبقى بنفس عدد البكسلات على الشاشة مهما ابتعدت
+        -- الكاميرا أو قربت/بعدت الـZoom. فقط موقعه يتحرك مع الرأس.
+        billboard.Size = UDim2.new(0, 150, 0, 38)
         billboard.StudsOffsetWorldSpace = Vector3.new(0, 3.15, 0)
         billboard.AlwaysOnTop = true
         billboard.LightInfluence = 0
@@ -1687,6 +1689,9 @@ local function CreateESPName(player)
     end
 
     billboard.Adornee = head
+    -- إعادة فرض الحجم الثابت في كل تحديث حتى لا يغيره أي جزء آخر من السكربت.
+    billboard.Size = UDim2.new(0, 150, 0, 38)
+    billboard.StudsOffsetWorldSpace = Vector3.new(0, 3.15, 0)
     billboard.MaxDistance = ESP_MaxDistance
     billboard.Enabled = ESP_ShowNames
 
