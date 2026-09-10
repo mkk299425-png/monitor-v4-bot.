@@ -1,5 +1,5 @@
 -- =============================================
--- MONETOR X (FULLY FIXED VERSION)
+-- MONETOR X (FULLY FIXED + تطوير FEATURE)
 -- Original Code Fully Preserved & Corrected
 -- =============================================
 
@@ -2760,6 +2760,274 @@ LP.CharacterAdded:Connect(function(character)
     task.wait(0.5)
     if ShieldMode then
         CreateShield()
+    end
+end)
+
+-- =============================================
+-- ️  تطوير (MASS LAUNCH + SPIN) — NEW FEATURE
+-- =============================================
+local TATWIR_Active = false
+local TATWIR_SpinSpeed = 200
+local TATWIR_SpeedBox = nil
+local TATWIR_Button = nil
+local TATWIR_SpinConnection = nil
+local TATWIR_TouchConnection = nil
+local TATWIR_BodyAngular = nil
+
+local function TATWIR_Cleanup()
+    TATWIR_Active = false
+
+    if TATWIR_SpinConnection then
+        TATWIR_SpinConnection:Disconnect()
+        TATWIR_SpinConnection = nil
+    end
+
+    if TATWIR_TouchConnection then
+        TATWIR_TouchConnection:Disconnect()
+        TATWIR_TouchConnection = nil
+    end
+
+    if TATWIR_BodyAngular then
+        pcall(function() TATWIR_BodyAngular:Destroy() end)
+        TATWIR_BodyAngular = nil
+    end
+
+    -- إرجاع CanCollide لكل اللاعبين (بس نرجعها للأصلي من خلال إعادة تعيينها بناءً على حالة الجسم)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LP and plr.Character then
+            for _, part in ipairs(plr.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    -- ما نغيرها لأنها من الأصل true بسبب Humanoid
+                    -- لكن نضمن إنها صحيحة
+                    pcall(function()
+                        if part.Name == "HumanoidRootPart" then
+                            part.CanCollide = false
+                        else
+                            part.CanCollide = true
+                        end
+                    end)
+                end
+            end
+        end
+    end
+
+    -- إزالة BodyAngularVelocity من شخصيتنا
+    if LP.Character then
+        local myRoot = LP.Character:FindFirstChild("HumanoidRootPart")
+        if myRoot then
+            local oldBV = myRoot:FindFirstChild("Tatwir_Spin")
+            if oldBV then pcall(function() oldBV:Destroy() end) end
+        end
+    end
+end
+
+local function TATWIR_LaunchPlayer(targetChar)
+    if not targetChar or targetChar == LP.Character then return end
+    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
+    if not targetRoot then return end
+
+    -- احذف أي BodyVelocity قديم
+    local oldBV = targetRoot:FindFirstChild("Tatwir_Launch")
+    if oldBV then pcall(function() oldBV:Destroy() end) end
+
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "Tatwir_Launch"
+    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bv.Velocity = Vector3.new(0, 250, 0) + Vector3.new(
+        math.random(-50, 50),
+        0,
+        math.random(-50, 50)
+    )
+    bv.Parent = targetRoot
+
+    task.delay(0.35, function()
+        if bv and bv.Parent then
+            bv:Destroy()
+        end
+    end)
+end
+
+local function TATWIR_Start()
+    if TATWIR_Active then return end
+    local char = LP.Character
+    if not char then
+        MakeNotifi({Title="تطوير", Text="ما موجودة شخصية", Time=2})
+        return
+    end
+    local myRoot = char:FindFirstChild("HumanoidRootPart")
+    local myHum = char:FindFirstChildOfClass("Humanoid")
+    if not myRoot or not myHum then
+        MakeNotifi({Title="تطوير", Text="ما موجود HumanoidRootPart", Time=2})
+        return
+    end
+
+    TATWIR_Active = true
+
+    -- 1) خلي كل اللاعبين CanCollide = true (ملموسين)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LP and plr.Character then
+            for _, part in ipairs(plr.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    pcall(function()
+                        part.CanCollide = true
+                    end)
+                end
+            end
+        end
+    end
+
+    -- 2) إضافة Spin (BodyAngularVelocity) لشخصيتنا
+    local oldSpin = myRoot:FindFirstChild("Tatwir_Spin")
+    if oldSpin then pcall(function() oldSpin:Destroy() end) end
+
+    TATWIR_BodyAngular = Instance.new("BodyAngularVelocity")
+    TATWIR_BodyAngular.Name = "Tatwir_Spin"
+    TATWIR_BodyAngular.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
+    TATWIR_BodyAngular.P = 9e9
+    TATWIR_BodyAngular.Parent = myRoot
+
+    -- 3) الاتصال بلمس أي جسم: إذا كان لاعب → يطير
+    TATWIR_TouchConnection = myRoot.Touched:Connect(function(hit)
+        if not TATWIR_Active then return end
+        local model = hit:FindFirstAncestorOfClass("Model")
+        if not model or model == char then return end
+        if not model:FindFirstChildOfClass("Humanoid") then return end
+        -- تأكد إنه لاعب آخر
+        local plr = Players:GetPlayerFromCharacter(model)
+        if not plr or plr == LP then return end
+        TATWIR_LaunchPlayer(model)
+    end)
+
+    -- 4) مراقبة مستمرة لتثبيت CanCollide وإبقاء Spin
+    TATWIR_SpinConnection = RunService.Heartbeat:Connect(function()
+        if not TATWIR_Active then return end
+
+        -- تأكد من Spin
+        if TATWIR_BodyAngular and TATWIR_BodyAngular.Parent then
+            TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
+        end
+
+        -- تأكد من CanCollide لكل اللاعبين (بما فيهم الجدد)
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LP and plr.Character then
+                for _, part in ipairs(plr.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide == false and part.Name ~= "HumanoidRootPart" then
+                        pcall(function() part.CanCollide = true end)
+                    end
+                end
+            end
+        end
+    end)
+
+    if TATWIR_Button then
+        local lbl = TATWIR_Button:FindFirstChild("TextLabel")
+        if lbl then lbl.Text = " تطوير — إيقاف" end
+    end
+
+    MakeNotifi({
+        Title = "تطوير",
+        Text = "تم التفعيل — كل اللاعبين ملموسين، الدوران: " .. TATWIR_SpinSpeed .. "°/ث، لمس أي لاعب يطير في الجو!",
+        Time = 4
+    })
+end
+
+local function TATWIR_Stop()
+    if not TATWIR_Active then
+        MakeNotifi({Title="تطوير", Text="موقّف أصلاً", Time=2})
+        return
+    end
+    TATWIR_Cleanup()
+
+    if TATWIR_Button then
+        local lbl = TATWIR_Button:FindFirstChild("TextLabel")
+        if lbl then lbl.Text = " تطوير — تشغيل" end
+    end
+
+    MakeNotifi({Title="تطوير", Text="تم الإيقاف — رجع كل شي طبيعي", Time=2})
+end
+
+-- زر التشغيل/الإيقاف
+TATWIR_Button = AddButton(CombatTab, {
+    Name = " تطوير — تشغيل",
+    Callback = function()
+        if TATWIR_Active then
+            TATWIR_Stop()
+        else
+            TATWIR_Start()
+        end
+    end
+})
+
+-- صندوق سرعة الدوران (Spin Speed)
+TATWIR_SpeedBox = Create("TextBox", CombatTab, {
+    Size = UDim2.new(1, 0, 0, 30),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25,
+    BorderSizePixel = 0,
+    Text = tostring(TATWIR_SpinSpeed),
+    PlaceholderText = "اكتب سرعة الدوران (مثال: 200)",
+    TextColor3 = Configs_HUB.Cor_Text,
+    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+    TextSize = 13,
+    Font = Configs_HUB.Text_Font,
+    ClearTextOnFocus = false,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    ZIndex = 20
+})
+Corner(TATWIR_SpeedBox)
+Stroke(TATWIR_SpeedBox)
+
+local function TATWIR_ApplySpeed()
+    local v = tonumber(TATWIR_SpeedBox.Text) or TATWIR_SpinSpeed
+    v = math.clamp(math.floor(v), 0, 100000)
+    TATWIR_SpinSpeed = v
+    TATWIR_SpeedBox.Text = tostring(v)
+    if TATWIR_BodyAngular then
+        TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(v), 0)
+    end
+    MakeNotifi({Title="تطوير", Text="سرعة الدوران صارت: " .. v .. "°/ث", Time=2})
+end
+
+TATWIR_SpeedBox.FocusLost:Connect(function()
+    TATWIR_ApplySpeed()
+end)
+
+AddButton(CombatTab, {
+    Name = " تطبيق سرعة الدوران",
+    Callback = function()
+        TATWIR_ApplySpeed()
+    end
+})
+
+AddButton(CombatTab, {
+    Name = " زيادة سرعة الدوران (+50)",
+    Callback = function()
+        TATWIR_SpinSpeed = TATWIR_SpinSpeed + 50
+        TATWIR_SpeedBox.Text = tostring(TATWIR_SpinSpeed)
+        if TATWIR_BodyAngular then
+            TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
+        end
+        MakeNotifi({Title="تطوير", Text="سرعة الدوران: " .. TATWIR_SpinSpeed .. "°/ث", Time=1})
+    end
+})
+
+AddButton(CombatTab, {
+    Name = " تقليل سرعة الدوران (-50)",
+    Callback = function()
+        TATWIR_SpinSpeed = math.max(0, TATWIR_SpinSpeed - 50)
+        TATWIR_SpeedBox.Text = tostring(TATWIR_SpinSpeed)
+        if TATWIR_BodyAngular then
+            TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
+        end
+        MakeNotifi({Title="تطوير", Text="سرعة الدوران: " .. TATWIR_SpinSpeed .. "°/ث", Time=1})
+    end
+})
+
+-- تنظيف عند الموت
+LP.CharacterAdded:Connect(function()
+    if TATWIR_Active then
+        TATWIR_Stop()
     end
 end)
 
