@@ -1,5 +1,6 @@
 -- =============================================
--- MONETOR X (FULLY FIXED + MERGED TOGGLES + AUTO REFRESH ON DEATH)
+-- MONETOR X v3.0 (FULLY UPDATED + HITBOX EXPANDER + PROXIMITY PANEL)
+-- Speed Changer + Anti-Void + Custom Sky + Server Hop + Follow + Hitbox + Proximity
 -- Original Code Fully Preserved & Corrected
 -- =============================================
 
@@ -12,6 +13,8 @@ local RunService = game:GetService("RunService")
 local RepStorage = game:GetService("ReplicatedStorage")
 local LogService = game:GetService("LogService")
 local MarketplaceService = game:GetService("MarketplaceService")
+local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
 
 local Configs_HUB = {
     Cor_Hub = Color3.fromRGB(15, 15, 15),
@@ -230,7 +233,7 @@ function MakeNotifi(Configs)
 end
 
 -- =============================================
--- BYPASS SYSTEM (FULLY RESTORED)
+-- BYPASS SYSTEM
 -- =============================================
 local BypassEnabled = false
 
@@ -244,8 +247,7 @@ end
 local function FindAllACERemotes()
     local remotes = {}
     local containers = {
-        RepStorage,
-        workspace,
+        RepStorage, workspace,
         game:GetService("Lighting"),
         game:GetService("CoreGui"),
         game:GetService("StarterGui"),
@@ -354,8 +356,7 @@ end
 
 local function MonitorNewRemotes()
     local containers = {
-        RepStorage,
-        workspace,
+        RepStorage, workspace,
         game:GetService("Lighting"),
         game:GetService("CoreGui"),
         game:GetService("StarterGui"),
@@ -405,7 +406,7 @@ FullBypass()
 MonitorNewRemotes()
 
 -- =============================================
--- FLIGHT SYSTEM (FULLY RESTORED)
+-- FLIGHT SYSTEM
 -- =============================================
 local MainFlyButton = nil
 local Flying = false
@@ -427,7 +428,6 @@ local function UpdateMainFlyButton()
     end
 end
 
--- Fly Control Panel (new)
 local FlyPanel = Create("Frame", ScreenGui, {
     Name = "FlyControlPanel",
     Size = UDim2.new(0, 200, 0, 120),
@@ -668,7 +668,7 @@ for _, child in ipairs(PlayerGui:GetChildren()) do
 end
 
 -- =============================================
--- MAIN UI & INTERFACE (FULLY RESTORED)
+-- MAIN UI
 -- =============================================
 local Menu = Create("Frame", ScreenGui, {
     Size = UDim2.new(0, 530, 0, 320),
@@ -684,13 +684,11 @@ local Menu = Create("Frame", ScreenGui, {
 Corner(Menu)
 Stroke(Menu)
 
--- Animated red background on a black base
 local BackgroundFX = Create("Frame", Menu, {
     Name = "Monetor_BackgroundFX",
     Size = UDim2.new(1, 0, 1, 0),
     Position = UDim2.new(0, 0, 0, 0),
     BackgroundColor3 = Color3.fromRGB(5, 5, 5),
-    BackgroundTransparency = 0,
     BorderSizePixel = 0,
     ClipsDescendants = true,
     ZIndex = 0
@@ -827,7 +825,7 @@ local Title = Create("TextLabel", NameFrame, {
     Font = Configs_HUB.Text_Font,
     TextXAlignment = Enum.TextXAlignment.Left,
     TextYAlignment = Enum.TextYAlignment.Center,
-    Text = "Monetor X",
+    Text = "Monetor X v3.0",
     TextSize = 20,
     ZIndex = 12
 })
@@ -1122,7 +1120,6 @@ function AddButton(parent, Configs)
     return TextButton
 end
 
--- دالة جديدة: زر Toggle (تشغيل/إيقاف في نفس الزر)
 function AddToggleButton(parent, Configs)
     local ButtonName = Configs.Name or "Toggle!!"
     local OnText = Configs.OnText or (ButtonName .. ": تشغيل")
@@ -1218,7 +1215,7 @@ function AddPlayerProfile(parent)
         return "User: " .. LP.Name .. "\n" ..
                "Map Name: " .. placeName .. "\n" ..
                "Account Age: " .. LP.AccountAge .. " days\n" ..
-               "Script: Monetor X\n" ..
+               "Script: Monetor X v3.0\n" ..
                "Exploit: " .. tostring(exploit) .. "\n" ..
                "Ping: " .. math.floor(LP:GetNetworkPing() * 1000) .. " ms\n" ..
                "FPS: " .. fps .. "\n" ..
@@ -1235,9 +1232,6 @@ function AddPlayerProfile(parent)
     return Label
 end
 
--- =============================================
--- UPDATED AddDropdown WITH SEARCH FEATURE
--- =============================================
 function AddDropdown(parent, Configs)
     local DropdownName = Configs.Name or "Dropdown!!"
     local Options = Configs.Options or {"1", "2", "3"}
@@ -1435,20 +1429,24 @@ function AddDropdown(parent, Configs)
         end,
         GetSelected = function(self)
             return Selected
+        end,
+        SetSelected = function(self, value)
+            Selected = value
+            TextLabel.Text = DropdownName .. ": " .. value
         end
     }
 end
 
 -- =============================================
--- TABS CREATION (FULLY RESTORED)
+-- TABS CREATION
 -- =============================================
 local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
 local LocalPlayerTab = MakeTab({Name = "شخصيتي ‍️", TabTitle = true})
+local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
 local ESPTab = MakeTab({Name = "رادار ️", TabTitle = true})
 local TeleportTab = MakeTab({Name = "الانتقال ", TabTitle = true})
 local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
 local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, Image = "rbxassetid://6031075931"})
-
 
 local Monetor_CommandPanel = nil
 local Monetor_CommandInput = nil
@@ -1465,10 +1463,7 @@ local function Monetor_SetCommandStatus(message, isError)
     end
 end
 
--- يحاول استخدام نظام الأوامر الموجود في اللعبة.
--- لا يرسل أي شيء إلى TextChatService/Roblox Chat.
 local function Monetor_ExecuteTitleCommand(text)
-    -- المسار الرئيسي المؤكد من لعبتك: HDAdminHDClient → Signals → RequestCommand
     local commandText = ";titler me " .. text
     local hdClient = RepStorage:WaitForChild("HDAdminHDClient", 5)
     if not hdClient then return false, "HDAdminHDClient غير موجود" end
@@ -1671,22 +1666,8 @@ AddButton(MainTab, {
     end
 })
 
-AddButton(LocalPlayerTab, {
-    Name = " الشات — تشغيل / إيقاف",
-    Callback = function()
-        Monetor_ToggleCommandPanel()
-        MakeNotifi({
-            Title = "الشات الخاص",
-            Text = Monetor_ChatEnabled
-                and "تم تشغيل لوحة الإدخال — بدون Roblox Chat"
-                or "تم إيقاف لوحة الإدخال",
-            Time = 2
-        })
-    end
-})
-
 -- =============================================
--- MAIN TAB (FULLY RESTORED) + NEW FEATURES
+-- MAIN TAB
 -- =============================================
 AddButton(MainTab, {
     Name = " فك حماية الطيران",
@@ -1757,7 +1738,6 @@ AddButton(MainTab, {
     Callback = function()
         local selected = RespawnKillDropdown.GetSelected()
         if selected == "رفريش (Respawn)" then
-            -- نرسل أمر ;refresh مباشرة عبر HDAdmin
             pcall(function()
                 local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
                 if hdClient then
@@ -1789,30 +1769,117 @@ AddButton(MainTab, {
 })
 
 -- =============================================
--- LOCAL PLAYER TAB — MERGED TOGGLES (تشغيل/إيقاف في نفس الزر)
+-- SPEED CHANGER
 -- =============================================
-local SpeedEnabled = false
-local JumpEnabled = false
-local NoclipEnabled = false
-local InfJumpEnabled = false
+local CustomSpeed = 100
+local SpeedChangerEnabled = false
+local SpeedConnection = nil
+local SpeedBox = nil
 
 AddToggleButton(LocalPlayerTab, {
-    Name = "سرعة عالية",
-    OnText = "سرعة عالية: تشغيل",
-    OffText = "سرعة عالية: إيقاف",
+    Name = "تفعيل Speed Changer",
+    OnText = "Speed Changer: تشغيل",
+    OffText = "Speed Changer: إيقاف",
     StartState = false,
     OnEnable = function()
-        SpeedEnabled = true
-        MakeNotifi({Title="Player", Text="تم تفعيل السرعة العالية", Time=2})
+        SpeedChangerEnabled = true
+        if SpeedConnection then SpeedConnection:Disconnect() end
+        SpeedConnection = RunService.Stepped:Connect(function()
+            if SpeedChangerEnabled and LP.Character and LP.Character:FindFirstChild("Humanoid") then
+                LP.Character.Humanoid.WalkSpeed = CustomSpeed
+            end
+        end)
+        MakeNotifi({Title="Speed", Text="تم التفعيل — السرعة: "..CustomSpeed, Time=2})
     end,
     OnDisable = function()
-        SpeedEnabled = false
+        SpeedChangerEnabled = false
+        if SpeedConnection then SpeedConnection:Disconnect() SpeedConnection = nil end
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             LP.Character.Humanoid.WalkSpeed = 16
         end
-        MakeNotifi({Title="Player", Text="تم إرجاع السرعة الطبيعية", Time=2})
+        MakeNotifi({Title="Speed", Text="تم الإيقاف — رجع 16", Time=2})
     end
 })
+
+SpeedBox = Create("TextBox", LocalPlayerTab, {
+    Size = UDim2.new(1, 0, 0, 30),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25,
+    BorderSizePixel = 0,
+    Text = tostring(CustomSpeed),
+    PlaceholderText = "اكتب السرعة (16 - 500)",
+    TextColor3 = Configs_HUB.Cor_Text,
+    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+    TextSize = 13,
+    Font = Configs_HUB.Text_Font,
+    ClearTextOnFocus = false,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    ZIndex = 20
+})
+Corner(SpeedBox)
+Stroke(SpeedBox)
+
+local function ApplySpeed()
+    local v = tonumber(SpeedBox.Text) or 100
+    v = math.clamp(math.floor(v), 16, 500)
+    CustomSpeed = v
+    SpeedBox.Text = tostring(v)
+    if LP.Character and LP.Character:FindFirstChild("Humanoid") and SpeedChangerEnabled then
+        LP.Character.Humanoid.WalkSpeed = v
+    end
+    MakeNotifi({Title="Speed", Text="السرعة صارت: "..v, Time=2})
+end
+
+SpeedBox.FocusLost:Connect(function()
+    ApplySpeed()
+end)
+
+AddButton(LocalPlayerTab, {
+    Name = " تطبيق السرعة",
+    Callback = function()
+        ApplySpeed()
+    end
+})
+
+AddButton(LocalPlayerTab, {
+    Name = " زيادة (+50)",
+    Callback = function()
+        CustomSpeed = math.min(500, CustomSpeed + 50)
+        SpeedBox.Text = tostring(CustomSpeed)
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") and SpeedChangerEnabled then
+            LP.Character.Humanoid.WalkSpeed = CustomSpeed
+        end
+        MakeNotifi({Title="Speed", Text="السرعة: "..CustomSpeed, Time=1})
+    end
+})
+
+AddButton(LocalPlayerTab, {
+    Name = " تقليل (-50)",
+    Callback = function()
+        CustomSpeed = math.max(16, CustomSpeed - 50)
+        SpeedBox.Text = tostring(CustomSpeed)
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") and SpeedChangerEnabled then
+            LP.Character.Humanoid.WalkSpeed = CustomSpeed
+        end
+        MakeNotifi({Title="Speed", Text="السرعة: "..CustomSpeed, Time=1})
+    end
+})
+
+AddButton(LocalPlayerTab, {
+    Name = "️ إرجاع افتراضي (16)",
+    Callback = function()
+        CustomSpeed = 16
+        SpeedBox.Text = "16"
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            LP.Character.Humanoid.WalkSpeed = 16
+        end
+        MakeNotifi({Title="Speed", Text="رجع 16 (افتراضي)", Time=2})
+    end
+})
+
+local JumpEnabled = false
+local NoclipEnabled = false
+local InfJumpEnabled = false
 
 AddToggleButton(LocalPlayerTab, {
     Name = "قفز عالي",
@@ -1848,7 +1915,7 @@ AddToggleButton(LocalPlayerTab, {
 })
 
 AddToggleButton(LocalPlayerTab, {
-    Name = "قفز لا نهائي بالهواء",
+    Name = "قفز لا نهائي",
     OnText = "قفز لا نهائي: تشغيل",
     OffText = "قفز لا نهائي: إيقاف",
     StartState = false,
@@ -1864,14 +1931,10 @@ AddToggleButton(LocalPlayerTab, {
 
 RunService.Stepped:Connect(function()
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        if SpeedEnabled then
-            LP.Character.Humanoid.WalkSpeed = 100
-        end
         if JumpEnabled then
             LP.Character.Humanoid.JumpPower = 150
         end
     end
-    
     if NoclipEnabled and LP.Character then
         for _, v in pairs(LP.Character:GetDescendants()) do
             if v:IsA("BasePart") then
@@ -1888,7 +1951,687 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 -- =============================================
--- ESP TAB (RADAR LITE) — ثابت الحجم + تحديث سريع + استهداف دائم
+-- ANTI-VOID
+-- =============================================
+local AntiVoidEnabled = false
+local AntiVoidConnection = nil
+local AntiVoidYThreshold = -50
+
+AddToggleButton(LocalPlayerTab, {
+    Name = "مضاد السقوط (Anti-Void)",
+    OnText = "مضاد السقوط: تشغيل",
+    OffText = "مضاد السقوط: إيقاف",
+    StartState = false,
+    OnEnable = function()
+        AntiVoidEnabled = true
+        if AntiVoidConnection then AntiVoidConnection:Disconnect() end
+        AntiVoidConnection = RunService.Heartbeat:Connect(function()
+            if not AntiVoidEnabled then return end
+            local char = LP.Character
+            if not char then return end
+            local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+            if not root then return end
+            
+            if root.Position.Y < AntiVoidYThreshold then
+                local spawnLocation = workspace:FindFirstChildOfClass("SpawnLocation")
+                local targetCFrame
+                
+                if spawnLocation then
+                    targetCFrame = spawnLocation.CFrame + Vector3.new(0, 5, 0)
+                else
+                    for _, obj in ipairs(workspace:GetDescendants()) do
+                        if obj:IsA("SpawnLocation") then
+                            targetCFrame = obj.CFrame + Vector3.new(0, 5, 0)
+                            break
+                        end
+                    end
+                end
+                
+                if targetCFrame then
+                    root.CFrame = targetCFrame
+                    root.Velocity = Vector3.zero
+                    if Flying then stopFly() end
+                    MakeNotifi({Title="Anti-Void", Text="تم إنقاذك من الفراغ!", Time=2})
+                    task.wait(2)
+                end
+            end
+        end)
+        MakeNotifi({Title="Anti-Void", Text="تم التفعيل — إذا وقعت، يرجعك للـ Spawn", Time=3})
+    end,
+    OnDisable = function()
+        AntiVoidEnabled = false
+        if AntiVoidConnection then AntiVoidConnection:Disconnect() AntiVoidConnection = nil end
+        MakeNotifi({Title="Anti-Void", Text="تم الإيقاف", Time=2})
+    end
+})
+
+-- =============================================
+-- CUSTOM SKY (فضائي)
+-- =============================================
+local CustomSkyEnabled = false
+local SkyObject = nil
+local SkyPlanets = {}
+local SkyRotationConnection = nil
+
+AddToggleButton(MainTab, {
+    Name = "سماء فضائية",
+    OnText = "سماء فضائية: تشغيل",
+    OffText = "سماء فضائية: إيقاف",
+    StartState = false,
+    OnEnable = function()
+        CustomSkyEnabled = true
+        
+        for _, obj in ipairs(Lighting:GetChildren()) do
+            if obj:IsA("Sky") and obj.Name == "Monetor_SpaceSky" then
+                obj:Destroy()
+            end
+        end
+        
+        SkyObject = Instance.new("Sky")
+        SkyObject.Name = "Monetor_SpaceSky"
+        SkyObject.SkyboxBk = "rbxassetid://159454299"
+        SkyObject.SkyboxDn = "rbxassetid://159454296"
+        SkyObject.SkyboxFt = "rbxassetid://159454293"
+        SkyObject.SkyboxLf = "rbxassetid://159454286"
+        SkyObject.SkyboxRt = "rbxassetid://159454300"
+        SkyObject.SkyboxUp = "rbxassetid://159454288"
+        SkyObject.StarCount = 12000
+        SkyObject.SunAngularSize = 15
+        SkyObject.MoonAngularSize = 20
+        SkyObject.Parent = Lighting
+        
+        Lighting.Brightness = 0.8
+        Lighting.Ambient = Color3.fromRGB(30, 25, 60)
+        Lighting.OutdoorAmbient = Color3.fromRGB(40, 30, 70)
+        Lighting.ClockTime = 0
+        Lighting.FogColor = Color3.fromRGB(15, 10, 40)
+        Lighting.FogEnd = 500
+        
+        SkyPlanets = {}
+        local planetData = {
+            {id=4810674032, size=500, pos=Vector3.new(300, 250, -800), color=Color3.fromRGB(255, 220, 180)},
+            {id=4810678572, size=350, pos=Vector3.new(-600, 180, -400), color=Color3.fromRGB(200, 150, 250)},
+            {id=4810678521, size=400, pos=Vector3.new(-200, 300, -900), color=Color3.fromRGB(150, 200, 255)},
+            {id=4810674032, size=250, pos=Vector3.new(700, 400, 200), color=Color3.fromRGB(255, 180, 200)},
+        }
+        
+        for i, data in ipairs(planetData) do
+            local planet = Instance.new("Part")
+            planet.Name = "Monetor_Planet_" .. i
+            planet.Shape = Enum.PartType.Ball
+            planet.Size = Vector3.new(data.size, data.size, data.size)
+            planet.Anchored = true
+            planet.CanCollide = false
+            planet.Material = Enum.Material.Neon
+            planet.Color = data.color
+            planet.Transparency = 0.15
+            planet.CastShadow = false
+            planet.Parent = workspace
+            
+            local light = Instance.new("PointLight")
+            light.Color = data.color
+            light.Range = 100
+            light.Brightness = 2
+            light.Parent = planet
+            
+            table.insert(SkyPlanets, {part = planet, basePos = data.pos, offset = data.pos})
+        end
+        
+        if SkyRotationConnection then SkyRotationConnection:Disconnect() end
+        SkyRotationConnection = RunService.Heartbeat:Connect(function()
+            if not CustomSkyEnabled then return end
+            local t = tick()
+            local cam = workspace.CurrentCamera
+            if not cam then return end
+            local camPos = cam.CFrame.Position
+            
+            for i, data in ipairs(SkyPlanets) do
+                if data.part and data.part.Parent then
+                    data.part.CFrame = CFrame.new(camPos + data.basePos + Vector3.new(
+                        math.sin(t * 0.3 + i) * 20,
+                        math.cos(t * 0.2 + i) * 15,
+                        0
+                    )) * CFrame.Angles(t * 0.1, t * 0.15 + i, 0)
+                end
+            end
+        end)
+        
+        MakeNotifi({Title="Sky", Text="السماء الفضائية تفعلت! كواكب + نجوم", Time=4})
+    end,
+    OnDisable = function()
+        CustomSkyEnabled = false
+        
+        if SkyObject then
+            pcall(function() SkyObject:Destroy() end)
+            SkyObject = nil
+        end
+        
+        for _, data in ipairs(SkyPlanets) do
+            if data.part then pcall(function() data.part:Destroy() end) end
+        end
+        SkyPlanets = {}
+        
+        if SkyRotationConnection then
+            SkyRotationConnection:Disconnect()
+            SkyRotationConnection = nil
+        end
+        
+        Lighting.Brightness = 2
+        Lighting.Ambient = Color3.fromRGB(70, 70, 70)
+        Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+        Lighting.ClockTime = 14
+        Lighting.FogEnd = 100000
+        
+        MakeNotifi({Title="Sky", Text="رجع الجو الطبيعي", Time=2})
+    end
+})
+
+-- =============================================
+-- SERVER HOP
+-- =============================================
+AddButton(MainTab, {
+    Name = " تنقل بين السيرفرات (Server Hop)",
+    Callback = function()
+        MakeNotifi({Title="Server Hop", Text="جاري البحث عن سيرفرات...", Time=3})
+        
+        task.spawn(function()
+            local success, servers = pcall(function()
+                local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+                local response = game:HttpGet(url)
+                return HttpService:JSONDecode(response)
+            end)
+            
+            if not success or not servers or not servers.data then
+                MakeNotifi({Title="Server Hop", Text="❌ فشل جلب السيرفرات", Time=3})
+                return
+            end
+            
+            local bestServer = nil
+            local bestPlayers = 0
+            
+            for _, server in ipairs(servers.data) do
+                if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                    if server.playing > bestPlayers then
+                        bestPlayers = server.playing
+                        bestServer = server.id
+                    end
+                end
+            end
+            
+            if bestServer then
+                MakeNotifi({Title="Server Hop", Text="✅ وجد سيرفر بـ "..bestPlayers.." لاعب. جاري الانتقال...", Time=3})
+                task.wait(1)
+                
+                pcall(function()
+                    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, bestServer, LP)
+                end)
+            else
+                MakeNotifi({Title="Server Hop", Text="❌ ما لقيت سيرفر مناسب", Time=3})
+            end
+        end)
+    end
+})
+
+-- =============================================
+-- FOLLOW PLAYER
+-- =============================================
+local FollowEnabled = false
+local FollowConnection = nil
+local FollowTargetName = ""
+local FollowDistance = 50
+local FollowDropdown = nil
+local FollowDistanceBox = nil
+
+local function UpdateFollowList()
+    local options = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LP then
+            table.insert(options, player.Name)
+        end
+    end
+    if #options == 0 then
+        options = {"لا يوجد لاعبين"}
+    end
+    if FollowDropdown then
+        pcall(function() FollowDropdown:Update(options) end)
+    end
+end
+
+FollowDropdown = AddDropdown(TrollTab, {
+    Name = "اختر لاعب للتتبع",
+    Options = {},
+    Searchable = true,
+    Callback = function(value)
+        FollowTargetName = value
+    end
+})
+
+FollowDistanceBox = Create("TextBox", TrollTab, {
+    Size = UDim2.new(1, 0, 0, 30),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25,
+    BorderSizePixel = 0,
+    Text = tostring(FollowDistance),
+    PlaceholderText = "المسافة (افتراضي: 50)",
+    TextColor3 = Configs_HUB.Cor_Text,
+    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+    TextSize = 13,
+    Font = Configs_HUB.Text_Font,
+    ClearTextOnFocus = false,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    ZIndex = 20
+})
+Corner(FollowDistanceBox)
+Stroke(FollowDistanceBox)
+
+AddToggleButton(TrollTab, {
+    Name = "تتبع اللاعب (Follow)",
+    OnText = "تتبع اللاعب: تشغيل",
+    OffText = "تتبع اللاعب: إيقاف",
+    StartState = false,
+    OnEnable = function()
+        if FollowTargetName == "" or FollowTargetName == "لا يوجد لاعبين" then
+            MakeNotifi({Title="Follow", Text="❌ اختر لاعب أولاً", Time=2})
+            return
+        end
+        
+        FollowDistance = tonumber(FollowDistanceBox.Text) or 50
+        FollowDistance = math.clamp(FollowDistance, 5, 500)
+        FollowDistanceBox.Text = tostring(FollowDistance)
+        
+        FollowEnabled = true
+        
+        if FollowConnection then FollowConnection:Disconnect() end
+        FollowConnection = RunService.Heartbeat:Connect(function()
+            if not FollowEnabled then return end
+            
+            local target = Players:FindFirstChild(FollowTargetName)
+            if not target or not target.Character then return end
+            
+            local myChar = LP.Character
+            if not myChar then return end
+            
+            local myRoot = myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso")
+            local targetRoot = target.Character:FindFirstChild("HumanoidRootPart") or target.Character:FindFirstChild("Torso")
+            local targetHum = target.Character:FindFirstChildOfClass("Humanoid")
+            
+            if not myRoot or not targetRoot or not targetHum then return end
+            
+            local direction = (myRoot.Position - targetRoot.Position)
+            local distance = direction.Magnitude
+            
+            if distance > FollowDistance then
+                local goalPos = targetRoot.Position + direction.Unit * FollowDistance
+                myRoot.CFrame = CFrame.new(goalPos, targetRoot.Position)
+            end
+        end)
+        
+        MakeNotifi({Title="Follow", Text="✅ يتبع: "..FollowTargetName.." — مسافة: "..FollowDistance, Time=3})
+    end,
+    OnDisable = function()
+        FollowEnabled = false
+        if FollowConnection then FollowConnection:Disconnect() FollowConnection = nil end
+        MakeNotifi({Title="Follow", Text="تم إيقاف التتبع", Time=2})
+    end
+})
+
+AddButton(TrollTab, {
+    Name = " تطبيق مسافة التتبع",
+    Callback = function()
+        FollowDistance = tonumber(FollowDistanceBox.Text) or 50
+        FollowDistance = math.clamp(FollowDistance, 5, 500)
+        FollowDistanceBox.Text = tostring(FollowDistance)
+        MakeNotifi({Title="Follow", Text="المسافة: "..FollowDistance, Time=2})
+    end
+})
+
+UpdateFollowList()
+Players.PlayerAdded:Connect(UpdateFollowList)
+Players.PlayerRemoved:Connect(UpdateFollowList)
+
+-- =============================================
+-- 🎯 HITBOX EXPANDER + Proximity Panel
+-- =============================================
+local HitboxEnabled = false
+local HitboxTargetName = ""
+local HitboxSize = 20
+local HitboxConnection = nil
+local HitboxDropdown = nil
+local HitboxSizeBox = nil
+local OriginalSizes = {}
+
+local function UpdateHitboxList()
+    local options = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LP then
+            table.insert(options, player.Name)
+        end
+    end
+    if #options == 0 then options = {"لا يوجد لاعبين"} end
+    if HitboxDropdown then
+        pcall(function() HitboxDropdown:Update(options) end)
+    end
+end
+
+HitboxDropdown = AddDropdown(CombatTab, {
+    Name = "🎯 اختر هدف Hitbox",
+    Options = {},
+    Searchable = true,
+    Callback = function(value)
+        HitboxTargetName = value
+    end
+})
+
+HitboxSizeBox = Create("TextBox", CombatTab, {
+    Size = UDim2.new(1, 0, 0, 30),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25,
+    BorderSizePixel = 0,
+    Text = tostring(HitboxSize),
+    PlaceholderText = "حجم الهيت بوكس (افتراضي: 20)",
+    TextColor3 = Configs_HUB.Cor_Text,
+    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+    TextSize = 13,
+    Font = Configs_HUB.Text_Font,
+    ClearTextOnFocus = false,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    ZIndex = 20
+})
+Corner(HitboxSizeBox)
+Stroke(HitboxSizeBox)
+
+local function ApplyHitboxToTarget(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+    local char = targetPlayer.Character
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            if not OriginalSizes[part] then
+                OriginalSizes[part] = part.Size
+            end
+            part.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+            part.Transparency = 1
+            part.CanCollide = false
+            part.Massless = true
+        end
+    end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if root then
+        if not OriginalSizes[root] then
+            OriginalSizes[root] = root.Size
+        end
+        root.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+        root.Transparency = 1
+        root.CanCollide = false
+    end
+end
+
+local function RestoreHitbox(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+    for _, part in ipairs(targetPlayer.Character:GetDescendants()) do
+        if part:IsA("BasePart") and OriginalSizes[part] then
+            pcall(function()
+                part.Size = OriginalSizes[part]
+                part.Transparency = 0
+                part.CanCollide = true
+                part.Massless = false
+            end)
+            OriginalSizes[part] = nil
+        end
+    end
+end
+
+AddToggleButton(CombatTab, {
+    Name = "🎯 تكبير Hitbox الهدف",
+    OnText = "Hitbox: تشغيل",
+    OffText = "Hitbox: إيقاف",
+    StartState = false,
+    OnEnable = function()
+        if HitboxTargetName == "" or HitboxTargetName == "لا يوجد لاعبين" then
+            MakeNotifi({Title="Hitbox", Text="❌ اختر هدف أولاً", Time=2})
+            return
+        end
+        
+        HitboxSize = math.clamp(tonumber(HitboxSizeBox.Text) or 20, 5, 100)
+        HitboxSizeBox.Text = tostring(HitboxSize)
+        
+        HitboxEnabled = true
+        
+        local target = Players:FindFirstChild(HitboxTargetName)
+        if target and target.Character then
+            ApplyHitboxToTarget(target)
+        end
+        
+        if HitboxConnection then HitboxConnection:Disconnect() end
+        HitboxConnection = RunService.Heartbeat:Connect(function()
+            if not HitboxEnabled then return end
+            local t = Players:FindFirstChild(HitboxTargetName)
+            if t and t.Character then
+                ApplyHitboxToTarget(t)
+            end
+        end)
+        
+        MakeNotifi({Title="Hitbox", Text="✅ تكبير "..HitboxTargetName.." — "..HitboxSize, Time=3})
+    end,
+    OnDisable = function()
+        HitboxEnabled = false
+        if HitboxConnection then HitboxConnection:Disconnect() HitboxConnection = nil end
+        local target = Players:FindFirstChild(HitboxTargetName)
+        if target then
+            RestoreHitbox(target)
+        end
+        MakeNotifi({Title="Hitbox", Text="تم الإيقاف", Time=2})
+    end
+})
+
+AddButton(CombatTab, {
+    Name = " تطبيق حجم Hitbox",
+    Callback = function()
+        HitboxSize = math.clamp(tonumber(HitboxSizeBox.Text) or 20, 5, 100)
+        HitboxSizeBox.Text = tostring(HitboxSize)
+        MakeNotifi({Title="Hitbox", Text="الحجم: "..HitboxSize, Time=2})
+    end
+})
+
+-- =============================================
+-- 📍 PROXIMITY PANEL — لوحة اللاعبين القريبين
+-- =============================================
+local ProximityPanel = Create("Frame", ScreenGui, {
+    Name = "Monetor_ProximityPanel",
+    Size = UDim2.new(0, 220, 0, 320),
+    Position = UDim2.new(1, -240, 0.5, -160),
+    BackgroundColor3 = Configs_HUB.Cor_Hub,
+    BackgroundTransparency = 0.05,
+    Active = true,
+    Draggable = true,
+    Visible = false,
+    BorderSizePixel = 0,
+    ZIndex = 40
+})
+Corner(ProximityPanel)
+Stroke(ProximityPanel)
+
+local ProximityTitle = Create("TextLabel", ProximityPanel, {
+    Size = UDim2.new(1, 0, 0, 30),
+    BackgroundTransparency = 1,
+    Text = "📍 اللاعبون القريبون",
+    TextColor3 = Configs_HUB.Cor_Text,
+    Font = Configs_HUB.Text_Font,
+    TextSize = 16,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    ZIndex = 41
+})
+
+local ProximityClose = Create("TextButton", ProximityPanel, {
+    Size = UDim2.new(0, 25, 0, 25),
+    Position = UDim2.new(1, -5, 0, 3),
+    AnchorPoint = Vector2.new(1, 0),
+    BackgroundTransparency = 1,
+    Text = "×",
+    TextColor3 = Color3.fromRGB(255, 100, 100),
+    Font = Configs_HUB.Text_Font,
+    TextSize = 20,
+    AutoButtonColor = false,
+    ZIndex = 42
+})
+
+ProximityClose.MouseButton1Click:Connect(function()
+    ProximityPanel.Visible = false
+end)
+
+local ProximityList = Create("ScrollingFrame", ProximityPanel, {
+    Size = UDim2.new(1, -10, 1, -40),
+    Position = UDim2.new(0, 5, 0, 35),
+    BackgroundTransparency = 1,
+    ScrollBarThickness = 3,
+    ScrollBarImageColor3 = Configs_HUB.Cor_Stroke,
+    CanvasSize = UDim2.new(),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y
+})
+Create("UIListLayout", ProximityList, {
+    Padding = UDim.new(0, 3),
+    SortOrder = Enum.SortOrder.LayoutOrder
+})
+
+local function UpdateProximityPanel()
+    if not ProximityPanel.Visible then return end
+    if not LP.Character then return end
+    local myRoot = LP.Character:FindFirstChild("HumanoidRootPart") or LP.Character:FindFirstChild("Torso")
+    if not myRoot then return end
+    
+    for _, child in ipairs(ProximityList:GetChildren()) do
+        if child:IsA("TextButton") or child:IsA("TextLabel") then
+            child:Destroy()
+        end
+    end
+    
+    local playersWithDist = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LP and player.Character then
+            local root = player.Character:FindFirstChild("HumanoidRootPart") or player.Character:FindFirstChild("Torso")
+            if root then
+                local dist = (root.Position - myRoot.Position).Magnitude
+                if dist <= 500 then
+                    table.insert(playersWithDist, {
+                        player = player,
+                        distance = dist,
+                        health = player.Character:FindFirstChildOfClass("Humanoid") and player.Character.Humanoid.Health or 0
+                    })
+                end
+            end
+        end
+    end
+    
+    table.sort(playersWithDist, function(a, b) return a.distance < b.distance end)
+    
+    for i, data in ipairs(playersWithDist) do
+        local btn = Create("TextButton", ProximityList, {
+            Size = UDim2.new(1, 0, 0, 30),
+            BackgroundColor3 = Configs_HUB.Cor_Options,
+            BackgroundTransparency = 0.5,
+            Text = "",
+            AutoButtonColor = false,
+            LayoutOrder = i,
+            ZIndex = 43
+        })
+        Corner(btn)
+        Stroke(btn)
+        
+        Create("TextLabel", btn, {
+            Size = UDim2.new(0, 20, 1, 0),
+            Position = UDim2.new(0, 3, 0, 0),
+            BackgroundTransparency = 1,
+            Text = "#" .. i,
+            TextColor3 = Color3.fromRGB(150, 150, 255),
+            Font = Configs_HUB.Text_Font,
+            TextSize = 11,
+            ZIndex = 44
+        })
+        
+        Create("TextLabel", btn, {
+            Size = UDim2.new(1, -80, 1, 0),
+            Position = UDim2.new(0, 25, 0, 0),
+            BackgroundTransparency = 1,
+            Text = data.player.Name,
+            TextColor3 = Configs_HUB.Cor_Text,
+            Font = Configs_HUB.Text_Font,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 44
+        })
+        
+        Create("TextLabel", btn, {
+            Size = UDim2.new(0, 50, 1, 0),
+            Position = UDim2.new(1, -55, 0, 0),
+            BackgroundTransparency = 1,
+            Text = math.floor(data.distance) .. "m",
+            TextColor3 = data.distance < 50 and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100),
+            Font = Configs_HUB.Text_Font,
+            TextSize = 11,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 44
+        })
+        
+        btn.MouseButton1Click:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(100, 30, 150)}):Play()
+            
+            if HitboxDropdown then
+                HitboxTargetName = data.player.Name
+                HitboxDropdown:SetSelected(data.player.Name)
+            end
+            if ESP_TargetDropdown then ESP_TargetDropdown:Update({data.player.Name}) end
+            if playerDropdown then selectedPlayerName = data.player.Name end
+            if FollowDropdown then 
+                FollowTargetName = data.player.Name 
+                FollowDropdown:SetSelected(data.player.Name)
+            end
+            if TPDropdown then 
+                TPSelectedPlayer = data.player.Name 
+                TPDropdown:SetSelected(data.player.Name)
+            end
+            
+            MakeNotifi({
+                Title = "📍 تحديد تلقائي",
+                Text = "تم تحديد: " .. data.player.Name .. " (" .. math.floor(data.distance) .. "m)",
+                Time = 2
+            })
+        end)
+    end
+    
+    if #playersWithDist == 0 then
+        Create("TextLabel", ProximityList, {
+            Size = UDim2.new(1, 0, 0, 40),
+            BackgroundTransparency = 1,
+            Text = "لا يوجد لاعبين قريبين",
+            TextColor3 = Configs_HUB.Cor_DarkText,
+            Font = Configs_HUB.Text_Font,
+            TextSize = 12
+        })
+    end
+end
+
+AddToggleButton(MainTab, {
+    Name = "📍 لوحة اللاعبين القريبين",
+    OnText = "لوحة القريبين: تشغيل",
+    OffText = "لوحة القريبين: إيقاف",
+    StartState = false,
+    OnEnable = function()
+        ProximityPanel.Visible = true
+        MakeNotifi({Title="Proximity", Text="اللوحة تظهر على اليمين", Time=2})
+    end,
+    OnDisable = function()
+        ProximityPanel.Visible = false
+        MakeNotifi({Title="Proximity", Text="تم الإخفاء", Time=2})
+    end
+})
+
+task.spawn(function()
+    while task.wait(0.5) do
+        pcall(UpdateProximityPanel)
+    end
+end)
+
+-- =============================================
+-- ESP TAB (LIGHT RADAR)
 -- =============================================
 local ESP_Active = false
 local ESP_ShowNames = true
@@ -1896,10 +2639,8 @@ local ESP_ShowBody = true
 local ESP_ShowHealth = true
 local ESP_ShowDistance = true
 local ESP_MaxDistance = 250
-
 local ESP_UpdateInterval = 0.08
 local ESP_TARGET_DISTANCE = 1000000000
-
 local ESP_FOLDER_NAME = "Monetor_ESP_RADAR"
 local ESP_TargetUserId = nil
 local ESP_TargetName = nil
@@ -1932,11 +2673,9 @@ local function GetOrCreateESPFolder(character)
     if folder and folder:IsA("Folder") then
         return folder
     end
-
     if folder then
         pcall(function() folder:Destroy() end)
     end
-
     folder = Instance.new("Folder")
     folder.Name = ESP_FOLDER_NAME
     folder.Parent = character
@@ -1950,11 +2689,6 @@ local function RemoveESP(player)
     if folder then
         pcall(function() folder:Destroy() end)
     end
-
-    local oldName = character:FindFirstChild("Monetor_ESP_Name", true)
-    if oldName then
-        pcall(function() oldName:Destroy() end)
-    end
 end
 
 local function ClearAllESP()
@@ -1967,35 +2701,26 @@ end
 
 local function UpdateNameVisual(player, billboard, distance)
     if not player or not billboard then return end
-
     local card = billboard:FindFirstChild("Card")
     if not card then return end
-
     local nameLabel = card:FindFirstChild("PlayerName")
     local infoLabel = card:FindFirstChild("Info")
     local targetBadge = card:FindFirstChild("TargetBadge")
     local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-
     local target = IsTarget(player)
     local baseColor = target and Color3.fromRGB(255, 55, 55) or GetESPColor(player)
 
     if nameLabel then
         nameLabel.Text = player.DisplayName ~= "" and player.DisplayName or player.Name
         nameLabel.TextColor3 = target and Color3.fromRGB(255, 85, 85) or Color3.fromRGB(255, 255, 255)
-
         local accent = nameLabel:FindFirstChild("NameStroke")
         if accent and accent:IsA("UIStroke") then
             accent.Color = baseColor
         end
     end
-
     if targetBadge then
         targetBadge.Visible = target
-        if target then
-            targetBadge.Text = "TARGET"
-        end
     end
-
     if infoLabel then
         local infoParts = {}
         if ESP_ShowHealth and humanoid then
@@ -2006,34 +2731,27 @@ local function UpdateNameVisual(player, billboard, distance)
         end
         infoLabel.Text = table.concat(infoParts, "  •  ")
         infoLabel.Visible = (#infoParts > 0)
-        infoLabel.TextColor3 = target and Color3.fromRGB(255, 180, 180) or Color3.fromRGB(215, 225, 235)
     end
 end
 
 local function CreateESPName(player)
     if not ESP_Active or not ESP_ShowNames or player == LP then return end
-
     local character = player.Character
     if not character then return end
-
     local head = character:FindFirstChild("Head")
     if not head then return end
-
     local folder = GetOrCreateESPFolder(character)
     if not folder then return end
-
     local billboard = folder:FindFirstChild("NameBillboard")
     if billboard and not billboard:IsA("BillboardGui") then
         pcall(function() billboard:Destroy() end)
         billboard = nil
     end
-
     if not billboard then
         billboard = Instance.new("BillboardGui")
         billboard.Name = "NameBillboard"
         billboard.Adornee = head
         billboard.Parent = folder
-
         billboard.Size = UDim2.new(0, 150, 0, 38)
         billboard.StudsOffsetWorldSpace = Vector3.new(0, 3.15, 0)
         billboard.AlwaysOnTop = true
@@ -2047,7 +2765,6 @@ local function CreateESPName(player)
         card.Name = "Card"
         card.Size = UDim2.fromScale(1, 1)
         card.BackgroundTransparency = 1
-        card.BorderSizePixel = 0
         card.Parent = billboard
 
         local nameLabel = Instance.new("TextLabel")
@@ -2060,8 +2777,6 @@ local function CreateESPName(player)
         nameLabel.TextStrokeTransparency = 0.08
         nameLabel.Font = Enum.Font.GothamBold
         nameLabel.TextSize = 14
-        nameLabel.TextScaled = false
-        nameLabel.TextWrapped = false
         nameLabel.TextXAlignment = Enum.TextXAlignment.Center
         nameLabel.TextYAlignment = Enum.TextYAlignment.Center
         nameLabel.Text = player.DisplayName ~= "" and player.DisplayName or player.Name
@@ -2079,12 +2794,9 @@ local function CreateESPName(player)
         infoLabel.Position = UDim2.new(0, 4, 0, 20)
         infoLabel.BackgroundTransparency = 1
         infoLabel.TextColor3 = Color3.fromRGB(215, 225, 235)
-        infoLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         infoLabel.TextStrokeTransparency = 0.25
         infoLabel.Font = Enum.Font.GothamMedium
         infoLabel.TextSize = 11
-        infoLabel.TextScaled = false
-        infoLabel.TextWrapped = false
         infoLabel.TextXAlignment = Enum.TextXAlignment.Center
         infoLabel.TextYAlignment = Enum.TextYAlignment.Center
         infoLabel.Text = ""
@@ -2096,9 +2808,7 @@ local function CreateESPName(player)
         targetBadge.Position = UDim2.new(1, -54, 0, -7)
         targetBadge.BackgroundTransparency = 0.18
         targetBadge.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-        targetBadge.BorderSizePixel = 0
         targetBadge.TextColor3 = Color3.fromRGB(255, 255, 255)
-        targetBadge.TextStrokeTransparency = 0.35
         targetBadge.Font = Enum.Font.GothamBold
         targetBadge.TextSize = 8
         targetBadge.Text = "TARGET"
@@ -2110,31 +2820,23 @@ local function CreateESPName(player)
         badgeCorner.CornerRadius = UDim.new(0, 4)
         badgeCorner.Parent = targetBadge
     end
-
     billboard.Adornee = head
-    billboard.Size = UDim2.new(0, 150, 0, 38)
-    billboard.StudsOffsetWorldSpace = Vector3.new(0, 3.15, 0)
     billboard.MaxDistance = IsTarget(player) and ESP_TARGET_DISTANCE or ESP_MaxDistance
     billboard.Enabled = ESP_ShowNames
-
     UpdateNameVisual(player, billboard)
 end
 
 local function CreateESPBody(player)
     if not ESP_Active or not ESP_ShowBody or player == LP then return end
-
     local character = player.Character
     if not character then return end
-
     local folder = GetOrCreateESPFolder(character)
     if not folder then return end
-
     local highlight = folder:FindFirstChild("BodyHighlight")
     if highlight and not highlight:IsA("Highlight") then
         pcall(function() highlight:Destroy() end)
         highlight = nil
     end
-
     if not highlight then
         highlight = Instance.new("Highlight")
         highlight.Name = "BodyHighlight"
@@ -2144,7 +2846,6 @@ local function CreateESPBody(player)
         highlight.OutlineTransparency = 0.03
         highlight.Parent = folder
     end
-
     local color = IsTarget(player) and Color3.fromRGB(255, 40, 40) or GetESPColor(player)
     highlight.FillColor = color
     highlight.OutlineColor = color
@@ -2154,7 +2855,6 @@ end
 local function CreateESP(player)
     if player == LP or not ESP_Active then return end
     if not player.Character then return end
-
     CreateESPBody(player)
     CreateESPName(player)
 end
@@ -2167,11 +2867,9 @@ local function RefreshTargetVisuals()
                 local billboard = folder:FindFirstChild("NameBillboard")
                 if billboard and billboard:IsA("BillboardGui") then
                     billboard.MaxDistance = IsTarget(player) and ESP_TARGET_DISTANCE or ESP_MaxDistance
-                    billboard.Size = UDim2.new(0, 150, 0, 38)
                     billboard.Enabled = ESP_Active and ESP_ShowNames
                     UpdateNameVisual(player, billboard)
                 end
-
                 local highlight = folder:FindFirstChild("BodyHighlight")
                 if highlight and highlight:IsA("Highlight") then
                     local color = IsTarget(player) and Color3.fromRGB(255, 40, 40) or GetESPColor(player)
@@ -2191,15 +2889,9 @@ local function UpdateRadarTargetList()
             table.insert(options, player.Name)
         end
     end
-
-    if #options == 0 then
-        options = {"لا يوجد لاعبين"}
-    end
-
+    if #options == 0 then options = {"لا يوجد لاعبين"} end
     if ESP_TargetDropdown then
-        pcall(function()
-            ESP_TargetDropdown:Update(options)
-        end)
+        pcall(function() ESP_TargetDropdown:Update(options) end)
     end
 end
 
@@ -2211,12 +2903,10 @@ AddToggleButton(ESPTab, {
     OnEnable = function()
         ESP_Active = true
         for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LP then
-                CreateESP(player)
-            end
+            if player ~= LP then CreateESP(player) end
         end
         RefreshTargetVisuals()
-        MakeNotifi({Title="ESP", Text="تم تشغيل الرادار المطور", Time=3})
+        MakeNotifi({Title="ESP", Text="تم تشغيل الرادار", Time=3})
     end,
     OnDisable = function()
         ESP_Active = false
@@ -2233,9 +2923,7 @@ AddToggleButton(ESPTab, {
     OnEnable = function()
         ESP_ShowNames = true
         for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LP and player.Character and ESP_Active then
-                CreateESPName(player)
-            end
+            if player ~= LP and player.Character and ESP_Active then CreateESPName(player) end
         end
         MakeNotifi({Title="ESP", Text="الأسماء: تشغيل", Time=2})
     end,
@@ -2245,9 +2933,7 @@ AddToggleButton(ESPTab, {
             if player ~= LP and player.Character then
                 local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
                 local billboard = folder and folder:FindFirstChild("NameBillboard")
-                if billboard and billboard:IsA("BillboardGui") then
-                    billboard.Enabled = false
-                end
+                if billboard and billboard:IsA("BillboardGui") then billboard.Enabled = false end
             end
         end
         MakeNotifi({Title="ESP", Text="الأسماء: إيقاف", Time=2})
@@ -2262,9 +2948,7 @@ AddToggleButton(ESPTab, {
     OnEnable = function()
         ESP_ShowBody = true
         for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LP and player.Character and ESP_Active then
-                CreateESPBody(player)
-            end
+            if player ~= LP and player.Character and ESP_Active then CreateESPBody(player) end
         end
         MakeNotifi({Title="ESP", Text="الجسم: تشغيل", Time=2})
     end,
@@ -2286,14 +2970,8 @@ AddToggleButton(ESPTab, {
     OnText = "الصحة: تشغيل",
     OffText = "الصحة: إيقاف",
     StartState = true,
-    OnEnable = function()
-        ESP_ShowHealth = true
-        MakeNotifi({Title="ESP", Text="الصحة: تشغيل", Time=2})
-    end,
-    OnDisable = function()
-        ESP_ShowHealth = false
-        MakeNotifi({Title="ESP", Text="الصحة: إيقاف", Time=2})
-    end
+    OnEnable = function() ESP_ShowHealth = true; MakeNotifi({Title="ESP", Text="الصحة: تشغيل", Time=2}) end,
+    OnDisable = function() ESP_ShowHealth = false; MakeNotifi({Title="ESP", Text="الصحة: إيقاف", Time=2}) end
 })
 
 AddToggleButton(ESPTab, {
@@ -2301,14 +2979,8 @@ AddToggleButton(ESPTab, {
     OnText = "المسافة: تشغيل",
     OffText = "المسافة: إيقاف",
     StartState = true,
-    OnEnable = function()
-        ESP_ShowDistance = true
-        MakeNotifi({Title="ESP", Text="المسافة: تشغيل", Time=2})
-    end,
-    OnDisable = function()
-        ESP_ShowDistance = false
-        MakeNotifi({Title="ESP", Text="المسافة: إيقاف", Time=2})
-    end
+    OnEnable = function() ESP_ShowDistance = true; MakeNotifi({Title="ESP", Text="المسافة: تشغيل", Time=2}) end,
+    OnDisable = function() ESP_ShowDistance = false; MakeNotifi({Title="ESP", Text="المسافة: إيقاف", Time=2}) end
 })
 
 ESP_TargetDropdown = AddDropdown(ESPTab, {
@@ -2317,40 +2989,17 @@ ESP_TargetDropdown = AddDropdown(ESPTab, {
     Searchable = true,
     Callback = function(value)
         if value == "لا يوجد لاعبين" then return end
-
         local targetPlayer = Players:FindFirstChild(value)
         if not targetPlayer or targetPlayer == LP then
-            MakeNotifi({Title="Target", Text="اللاعب غير متوفر حالياً", Time=2})
+            MakeNotifi({Title="Target", Text="اللاعب غير متوفر", Time=2})
             return
         end
-
         ESP_TargetUserId = targetPlayer.UserId
         ESP_TargetName = targetPlayer.Name
         ESP_TargetOnline = true
-
-        if ESP_Active then
-            CreateESP(targetPlayer)
-        end
+        if ESP_Active then CreateESP(targetPlayer) end
         RefreshTargetVisuals()
-
-        MakeNotifi({
-            Title=" Target",
-            Text="تم استهداف " .. targetPlayer.Name .. " — يتبعه الرادار مهما كانت المسافة",
-            Time=3
-        })
-    end
-})
-
-AddButton(ESPTab, {
-    Name = " تثبيت المستهدف / تحديثه",
-    Callback = function()
-        RefreshTargetVisuals()
-        UpdateRadarTargetList()
-        if ESP_TargetName then
-            MakeNotifi({Title="Target", Text="المستهدف الحالي: " .. ESP_TargetName, Time=2})
-        else
-            MakeNotifi({Title="Target", Text="لم يتم اختيار مستهدف", Time=2})
-        end
+        MakeNotifi({Title="Target", Text="تم استهداف " .. targetPlayer.Name, Time=3})
     end
 })
 
@@ -2371,9 +3020,8 @@ local ESP_DistanceBox = Create("TextBox", ESPTab, {
     BackgroundTransparency = 0.25,
     BorderSizePixel = 0,
     Text = tostring(ESP_MaxDistance),
-    PlaceholderText = "اكتب مدى الرادار بالمتر (مثال: 250)",
+    PlaceholderText = "اكتب مدى الرادار (مثال: 250)",
     TextColor3 = Configs_HUB.Cor_Text,
-    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
     TextSize = 13,
     Font = Configs_HUB.Text_Font,
     ClearTextOnFocus = false,
@@ -2383,122 +3031,69 @@ local ESP_DistanceBox = Create("TextBox", ESPTab, {
 Corner(ESP_DistanceBox)
 Stroke(ESP_DistanceBox)
 
-local function ApplyESPDistance(value)
-    value = math.floor(tonumber(value) or 250)
-    value = math.clamp(value, 10, 5000)
-    ESP_MaxDistance = value
-    ESP_DistanceBox.Text = tostring(value)
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LP and player.Character then
-            local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
-            local billboard = folder and folder:FindFirstChild("NameBillboard")
-            if billboard and billboard:IsA("BillboardGui") then
-                billboard.MaxDistance = IsTarget(player) and ESP_TARGET_DISTANCE or ESP_MaxDistance
-            end
-        end
-    end
-
-    MakeNotifi({Title="ESP", Text="مدى الرادار صار: " .. ESP_MaxDistance .. " متر", Time=2})
-end
-
-ESP_DistanceBox.FocusLost:Connect(function()
-    ApplyESPDistance(ESP_DistanceBox.Text)
-end)
-
 AddButton(ESPTab, {
     Name = " تطبيق مدى الرادار",
     Callback = function()
-        ApplyESPDistance(ESP_DistanceBox.Text)
+        local value = math.floor(tonumber(ESP_DistanceBox.Text) or 250)
+        value = math.clamp(value, 10, 5000)
+        ESP_MaxDistance = value
+        ESP_DistanceBox.Text = tostring(value)
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LP and player.Character then
+                local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
+                local billboard = folder and folder:FindFirstChild("NameBillboard")
+                if billboard and billboard:IsA("BillboardGui") then
+                    billboard.MaxDistance = IsTarget(player) and ESP_TARGET_DISTANCE or ESP_MaxDistance
+                end
+            end
+        end
+        MakeNotifi({Title="ESP", Text="مدى الرادار: " .. value, Time=2})
     end
 })
 
-AddTextLabel(ESPTab, " LITE للموبايل • افتراضي 250 متر • تحديث تلقائي سريع • المستهدف أحمر ودائم حتى خارج المدى")
-
 Players.PlayerAdded:Connect(function(player)
     UpdateRadarTargetList()
-
-    if ESP_TargetUserId and player.UserId == ESP_TargetUserId then
-        ESP_TargetName = player.Name
-        ESP_TargetOnline = true
-        MakeNotifi({Title=" Target", Text="رجع المستهدف " .. player.Name .. " للسيرفر — تم استرجاع الاستهداف", Time=4})
-    end
-
-    player.CharacterAdded:Connect(function()
-        task.wait(0.25)
-        if ESP_Active then
-            CreateESP(player)
-            if IsTarget(player) then
-                MakeNotifi({Title=" Target", Text="تم استرجاع رادار المستهدف " .. player.Name, Time=2})
-            end
-        end
-    end)
+    UpdateFollowList()
+    UpdateHitboxList()
 end)
-
 Players.PlayerRemoving:Connect(function(player)
-    local wasTarget = IsTarget(player)
-    if wasTarget then
+    if IsTarget(player) then
         ESP_TargetOnline = false
-        MakeNotifi({
-            Title=" Target",
-            Text="خرج المستهدف " .. (ESP_TargetName or player.Name) .. " من السيرفر — الاستهداف محفوظ لعودته",
-            Time=5
-        })
     end
-
     RemoveESP(player)
     UpdateRadarTargetList()
+    UpdateFollowList()
+    UpdateHitboxList()
 end)
 
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LP then
-        player.CharacterAdded:Connect(function()
-            task.wait(0.25)
-            if ESP_Active then
-                CreateESP(player)
-                if IsTarget(player) then
-                    MakeNotifi({Title=" Target", Text="تم استرجاع رادار المستهدف " .. player.Name, Time=2})
-                end
-            end
-        end)
-    end
-end
-
 UpdateRadarTargetList()
+UpdateHitboxList()
 
 local ESP_UpdateClock = 0
 RunService.Heartbeat:Connect(function(dt)
     if not ESP_Active then return end
-
     ESP_UpdateClock += dt
     if ESP_UpdateClock < ESP_UpdateInterval then return end
     ESP_UpdateClock = 0
-
     local myCharacter = LP.Character
     local myRoot = GetCharacterRoot(myCharacter)
     if not myRoot then return end
-
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LP then
             local character = player.Character
             local folder = character and character:FindFirstChild(ESP_FOLDER_NAME)
             local head = character and character:FindFirstChild("Head")
-
             if character and head and folder then
                 local billboard = folder:FindFirstChild("NameBillboard")
                 local root = GetCharacterRoot(character)
                 local distance = root and (root.Position - myRoot.Position).Magnitude or math.huge
                 local target = IsTarget(player)
-
                 if billboard and billboard:IsA("BillboardGui") then
                     billboard.Adornee = head
-                    billboard.Size = UDim2.new(0, 150, 0, 38)
-                    billboard.StudsOffsetWorldSpace = Vector3.new(0, 3.15, 0)
                     billboard.MaxDistance = target and ESP_TARGET_DISTANCE or ESP_MaxDistance
                     billboard.Enabled = ESP_ShowNames and (target or distance <= ESP_MaxDistance)
                     UpdateNameVisual(player, billboard, distance)
                 end
-
                 local highlight = folder:FindFirstChild("BodyHighlight")
                 if highlight and highlight:IsA("Highlight") then
                     local color = target and Color3.fromRGB(255, 40, 40) or GetESPColor(player)
@@ -2514,30 +3109,16 @@ RunService.Heartbeat:Connect(function(dt)
 end)
 
 -- =============================================
--- END OF LIGHT RADAR
+-- COMBAT TAB (بقية الأزرار)
 -- =============================================
-
--- =============================================
--- ️ COMBAT TAB (قتال) — دم حديد + درع + قوة خارقة + Auto Refresh + Auto Refresh On Death
--- =============================================
-local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
-
 local GodMode = false
 local ShieldMode = false
 local SuperDamage = false
-local AimbotMode = false
 local CombatSpeed = false
 local CombatJump = false
-
 local godConnection = nil
-local shieldConnection = nil
-local aimbotConnection = nil
 
--- =============================================
---  Auto Refresh (رفريش تلقائي عند الدم)
--- =============================================
 local AutoRefreshEnabled = false
-local AutoRefreshButton = nil
 local AutoRefreshConnection = nil
 local AutoRefreshCharacterConnection = nil
 local AutoRefreshHealthConnection = nil
@@ -2546,9 +3127,6 @@ local AutoRefreshTriggered = false
 local LastRefreshTime = 0
 local REFRESH_COOLDOWN = 0.15
 
--- =============================================
---  Auto Refresh On Death (رفريش تلقائي عند الموت) — جديد
--- =============================================
 local AutoRefreshOnDeathEnabled = false
 local AutoRefreshOnDeathConnection = nil
 local AutoRefreshOnDeathCharConnection = nil
@@ -2563,59 +3141,35 @@ local function SendRefreshCommand()
     local ok, success, message = pcall(function()
         local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
         if not hdClient then return false, "HDAdminHDClient غير موجود" end
-
         local signals = hdClient:FindFirstChild("Signals")
         if not signals then return false, "HDAdmin Signals غير موجود" end
-
         local requestCommand = signals:FindFirstChild("RequestCommand")
         if not requestCommand or not requestCommand:IsA("RemoteFunction") then
             return false, "RequestCommand غير موجود"
         end
-
         requestCommand:InvokeServer(";refresh")
         return true, "تم إرسال ;refresh"
     end)
-
-    if not ok then
-        return false, tostring(success)
-    end
-    return success == true, message or (success and "تم إرسال ;refresh" or "تعذر إرسال ;refresh")
-end
-
-local function GetAutoRefreshButtonLabel()
-    return AutoRefreshButton and AutoRefreshButton:FindFirstChild("TextLabel")
-end
-
-local function SetAutoRefreshButtonText(text)
-    if not AutoRefreshButton then return end
-    local label = GetAutoRefreshButtonLabel()
-    if label then
-        label.Text = text
-    end
+    if not ok then return false, tostring(success) end
+    return success == true, message or "تعذر"
 end
 
 local function CheckHealthAndRefresh()
     if not AutoRefreshEnabled then return end
-
     local humanoid = GetAutoRefreshHumanoid()
     if not humanoid or humanoid.MaxHealth <= 0 or humanoid.Health <= 0 then
         AutoRefreshTriggered = false
         return
     end
-
     local healthPercent = (humanoid.Health / humanoid.MaxHealth) * 100
-
     if healthPercent <= REFRESH_THRESHOLD then
         if not AutoRefreshTriggered and (os.clock() - LastRefreshTime) >= REFRESH_COOLDOWN then
             AutoRefreshTriggered = true
             LastRefreshTime = os.clock()
-
             local success, message = SendRefreshCommand()
             MakeNotifi({
                 Title = success and "Auto Refresh" or "Auto Refresh — خطأ",
-                Text = success
-                    and ("تم إرسال ;refresh فوراً — الدم: " .. math.floor(healthPercent) .. "%")
-                    or ("تعذر إرسال ;refresh: " .. tostring(message)),
+                Text = success and ("تم ;refresh — الدم: " .. math.floor(healthPercent) .. "%") or ("تعذر: " .. tostring(message)),
                 Time = success and 2 or 3
             })
         end
@@ -2625,101 +3179,59 @@ local function CheckHealthAndRefresh()
 end
 
 local function DisconnectAutoRefreshConnections()
-    if AutoRefreshConnection then
-        AutoRefreshConnection:Disconnect()
-        AutoRefreshConnection = nil
-    end
-    if AutoRefreshCharacterConnection then
-        AutoRefreshCharacterConnection:Disconnect()
-        AutoRefreshCharacterConnection = nil
-    end
-    if AutoRefreshHealthConnection then
-        AutoRefreshHealthConnection:Disconnect()
-        AutoRefreshHealthConnection = nil
-    end
+    if AutoRefreshConnection then AutoRefreshConnection:Disconnect() AutoRefreshConnection = nil end
+    if AutoRefreshCharacterConnection then AutoRefreshCharacterConnection:Disconnect() AutoRefreshCharacterConnection = nil end
+    if AutoRefreshHealthConnection then AutoRefreshHealthConnection:Disconnect() AutoRefreshHealthConnection = nil end
 end
 
 local function StartAutoRefreshMonitor()
     DisconnectAutoRefreshConnections()
     AutoRefreshTriggered = false
     LastRefreshTime = 0
-
     AutoRefreshConnection = RunService.RenderStepped:Connect(CheckHealthAndRefresh)
-
     AutoRefreshCharacterConnection = LP.CharacterAdded:Connect(function(character)
         AutoRefreshTriggered = false
         local humanoid = character:WaitForChild("Humanoid", 5)
         if humanoid and AutoRefreshEnabled then
-            if AutoRefreshHealthConnection then
-                AutoRefreshHealthConnection:Disconnect()
-            end
-            AutoRefreshHealthConnection = humanoid.HealthChanged:Connect(function()
-                CheckHealthAndRefresh()
-            end)
+            if AutoRefreshHealthConnection then AutoRefreshHealthConnection:Disconnect() end
+            AutoRefreshHealthConnection = humanoid.HealthChanged:Connect(CheckHealthAndRefresh)
         end
     end)
-
     local humanoid = GetAutoRefreshHumanoid()
     if humanoid then
-        AutoRefreshHealthConnection = humanoid.HealthChanged:Connect(function()
-            CheckHealthAndRefresh()
-        end)
+        AutoRefreshHealthConnection = humanoid.HealthChanged:Connect(CheckHealthAndRefresh)
     end
 end
 
--- =============================================
---  Auto Refresh On Death Functions (رفريش عند الموت)
--- =============================================
 local function DisconnectAutoRefreshOnDeathConnections()
-    if AutoRefreshOnDeathConnection then
-        AutoRefreshOnDeathConnection:Disconnect()
-        AutoRefreshOnDeathConnection = nil
-    end
-    if AutoRefreshOnDeathCharConnection then
-        AutoRefreshOnDeathCharConnection:Disconnect()
-        AutoRefreshOnDeathCharConnection = nil
-    end
+    if AutoRefreshOnDeathConnection then AutoRefreshOnDeathConnection:Disconnect() AutoRefreshOnDeathConnection = nil end
+    if AutoRefreshOnDeathCharConnection then AutoRefreshOnDeathCharConnection:Disconnect() AutoRefreshOnDeathCharConnection = nil end
 end
 
 local function HookAutoRefreshOnDeathToHumanoid(humanoid)
-    if AutoRefreshOnDeathConnection then
-        AutoRefreshOnDeathConnection:Disconnect()
-        AutoRefreshOnDeathConnection = nil
-    end
+    if AutoRefreshOnDeathConnection then AutoRefreshOnDeathConnection:Disconnect() AutoRefreshOnDeathConnection = nil end
     if not humanoid then return end
-
     AutoRefreshOnDeathConnection = humanoid.Died:Connect(function()
         if not AutoRefreshOnDeathEnabled then return end
         local success, message = SendRefreshCommand()
         MakeNotifi({
-            Title = success and "Auto Refresh (Death)" or "Auto Refresh (Death) — خطأ",
-            Text = success
-                and "تم إرسال ;refresh بعد الموت"
-                or ("تعذر إرسال ;refresh: " .. tostring(message)),
-            Time = success and 3 or 3
+            Title = success and "Auto Refresh (Death)" or "خطأ",
+            Text = success and "تم ;refresh بعد الموت" or ("تعذر: " .. tostring(message)),
+            Time = 3
         })
     end)
 end
 
 local function StartAutoRefreshOnDeathMonitor()
     DisconnectAutoRefreshOnDeathConnections()
-
-    -- اربطه على Humanoid الحالي
     local humanoid = GetAutoRefreshHumanoid()
-    if humanoid then
-        HookAutoRefreshOnDeathToHumanoid(humanoid)
-    end
-
-    -- اربطه على كل respawn جديد
+    if humanoid then HookAutoRefreshOnDeathToHumanoid(humanoid) end
     AutoRefreshOnDeathCharConnection = LP.CharacterAdded:Connect(function(character)
         local newHumanoid = character:WaitForChild("Humanoid", 5)
-        if newHumanoid and AutoRefreshOnDeathEnabled then
-            HookAutoRefreshOnDeathToHumanoid(newHumanoid)
-        end
+        if newHumanoid and AutoRefreshOnDeathEnabled then HookAutoRefreshOnDeathToHumanoid(newHumanoid) end
     end)
 end
 
--- زر: رفريش تلقائي عند الموت (Toggle)
 AddToggleButton(CombatTab, {
     Name = "رفريش تلقائي عند الموت",
     OnText = "رفريش عند الموت: تشغيل",
@@ -2728,24 +3240,15 @@ AddToggleButton(CombatTab, {
     OnEnable = function()
         AutoRefreshOnDeathEnabled = true
         StartAutoRefreshOnDeathMonitor()
-        MakeNotifi({
-            Title = "Auto Refresh (Death)",
-            Text = "تم التفعيل — عند الموت يُرسل ;refresh تلقائياً",
-            Time = 4
-        })
+        MakeNotifi({Title = "Auto Refresh (Death)", Text = "عند الموت يُرسل ;refresh", Time = 4})
     end,
     OnDisable = function()
         AutoRefreshOnDeathEnabled = false
         DisconnectAutoRefreshOnDeathConnections()
-        MakeNotifi({
-            Title = "Auto Refresh (Death)",
-            Text = "تم إيقاف رفريش عند الموت",
-            Time = 2
-        })
+        MakeNotifi({Title = "Auto Refresh (Death)", Text = "تم الإيقاف", Time = 2})
     end
 })
 
--- زر: رفريش تلقائي عند الدم (Toggle)
 AddToggleButton(CombatTab, {
     Name = "رفريش تلقائي (عند الدم)",
     OnText = "رفريش تلقائي: تشغيل",
@@ -2754,24 +3257,17 @@ AddToggleButton(CombatTab, {
     OnEnable = function()
         AutoRefreshEnabled = true
         StartAutoRefreshMonitor()
-        MakeNotifi({
-            Title = "Auto Refresh",
-            Text = "تم التفعيل — يراقب الدم كل فريم، وعند 50% أو أقل يرسل ;refresh فوراً",
-            Time = 4
-        })
+        MakeNotifi({Title = "Auto Refresh", Text = "عند 50% دم يرسل ;refresh", Time = 4})
         CheckHealthAndRefresh()
     end,
     OnDisable = function()
         AutoRefreshEnabled = false
         DisconnectAutoRefreshConnections()
         AutoRefreshTriggered = false
-        MakeNotifi({Title="Auto Refresh", Text="تم إيقاف الرفريش التلقائي", Time=2})
+        MakeNotifi({Title="Auto Refresh", Text="تم الإيقاف", Time=2})
     end
 })
 
--- =============================================
--- الدوال القتالية الأخرى
--- =============================================
 local function CreateShield()
     if LP.Character then
         local shield = LP.Character:FindFirstChild("Monetor_Shield")
@@ -2787,9 +3283,7 @@ end
 local function RemoveShield()
     if LP.Character then
         local shield = LP.Character:FindFirstChild("Monetor_Shield")
-        if shield then
-            shield:Destroy()
-        end
+        if shield then shield:Destroy() end
     end
 end
 
@@ -2808,30 +3302,22 @@ AddToggleButton(CombatTab, {
                 end
             end
         end)
-        MakeNotifi({Title="قتال", Text=" تم تفعيل الدم الحديد — ما تموت!", Time=3})
+        MakeNotifi({Title="قتال", Text="دم حديد مفعل!", Time=3})
     end,
     OnDisable = function()
         GodMode = false
         if godConnection then godConnection:Disconnect() godConnection = nil end
-        MakeNotifi({Title="قتال", Text="تم إيقاف الدم الحديد", Time=2})
+        MakeNotifi({Title="قتال", Text="تم الإيقاف", Time=2})
     end
 })
 
 AddToggleButton(CombatTab, {
-    Name = "درع قوي (ForceField)",
+    Name = "درع قوي",
     OnText = "درع قوي: تشغيل",
     OffText = "درع قوي: إيقاف",
     StartState = false,
-    OnEnable = function()
-        ShieldMode = true
-        CreateShield()
-        MakeNotifi({Title="قتال", Text="️ تم تفعيل الدرع — محمي من الضربات!", Time=3})
-    end,
-    OnDisable = function()
-        ShieldMode = false
-        RemoveShield()
-        MakeNotifi({Title="قتال", Text="تم إيقاف الدرع", Time=2})
-    end
+    OnEnable = function() ShieldMode = true; CreateShield(); MakeNotifi({Title="قتال", Text="الدرع مفعل!", Time=3}) end,
+    OnDisable = function() ShieldMode = false; RemoveShield(); MakeNotifi({Title="قتال", Text="تم الإيقاف", Time=2}) end
 })
 
 AddToggleButton(CombatTab, {
@@ -2858,12 +3344,9 @@ AddToggleButton(CombatTab, {
                 end
             end
         end
-        MakeNotifi({Title="قتال", Text=" ضربتك صارت تقتل بضربة وحدة!", Time=3})
+        MakeNotifi({Title="قتال", Text="ضربة قاتلة!", Time=3})
     end,
-    OnDisable = function()
-        SuperDamage = false
-        MakeNotifi({Title="قتال", Text="تم إيقاف قوة الضربة", Time=2})
-    end
+    OnDisable = function() SuperDamage = false; MakeNotifi({Title="قتال", Text="تم الإيقاف", Time=2}) end
 })
 
 AddToggleButton(CombatTab, {
@@ -2876,14 +3359,14 @@ AddToggleButton(CombatTab, {
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             LP.Character.Humanoid.WalkSpeed = 150
         end
-        MakeNotifi({Title="قتال", Text=" سرعتك صارت 150 — ما يلحقونك!", Time=3})
+        MakeNotifi({Title="قتال", Text="سرعة 150!", Time=3})
     end,
     OnDisable = function()
         CombatSpeed = false
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             LP.Character.Humanoid.WalkSpeed = 16
         end
-        MakeNotifi({Title="قتال", Text="تم إرجاع السرعة", Time=2})
+        MakeNotifi({Title="قتال", Text="تم الإيقاف", Time=2})
     end
 })
 
@@ -2897,64 +3380,42 @@ AddToggleButton(CombatTab, {
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             LP.Character.Humanoid.JumpPower = 300
         end
-        MakeNotifi({Title="قتال", Text=" قفزك صار خارق — تقفز فوق البنايات!", Time=3})
+        MakeNotifi({Title="قتال", Text="قفز 300!", Time=3})
     end,
     OnDisable = function()
         CombatJump = false
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             LP.Character.Humanoid.JumpPower = 50
         end
-        MakeNotifi({Title="قتال", Text="تم إرجاع القفز", Time=2})
+        MakeNotifi({Title="قتال", Text="تم الإيقاف", Time=2})
     end
 })
 
 RunService.Stepped:Connect(function()
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        if CombatSpeed then
-            LP.Character.Humanoid.WalkSpeed = 150
-        end
-        if CombatJump then
-            LP.Character.Humanoid.JumpPower = 300
-        end
+        if CombatSpeed then LP.Character.Humanoid.WalkSpeed = 150 end
+        if CombatJump then LP.Character.Humanoid.JumpPower = 300 end
     end
 end)
 
 LP.CharacterAdded:Connect(function(character)
     task.wait(0.5)
-    if ShieldMode then
-        CreateShield()
-    end
+    if ShieldMode then CreateShield() end
 end)
 
--- =============================================
--- ️  تطوير (MASS LAUNCH + SPIN) — MERGED TOGGLE
--- =============================================
+-- تطوير
 local TATWIR_Active = false
 local TATWIR_SpinSpeed = 200
 local TATWIR_SpeedBox = nil
-local TATWIR_Toggle = nil
 local TATWIR_SpinConnection = nil
 local TATWIR_TouchConnection = nil
 local TATWIR_BodyAngular = nil
 
 local function TATWIR_Cleanup()
     TATWIR_Active = false
-
-    if TATWIR_SpinConnection then
-        TATWIR_SpinConnection:Disconnect()
-        TATWIR_SpinConnection = nil
-    end
-
-    if TATWIR_TouchConnection then
-        TATWIR_TouchConnection:Disconnect()
-        TATWIR_TouchConnection = nil
-    end
-
-    if TATWIR_BodyAngular then
-        pcall(function() TATWIR_BodyAngular:Destroy() end)
-        TATWIR_BodyAngular = nil
-    end
-
+    if TATWIR_SpinConnection then TATWIR_SpinConnection:Disconnect() TATWIR_SpinConnection = nil end
+    if TATWIR_TouchConnection then TATWIR_TouchConnection:Disconnect() TATWIR_TouchConnection = nil end
+    if TATWIR_BodyAngular then pcall(function() TATWIR_BodyAngular:Destroy() end) TATWIR_BodyAngular = nil end
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LP and plr.Character then
             for _, part in ipairs(plr.Character:GetDescendants()) do
@@ -2970,79 +3431,44 @@ local function TATWIR_Cleanup()
             end
         end
     end
-
-    if LP.Character then
-        local myRoot = LP.Character:FindFirstChild("HumanoidRootPart")
-        if myRoot then
-            local oldBV = myRoot:FindFirstChild("Tatwir_Spin")
-            if oldBV then pcall(function() oldBV:Destroy() end) end
-        end
-    end
 end
 
 local function TATWIR_LaunchPlayer(targetChar)
     if not targetChar or targetChar == LP.Character then return end
     local targetRoot = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
     if not targetRoot then return end
-
     local oldBV = targetRoot:FindFirstChild("Tatwir_Launch")
     if oldBV then pcall(function() oldBV:Destroy() end) end
-
     local bv = Instance.new("BodyVelocity")
     bv.Name = "Tatwir_Launch"
     bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    bv.Velocity = Vector3.new(0, 250, 0) + Vector3.new(
-        math.random(-50, 50),
-        0,
-        math.random(-50, 50)
-    )
+    bv.Velocity = Vector3.new(0, 250, 0) + Vector3.new(math.random(-50, 50), 0, math.random(-50, 50))
     bv.Parent = targetRoot
-
-    task.delay(0.35, function()
-        if bv and bv.Parent then
-            bv:Destroy()
-        end
-    end)
+    task.delay(0.35, function() if bv and bv.Parent then bv:Destroy() end end)
 end
 
 local function TATWIR_Start()
     if TATWIR_Active then return end
     local char = LP.Character
-    if not char then
-        MakeNotifi({Title="تطوير", Text="ما موجودة شخصية", Time=2})
-        return
-    end
+    if not char then return end
     local myRoot = char:FindFirstChild("HumanoidRootPart")
-    local myHum = char:FindFirstChildOfClass("Humanoid")
-    if not myRoot or not myHum then
-        MakeNotifi({Title="تطوير", Text="ما موجود HumanoidRootPart", Time=2})
-        return
-    end
-
+    if not myRoot then return end
     TATWIR_Active = true
-
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LP and plr.Character then
             for _, part in ipairs(plr.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    pcall(function()
-                        part.CanCollide = true
-                    end)
-                end
+                if part:IsA("BasePart") then pcall(function() part.CanCollide = true end) end
             end
         end
     end
-
     local oldSpin = myRoot:FindFirstChild("Tatwir_Spin")
     if oldSpin then pcall(function() oldSpin:Destroy() end) end
-
     TATWIR_BodyAngular = Instance.new("BodyAngularVelocity")
     TATWIR_BodyAngular.Name = "Tatwir_Spin"
     TATWIR_BodyAngular.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
     TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
     TATWIR_BodyAngular.P = 9e9
     TATWIR_BodyAngular.Parent = myRoot
-
     TATWIR_TouchConnection = myRoot.Touched:Connect(function(hit)
         if not TATWIR_Active then return end
         local model = hit:FindFirstAncestorOfClass("Model")
@@ -3052,14 +3478,11 @@ local function TATWIR_Start()
         if not plr or plr == LP then return end
         TATWIR_LaunchPlayer(model)
     end)
-
     TATWIR_SpinConnection = RunService.Heartbeat:Connect(function()
         if not TATWIR_Active then return end
-
         if TATWIR_BodyAngular and TATWIR_BodyAngular.Parent then
             TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
         end
-
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LP and plr.Character then
                 for _, part in ipairs(plr.Character:GetDescendants()) do
@@ -3070,48 +3493,32 @@ local function TATWIR_Start()
             end
         end
     end)
-
-    MakeNotifi({
-        Title = "تطوير",
-        Text = "تم التفعيل — كل اللاعبين ملموسين، الدوران: " .. TATWIR_SpinSpeed .. "°/ث، لمس أي لاعب يطير في الجو!",
-        Time = 4
-    })
+    MakeNotifi({Title="تطوير", Text="التطوير مفعل! لمس أي لاعب = يطير", Time=4})
 end
 
 local function TATWIR_Stop()
-    if not TATWIR_Active then
-        MakeNotifi({Title="تطوير", Text="موقّف أصلاً", Time=2})
-        return
-    end
+    if not TATWIR_Active then return end
     TATWIR_Cleanup()
-
-    MakeNotifi({Title="تطوير", Text="تم الإيقاف — رجع كل شي طبيعي", Time=2})
+    MakeNotifi({Title="تطوير", Text="تم الإيقاف", Time=2})
 end
 
--- زر Toggle لتطوير
-TATWIR_Toggle = AddToggleButton(CombatTab, {
+AddToggleButton(CombatTab, {
     Name = "تطوير",
     OnText = "تطوير: تشغيل",
     OffText = "تطوير: إيقاف",
     StartState = false,
-    OnEnable = function()
-        TATWIR_Start()
-    end,
-    OnDisable = function()
-        TATWIR_Stop()
-    end
+    OnEnable = function() TATWIR_Start() end,
+    OnDisable = function() TATWIR_Stop() end
 })
 
--- صندوق سرعة الدوران (Spin Speed)
 TATWIR_SpeedBox = Create("TextBox", CombatTab, {
     Size = UDim2.new(1, 0, 0, 30),
     BackgroundColor3 = Configs_HUB.Cor_Options,
     BackgroundTransparency = 0.25,
     BorderSizePixel = 0,
     Text = tostring(TATWIR_SpinSpeed),
-    PlaceholderText = "اكتب سرعة الدوران (مثال: 200)",
+    PlaceholderText = "سرعة الدوران (مثال: 200)",
     TextColor3 = Configs_HUB.Cor_Text,
-    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
     TextSize = 13,
     Font = Configs_HUB.Text_Font,
     ClearTextOnFocus = false,
@@ -3122,25 +3529,20 @@ Corner(TATWIR_SpeedBox)
 Stroke(TATWIR_SpeedBox)
 
 local function TATWIR_ApplySpeed()
-    local v = tonumber(TATWIR_SpeedBox.Text) or TATWIR_SpinSpeed
-    v = math.clamp(math.floor(v), 0, 100000)
+    local v = math.clamp(math.floor(tonumber(TATWIR_SpeedBox.Text) or TATWIR_SpinSpeed), 0, 100000)
     TATWIR_SpinSpeed = v
     TATWIR_SpeedBox.Text = tostring(v)
     if TATWIR_BodyAngular then
         TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(v), 0)
     end
-    MakeNotifi({Title="تطوير", Text="سرعة الدوران صارت: " .. v .. "°/ث", Time=2})
+    MakeNotifi({Title="تطوير", Text="سرعة الدوران: " .. v .. "°/ث", Time=2})
 end
 
-TATWIR_SpeedBox.FocusLost:Connect(function()
-    TATWIR_ApplySpeed()
-end)
+TATWIR_SpeedBox.FocusLost:Connect(TATWIR_ApplySpeed)
 
 AddButton(CombatTab, {
     Name = " تطبيق سرعة الدوران",
-    Callback = function()
-        TATWIR_ApplySpeed()
-    end
+    Callback = TATWIR_ApplySpeed
 })
 
 AddButton(CombatTab, {
@@ -3151,7 +3553,7 @@ AddButton(CombatTab, {
         if TATWIR_BodyAngular then
             TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
         end
-        MakeNotifi({Title="تطوير", Text="سرعة الدوران: " .. TATWIR_SpinSpeed .. "°/ث", Time=1})
+        MakeNotifi({Title="تطوير", Text="سرعة: " .. TATWIR_SpinSpeed, Time=1})
     end
 })
 
@@ -3163,21 +3565,16 @@ AddButton(CombatTab, {
         if TATWIR_BodyAngular then
             TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
         end
-        MakeNotifi({Title="تطوير", Text="سرعة الدوران: " .. TATWIR_SpinSpeed .. "°/ث", Time=1})
+        MakeNotifi({Title="تطوير", Text="سرعة: " .. TATWIR_SpinSpeed, Time=1})
     end
 })
 
 LP.CharacterAdded:Connect(function()
-    if TATWIR_Active then
-        TATWIR_Stop()
-        if TATWIR_Toggle and TATWIR_Toggle.SetState then
-            TATWIR_Toggle.SetState(false)
-        end
-    end
+    if TATWIR_Active then TATWIR_Stop() end
 end)
 
 -- =============================================
--- TELEPORT TAB (FULLY RESTORED) with Searchable Dropdown
+-- TELEPORT TAB
 -- =============================================
 local TPSelectedPlayer = ""
 
@@ -3194,10 +3591,9 @@ AddButton(TeleportTab, {
     Name = " انتقال فوري للاعب المختار",
     Callback = function()
         if TPSelectedPlayer == "" or TPSelectedPlayer == "لا يوجد لاعبين" then
-            MakeNotifi({Title="تنبيه", Text="يرجى اختيار لاعب", Time=2})
+            MakeNotifi({Title="تنبيه", Text="اختر لاعب", Time=2})
             return
         end
-        
         local targetPlayer = Players:FindFirstChild(TPSelectedPlayer)
         if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
             if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
@@ -3205,13 +3601,13 @@ AddButton(TeleportTab, {
                 MakeNotifi({Title="Teleport", Text="تم الانتقال إلى " .. TPSelectedPlayer, Time=2})
             end
         else
-            MakeNotifi({Title="خطأ", Text="اللاعب غير موجود أو لم يترسبن", Time=2})
+            MakeNotifi({Title="خطأ", Text="اللاعب غير موجود", Time=2})
         end
     end
 })
 
 -- =============================================
--- TROLL TAB (FULLY RESTORED) with Searchable Player Dropdown
+-- TROLL TAB
 -- =============================================
 local selectedPlayerName = ""
 local playerDropdown = nil
@@ -3226,19 +3622,15 @@ local function StopInvisibilityAndFollow(teleportToSafeSpot)
     if invisConnection then invisConnection:Disconnect() invisConnection = nil end
     if followConnection then followConnection:Disconnect() followConnection = nil end
     if targetDeathConnection then targetDeathConnection:Disconnect() targetDeathConnection = nil end
-    
     local char = LP.Character
     if char then
         local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
-        
         if teleportToSafeSpot and root then
             root.CFrame = CFrame.new(EscapePosition)
         end
-
         local humanoid = char:FindFirstChildOfClass("Humanoid")
         if humanoid then humanoid.CameraOffset = Vector3.zero end
         workspace.CurrentCamera.CameraSubject = humanoid or root
-        
         for _, v in pairs(char:GetDescendants()) do
             if v:IsA("BasePart") and v.Transparency == 0.5 then
                 v.Transparency = 0
@@ -3255,13 +3647,12 @@ local function UpdatePlayerList()
         end
     end
     if #playerNames == 0 then table.insert(playerNames, "لا يوجد لاعبين") end
-    
     if playerDropdown then pcall(function() playerDropdown:Update(playerNames) end) end
     if TPDropdown then pcall(function() TPDropdown:Update(playerNames) end) end
 end
 
 playerDropdown = AddDropdown(TrollTab, {
-    Name = "اختر لاعب",
+    Name = "اختر لاعب (للترول)",
     Options = {},
     Searchable = true,
     Callback = function(value)
@@ -3273,91 +3664,64 @@ AddButton(TrollTab, {
     Name = "️ اقتل اللاعب (تتبع + إخفاء + هروب فوري)",
     Callback = function()
         if selectedPlayerName == "" or selectedPlayerName == "لا يوجد لاعبين" then
-            MakeNotifi({Title = "تنبيه", Text = "يرجى اختيار لاعب أولاً من القائمة أعلاه", Time = 3})
+            MakeNotifi({Title = "تنبيه", Text = "اختر لاعب", Time = 3})
             return
         end
 
         pcall(function()
-            local args = {";r6"}
             local signal = RepStorage:FindFirstChild("HDAdminHDClient")
             if signal then
                 signal = signal:FindFirstChild("Signals")
                 if signal then
                     signal = signal:FindFirstChild("RequestCommand")
-                    if signal then
-                        signal:InvokeServer(unpack(args))
-                    end
+                    if signal then signal:InvokeServer(";r6") end
                 end
             end
         end)
 
-        MakeNotifi({Title = "Troll", Text = "جاري التحول إلى R6 وتفعيل الهجوم على " .. selectedPlayerName .. "...", Time = 4})
+        MakeNotifi({Title = "Troll", Text = "جاري التحول إلى R6...", Time = 4})
 
         task.spawn(function()
             task.wait(3)
-            
             local myChar = LP.Character
             if not myChar or not myChar:FindFirstChild("Torso") then
-                MakeNotifi({Title = "تنبيه", Text = "يرجى التأكد من تحول شخصيتك لـ R6 وإعادة الضغط", Time = 3})
+                MakeNotifi({Title = "تنبيه", Text = "تأكد من R6", Time = 3})
                 return
             end
-
             local targetPlayer = Players:FindFirstChild(selectedPlayerName)
             if not targetPlayer or not targetPlayer.Character then
-                MakeNotifi({Title = "خطأ", Text = "اللاعب غير متوفر في السيرفر", Time = 3})
+                MakeNotifi({Title = "خطأ", Text = "اللاعب غير موجود", Time = 3})
                 return
             end
-
             StopInvisibilityAndFollow(false)
             isInvisActive = true
-
-            MakeNotifi({Title = "Troll", Text = "تم تفعيل الإخفاء والتتبع بنجاح!", Time = 3})
-
+            MakeNotifi({Title = "Troll", Text = "تفعل!", Time = 3})
             local myRoot = myChar:WaitForChild("HumanoidRootPart")
             local myHumanoid = myChar:WaitForChild("Humanoid")
-
             local targetHumanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
             if targetHumanoid then
                 targetDeathConnection = targetHumanoid.Died:Connect(function()
                     StopInvisibilityAndFollow(true)
-                    MakeNotifi({Title = "تم القتل!! ", Text = "تم القتل والانتقال فوراً للمكان الآمن (284, 40, 118)", Time = 5})
+                    MakeNotifi({Title = "تم القتل!", Text = "الانتقال للمكان الآمن", Time = 5})
                 end)
             end
-
             invisConnection = RunService.Heartbeat:Connect(function()
                 if not isInvisActive or not myChar or not myHumanoid or myHumanoid.Health <= 0 then
                     StopInvisibilityAndFollow(false)
                     return
                 end
-
-                if workspace.CurrentCamera.CameraSubject ~= myRoot then
-                    workspace.CurrentCamera.CameraSubject = myRoot
-                end
-
+                workspace.CurrentCamera.CameraSubject = myRoot
                 myRoot.CFrame = myRoot.CFrame * CFrame.Angles(math.rad(90), 0, 0)
                 myHumanoid.CameraOffset = Vector3.new(0, 1.44, 0)
-
-                local anim = Instance.new("Animation")
-                anim.AnimationId = "rbxassetid://215384594"
-                local track = myHumanoid:LoadAnimation(anim)
-                track.Priority = Enum.AnimationPriority.Action4
-                track:Play()
-                track:AdjustSpeed(0)
-                track.TimePosition = 0.3
-                RunService.RenderStepped:Wait()
-                track:Stop()
-
                 for _, v in pairs(myChar:GetDescendants()) do
                     if v:IsA("BasePart") and v.Transparency ~= 1 then
                         v.Transparency = 0.5
                     end
                 end
             end)
-
             followConnection = RunService.RenderStepped:Connect(function()
                 if isInvisActive and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local targetRoot = targetPlayer.Character.HumanoidRootPart
-                    myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 1)
+                    myRoot.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
                 end
             end)
         end)
@@ -3368,7 +3732,7 @@ AddButton(TrollTab, {
     Name = " إيقاف الإخفاء والتتبع",
     Callback = function()
         StopInvisibilityAndFollow(false)
-        MakeNotifi({Title = "Troll", Text = "تم إلغاء الإخفاء والتتبع", Time = 2})
+        MakeNotifi({Title = "Troll", Text = "تم الإلغاء", Time = 2})
     end
 })
 
@@ -3377,43 +3741,31 @@ Players.PlayerAdded:Connect(UpdatePlayerList)
 Players.PlayerRemoved:Connect(UpdatePlayerList)
 
 -- =============================================
--- RIGHTS TAB (FULLY RESTORED)
+-- RIGHTS TAB
 -- =============================================
 AddPlayerProfile(RightsTab)
 
 AddButton(RightsTab, {
     Name = " قناة Monetor X على التليجرام",
     Callback = function()
-        pcall(function()
-            if setclipboard then
-                setclipboard('https://t.me/Speed_loder')
-            end
-        end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ رابط قناة التليجرام", Time = 2})
+        pcall(function() if setclipboard then setclipboard('https://t.me/Speed_loder') end end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ الرابط", Time = 2})
     end
 })
 
 AddButton(RightsTab, {
     Name = " حساب Monetor X على التليجرام",
     Callback = function()
-        pcall(function()
-            if setclipboard then
-                setclipboard('@LXEKE')
-            end
-        end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ حساب @monetor_", Time = 2})
+        pcall(function() if setclipboard then setclipboard('@LXEKE') end end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ الحساب", Time = 2})
     end
 })
 
 AddButton(RightsTab, {
     Name = " حساب Monetor X على تيك توك",
     Callback = function()
-        pcall(function()
-            if setclipboard then
-                setclipboard('@monetor_')
-            end
-        end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ حساب @monetor_", Time = 2})
+        pcall(function() if setclipboard then setclipboard('@monetor_') end end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ الحساب", Time = 2})
     end
 })
 
@@ -3436,9 +3788,9 @@ pcall(FullBypass)
 
 task.wait(0.5)
 MakeNotifi({
-    Title = "Monetor X",
-    Text = "تم تفعيل Monetor X بنجاح! استمتع",
-    Time = 3
+    Title = "Monetor X v3.0",
+    Text = "تم تفعيل Monetor X بنجاح!\nميزات: Hitbox Expander، Proximity Panel، Speed Changer، Anti-Void، Sky، Follow",
+    Time = 5
 })
 
-print(" Monetor X Loaded Successfully!")
+print(" Monetor X v3.0 Loaded Successfully!")
