@@ -2707,16 +2707,97 @@ local function StartAutoRefreshMonitor()
 end
 
 -- =============================================
---  Auto Refresh On Death — STABLE / NO DUPLICATE
+--  Auto Refresh On Death — RESPAWN SYNC / NO DUPLICATE
 -- =============================================
 local function DisconnectAutoRefreshOnDeathConnections()
     if AutoRefreshOnDeathConnection then
         AutoRefreshOnDeathConnection:Disconnect()
         AutoRefreshOnDeathConnection = nil
     end
+
     if AutoRefreshOnDeathCharConnection then
         AutoRefreshOnDeathCharConnection:Disconnect()
         AutoRefreshOnDeathCharConnection = nil
+    end
+end
+
+local DeathRefreshToken = 0
+
+local function WaitForGlobalRefreshSlot(token)
+    while AutoRefreshOnDeathEnabled and DeathRefreshPending and token == DeathRefreshToken do
+        local elapsed = os.clock() - LastGlobalRefreshTime
+        local remaining = GLOBAL_REFRESH_COOLDOWN - elapsed
+
+        if not RefreshBusy and remaining <= 0 then
+            return true
+        end
+
+        task.wait(math.clamp(remaining > 0 and remaining or 0.05, 0.05, 0.25))
+    end
+
+    return false
+end
+
+local function PerformDeathRefresh(character, token)
+    -- Give Roblox a moment to finish creating the new character.
+    task.wait(0.25)
+
+    if not AutoRefreshOnDeathEnabled then return end
+    if not DeathRefreshPending then return end
+    if token ~= DeathRefreshToken then return end
+    if not character or LP.Character ~= character then return end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then
+        humanoid = character:WaitForChild("Humanoid", 5)
+    end
+
+    if not humanoid or humanoid.Health <= 0 then
+        return
+    end
+
+    -- If another refresh happened immediately before the death, wait instead
+    -- of dropping the death refresh. This prevents the old bug where the
+    -- new Character caused the pending refresh to be cancelled.
+    if not WaitForGlobalRefreshSlot(token) then
+        return
+    end
+
+    if not AutoRefreshOnDeathEnabled then return end
+    if not DeathRefreshPending then return end
+    if token ~= DeathRefreshToken then return end
+    if LP.Character ~= character then return end
+
+    local success, message = SendRefreshCommand("death")
+
+    if success then
+        MakeNotifi({
+            Title = "Auto Refresh (Death)",
+            Text = "تم إرسال ;refresh بعد الـrespawn",
+            Time = 3
+        })
+
+        -- Consume this death event. CharacterAdded from this refresh will
+        -- only arm the next death and will NOT send another refresh.
+        DeathRefreshPending = false
+        DeathRefreshWaitingForCharacter = false
+        DeathRefreshCharacter = character
+    else
+        MakeNotifi({
+            Title = "Auto Refresh (Death) — خطأ",
+            Text = "تعذر إرسال ;refresh: " .. tostring(message),
+            Time = 3
+        })
+
+        -- Keep it eligible for one controlled retry on the same character.
+        task.delay(0.5, function()
+            if not AutoRefreshOnDeathEnabled then return end
+            if not DeathRefreshPending then return end
+            if token ~= DeathRefreshToken then return end
+            if LP.Character ~= character then return end
+
+            PerformDeathRefresh(character, token)
+        end)
     end
 end
 
@@ -2734,56 +2815,35 @@ local function HookAutoRefreshOnDeathToHumanoid(humanoid)
     AutoRefreshOnDeathConnection = humanoid.Died:Connect(function()
         if not AutoRefreshOnDeathEnabled then return end
 
-        if DeathRefreshPending or DeathRefreshWaitingForCharacter then
+        -- One death = one refresh. Ignore duplicate Died signals.
+        if DeathRefreshPending then
             return
         end
 
-        -- If Health Auto Refresh fired just before death, don't stack another refresh.
+        -- If Health Auto Refresh just fired, this death is very likely part
+        -- of that refresh. Do not stack another refresh on top of it.
         if RefreshBusy or (os.clock() - LastGlobalRefreshTime) < GLOBAL_REFRESH_COOLDOWN then
-            DeathRefreshWaitingForCharacter = true
             return
         end
+
+        DeathRefreshToken += 1
+        local token = DeathRefreshToken
 
         DeathRefreshPending = true
+        DeathRefreshWaitingForCharacter = true
         DeathRefreshCharacter = hookedCharacter
 
-        task.delay(DEATH_REFRESH_DELAY, function()
-            if not AutoRefreshOnDeathEnabled then
-                DeathRefreshPending = false
-                DeathRefreshWaitingForCharacter = false
-                return
-            end
+        -- IMPORTANT: do NOT refresh immediately on Died.
+        -- Wait for CharacterAdded, then refresh the new character.
+        task.delay(4, function()
+            if not AutoRefreshOnDeathEnabled then return end
+            if not DeathRefreshPending then return end
+            if token ~= DeathRefreshToken then return end
 
-            -- If Roblox already created a new character, don't issue a duplicate refresh.
-            if LP.Character and LP.Character ~= DeathRefreshCharacter then
-                local newHumanoid = LP.Character:FindFirstChildOfClass("Humanoid")
-                if newHumanoid and newHumanoid.Health > 0 then
-                    DeathRefreshPending = false
-                    return
-                end
-            end
-
-            if RefreshBusy or (os.clock() - LastGlobalRefreshTime) < GLOBAL_REFRESH_COOLDOWN then
-                DeathRefreshPending = false
-                DeathRefreshWaitingForCharacter = true
-                return
-            end
-
-            local success, message = SendRefreshCommand("death")
-
-            MakeNotifi({
-                Title = success and "Auto Refresh (Death)" or "Auto Refresh (Death) — خطأ",
-                Text = success
-                    and "تم إرسال ;refresh بعد استقرار الموت"
-                    or ("تعذر إرسال ;refresh: " .. tostring(message)),
-                Time = 3
-            })
-
-            if success then
-                DeathRefreshWaitingForCharacter = true
-            else
-                DeathRefreshPending = false
-                DeathRefreshWaitingForCharacter = false
+            -- Fallback only if CharacterAdded was missed/delayed.
+            local currentCharacter = LP.Character
+            if currentCharacter and currentCharacter ~= hookedCharacter then
+                PerformDeathRefresh(currentCharacter, token)
             end
         end)
     end)
@@ -2792,6 +2852,7 @@ end
 local function StartAutoRefreshOnDeathMonitor()
     DisconnectAutoRefreshOnDeathConnections()
 
+    DeathRefreshToken += 1
     DeathRefreshPending = false
     DeathRefreshWaitingForCharacter = false
     DeathRefreshCharacter = nil
@@ -2804,12 +2865,22 @@ local function StartAutoRefreshOnDeathMonitor()
     AutoRefreshOnDeathCharConnection = LP.CharacterAdded:Connect(function(character)
         local newHumanoid = character:WaitForChild("Humanoid", 5)
 
-        if newHumanoid and AutoRefreshOnDeathEnabled then
-            DeathRefreshPending = false
-            DeathRefreshWaitingForCharacter = false
-            DeathRefreshCharacter = character
-            HookAutoRefreshOnDeathToHumanoid(newHumanoid)
+        if not newHumanoid or not AutoRefreshOnDeathEnabled then
+            return
         end
+
+        -- If this Character is the respawn caused by a real death,
+        -- complete the pending refresh AFTER respawn instead of cancelling it.
+        if DeathRefreshPending then
+            local token = DeathRefreshToken
+
+            task.spawn(function()
+                PerformDeathRefresh(character, token)
+            end)
+        end
+
+        -- Arm the next death.
+        HookAutoRefreshOnDeathToHumanoid(newHumanoid)
     end)
 end
 
