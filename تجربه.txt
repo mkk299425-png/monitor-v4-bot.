@@ -2710,10 +2710,11 @@ local function HookAutoRefreshOnDeathToHumanoid(humanoid)
 
         DeathRefreshBusy = true
 
-        -- الإرسال يبدأ فور إطلاق Died، لكن خارج callback حتى لا نعلّق حدث الموت
+        -- يبدأ الإرسال بأسرع جدولة ممكنة بدون حبس callback الموت
         task.spawn(function()
             local success, message = SendRefreshCommand()
 
+            -- نفس ظهور الإشعار المعتاد بدون تغيير واجهة السكربت
             MakeNotifi({
                 Title = success and "Auto Refresh (Death)" or "Auto Refresh (Death) — خطأ",
                 Text = success
