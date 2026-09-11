@@ -2537,7 +2537,6 @@ local godConnection = nil
 --  Auto Refresh (رفريش تلقائي عند الدم)
 -- =============================================
 local AutoRefreshEnabled = false
-local AutoRefreshButton = nil
 local AutoRefreshConnection = nil
 local AutoRefreshCharacterConnection = nil
 local AutoRefreshHealthConnection = nil
@@ -3126,17 +3125,15 @@ local Target_UserId = nil
 local Target_Name = nil
 local Target_Offset = 3 -- الفاصل قدام اللاعب (ستود)
 local Target_Connection = nil
-local Target_AttackConnection = nil
 local Target_Dropdown = nil
 local Target_OffsetBox = nil
 local Target_ToggleObj = nil
 local Target_Attacking = false
-local Target_AttackedPlayer = nil
 
 local TOOL_NAME = "BanHammer"
 
 -- فحص وجود الأداة في الحقيبة أو الانفنتوري
-local function BanHammer()
+local function HasBanHammer()
     local backpack = LP:FindFirstChild("Backpack")
     if backpack and backpack:FindFirstChild(TOOL_NAME) then
         return true, backpack:FindFirstChild(TOOL_NAME), "Backpack"
@@ -3176,9 +3173,8 @@ end
 local function StopTarget()
     Target_Enabled = false
     Target_Attacking = false
-    Target_AttackedPlayer = nil
     if Target_Connection then Target_Connection:Disconnect() Target_Connection = nil end
-    if Target_AttackConnection then Target_AttackConnection:Disconnect() Target_AttackConnection = nil end
+    
 
     -- إيقاف أي ضرب نشط
     local ok, tool, loc = HasBanHammer()
@@ -3508,7 +3504,6 @@ AddButton(TeleportTab, {
 -- TROLL TAB
 -- =============================================
 local selectedPlayerName = ""
-local playerDropdown = nil
 local isInvisActive = false
 local invisConnection = nil
 local followConnection = nil
