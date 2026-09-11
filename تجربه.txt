@@ -2547,22 +2547,15 @@ local LastRefreshTime = 0
 local REFRESH_COOLDOWN = 0.15
 
 -- =============================================
---  Auto Refresh System — STABLE / NO DUPLICATE
+--  Auto Refresh On Death (رفريش تلقائي عند الموت) — جديد
 -- =============================================
 local AutoRefreshOnDeathEnabled = false
 local AutoRefreshOnDeathConnection = nil
 local AutoRefreshOnDeathCharConnection = nil
 
--- Global refresh protection shared by Health + Death systems.
+-- حماية من تكرار/تداخل InvokeServer بدون تأخير إرسال الرفريش
 local RefreshBusy = false
-local LastGlobalRefreshTime = 0
-local GLOBAL_REFRESH_COOLDOWN = 1.50
-
--- Death-specific state.
-local DeathRefreshPending = false
-local DeathRefreshWaitingForCharacter = false
-local DeathRefreshCharacter = nil
-local DEATH_REFRESH_DELAY = 0.80
+local DeathRefreshBusy = false
 
 local function GetAutoRefreshHumanoid()
     local character = LP.Character
@@ -2570,18 +2563,12 @@ local function GetAutoRefreshHumanoid()
     return character:FindFirstChildOfClass("Humanoid")
 end
 
-local function SendRefreshCommand(source)
+local function SendRefreshCommand()
     if RefreshBusy then
-        return false, "تم تجاهل refresh مكرر — يوجد refresh قيد التنفيذ"
-    end
-
-    local now = os.clock()
-    if (now - LastGlobalRefreshTime) < GLOBAL_REFRESH_COOLDOWN then
-        return false, "تم تجاهل refresh متقارب جداً"
+        return false, "refresh قيد التنفيذ"
     end
 
     RefreshBusy = true
-    LastGlobalRefreshTime = now
 
     local ok, success, message = pcall(function()
         local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
@@ -2604,9 +2591,7 @@ local function SendRefreshCommand(source)
     if not ok then
         return false, tostring(success)
     end
-
-    return success == true,
-        message or (success and "تم إرسال ;refresh" or "تعذر إرسال ;refresh")
+    return success == true, message or (success and "تم إرسال ;refresh" or "تعذر إرسال ;refresh")
 end
 
 local function GetAutoRefreshButtonLabel()
@@ -2630,26 +2615,14 @@ local function CheckHealthAndRefresh()
         return
     end
 
-    if DeathRefreshPending or DeathRefreshWaitingForCharacter then
-        return
-    end
-
     local healthPercent = (humanoid.Health / humanoid.MaxHealth) * 100
 
     if healthPercent <= REFRESH_THRESHOLD then
         if not AutoRefreshTriggered and (os.clock() - LastRefreshTime) >= REFRESH_COOLDOWN then
-            if RefreshBusy or (os.clock() - LastGlobalRefreshTime) < GLOBAL_REFRESH_COOLDOWN then
-                return
-            end
-
             AutoRefreshTriggered = true
             LastRefreshTime = os.clock()
 
-            local success, message = SendRefreshCommand("health")
-            if not success then
-                AutoRefreshTriggered = false
-            end
-
+            local success, message = SendRefreshCommand()
             MakeNotifi({
                 Title = success and "Auto Refresh" or "Auto Refresh — خطأ",
                 Text = success
@@ -2707,97 +2680,16 @@ local function StartAutoRefreshMonitor()
 end
 
 -- =============================================
---  Auto Refresh On Death — RESPAWN SYNC / NO DUPLICATE
+--  Auto Refresh On Death Functions (رفريش عند الموت)
 -- =============================================
 local function DisconnectAutoRefreshOnDeathConnections()
     if AutoRefreshOnDeathConnection then
         AutoRefreshOnDeathConnection:Disconnect()
         AutoRefreshOnDeathConnection = nil
     end
-
     if AutoRefreshOnDeathCharConnection then
         AutoRefreshOnDeathCharConnection:Disconnect()
         AutoRefreshOnDeathCharConnection = nil
-    end
-end
-
-local DeathRefreshToken = 0
-
-local function WaitForGlobalRefreshSlot(token)
-    while AutoRefreshOnDeathEnabled and DeathRefreshPending and token == DeathRefreshToken do
-        local elapsed = os.clock() - LastGlobalRefreshTime
-        local remaining = GLOBAL_REFRESH_COOLDOWN - elapsed
-
-        if not RefreshBusy and remaining <= 0 then
-            return true
-        end
-
-        task.wait(math.clamp(remaining > 0 and remaining or 0.05, 0.05, 0.25))
-    end
-
-    return false
-end
-
-local function PerformDeathRefresh(character, token)
-    -- Give Roblox a moment to finish creating the new character.
-    task.wait(0.25)
-
-    if not AutoRefreshOnDeathEnabled then return end
-    if not DeathRefreshPending then return end
-    if token ~= DeathRefreshToken then return end
-    if not character or LP.Character ~= character then return end
-
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then
-        humanoid = character:WaitForChild("Humanoid", 5)
-    end
-
-    if not humanoid or humanoid.Health <= 0 then
-        return
-    end
-
-    -- If another refresh happened immediately before the death, wait instead
-    -- of dropping the death refresh. This prevents the old bug where the
-    -- new Character caused the pending refresh to be cancelled.
-    if not WaitForGlobalRefreshSlot(token) then
-        return
-    end
-
-    if not AutoRefreshOnDeathEnabled then return end
-    if not DeathRefreshPending then return end
-    if token ~= DeathRefreshToken then return end
-    if LP.Character ~= character then return end
-
-    local success, message = SendRefreshCommand("death")
-
-    if success then
-        MakeNotifi({
-            Title = "Auto Refresh (Death)",
-            Text = "تم إرسال ;refresh بعد الـrespawn",
-            Time = 3
-        })
-
-        -- Consume this death event. CharacterAdded from this refresh will
-        -- only arm the next death and will NOT send another refresh.
-        DeathRefreshPending = false
-        DeathRefreshWaitingForCharacter = false
-        DeathRefreshCharacter = character
-    else
-        MakeNotifi({
-            Title = "Auto Refresh (Death) — خطأ",
-            Text = "تعذر إرسال ;refresh: " .. tostring(message),
-            Time = 3
-        })
-
-        -- Keep it eligible for one controlled retry on the same character.
-        task.delay(0.5, function()
-            if not AutoRefreshOnDeathEnabled then return end
-            if not DeathRefreshPending then return end
-            if token ~= DeathRefreshToken then return end
-            if LP.Character ~= character then return end
-
-            PerformDeathRefresh(character, token)
-        end)
     end
 end
 
@@ -2806,81 +2698,52 @@ local function HookAutoRefreshOnDeathToHumanoid(humanoid)
         AutoRefreshOnDeathConnection:Disconnect()
         AutoRefreshOnDeathConnection = nil
     end
-
     if not humanoid then return end
-
-    local hookedCharacter = humanoid.Parent
-    DeathRefreshCharacter = hookedCharacter
 
     AutoRefreshOnDeathConnection = humanoid.Died:Connect(function()
         if not AutoRefreshOnDeathEnabled then return end
 
-        -- One death = one refresh. Ignore duplicate Died signals.
-        if DeathRefreshPending then
+        -- يمنع إرسال أكثر من refresh لنفس الموت، بدون أي تأخير
+        if DeathRefreshBusy or RefreshBusy then
             return
         end
 
-        -- If Health Auto Refresh just fired, this death is very likely part
-        -- of that refresh. Do not stack another refresh on top of it.
-        if RefreshBusy or (os.clock() - LastGlobalRefreshTime) < GLOBAL_REFRESH_COOLDOWN then
-            return
-        end
+        DeathRefreshBusy = true
 
-        DeathRefreshToken += 1
-        local token = DeathRefreshToken
+        -- الإرسال يبدأ فور إطلاق Died، لكن خارج callback حتى لا نعلّق حدث الموت
+        task.spawn(function()
+            local success, message = SendRefreshCommand()
 
-        DeathRefreshPending = true
-        DeathRefreshWaitingForCharacter = true
-        DeathRefreshCharacter = hookedCharacter
+            MakeNotifi({
+                Title = success and "Auto Refresh (Death)" or "Auto Refresh (Death) — خطأ",
+                Text = success
+                    and "تم إرسال ;refresh فوراً عند الموت"
+                    or ("تعذر إرسال ;refresh: " .. tostring(message)),
+                Time = success and 2 or 3
+            })
 
-        -- IMPORTANT: do NOT refresh immediately on Died.
-        -- Wait for CharacterAdded, then refresh the new character.
-        task.delay(4, function()
-            if not AutoRefreshOnDeathEnabled then return end
-            if not DeathRefreshPending then return end
-            if token ~= DeathRefreshToken then return end
-
-            -- Fallback only if CharacterAdded was missed/delayed.
-            local currentCharacter = LP.Character
-            if currentCharacter and currentCharacter ~= hookedCharacter then
-                PerformDeathRefresh(currentCharacter, token)
-            end
+            DeathRefreshBusy = false
         end)
     end)
 end
 
 local function StartAutoRefreshOnDeathMonitor()
     DisconnectAutoRefreshOnDeathConnections()
+    DeathRefreshBusy = false
 
-    DeathRefreshToken += 1
-    DeathRefreshPending = false
-    DeathRefreshWaitingForCharacter = false
-    DeathRefreshCharacter = nil
-
+    -- ربط الموت الحالي
     local humanoid = GetAutoRefreshHumanoid()
     if humanoid then
         HookAutoRefreshOnDeathToHumanoid(humanoid)
     end
 
+    -- إعادة ربط النظام مع كل شخصية جديدة
     AutoRefreshOnDeathCharConnection = LP.CharacterAdded:Connect(function(character)
+        DeathRefreshBusy = false
         local newHumanoid = character:WaitForChild("Humanoid", 5)
-
-        if not newHumanoid or not AutoRefreshOnDeathEnabled then
-            return
+        if newHumanoid and AutoRefreshOnDeathEnabled then
+            HookAutoRefreshOnDeathToHumanoid(newHumanoid)
         end
-
-        -- If this Character is the respawn caused by a real death,
-        -- complete the pending refresh AFTER respawn instead of cancelling it.
-        if DeathRefreshPending then
-            local token = DeathRefreshToken
-
-            task.spawn(function()
-                PerformDeathRefresh(character, token)
-            end)
-        end
-
-        -- Arm the next death.
-        HookAutoRefreshOnDeathToHumanoid(newHumanoid)
     end)
 end
 
@@ -2895,15 +2758,12 @@ AddToggleButton(CombatTab, {
         StartAutoRefreshOnDeathMonitor()
         MakeNotifi({
             Title = "Auto Refresh (Death)",
-            Text = "تم التفعيل — يعمل مرة واحدة لكل موت",
+            Text = "تم التفعيل — عند الموت يُرسل ;refresh تلقائياً",
             Time = 4
         })
     end,
     OnDisable = function()
         AutoRefreshOnDeathEnabled = false
-        DeathRefreshPending = false
-        DeathRefreshWaitingForCharacter = false
-        DeathRefreshCharacter = nil
         DisconnectAutoRefreshOnDeathConnections()
         MakeNotifi({
             Title = "Auto Refresh (Death)",
