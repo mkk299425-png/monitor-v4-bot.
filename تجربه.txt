@@ -1736,15 +1736,6 @@ AddButton(MainTab, {
     end
 })
 
-AddButton(MainTab, {
-    Name = " فارم فلوس",
-    Callback = function()
-        pcall(function()
-            loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/LSDSltPsDZyOKL7q/raw"))()
-        end)
-    end
-})
-
 local RespawnKillDropdown = AddDropdown(MainTab, {
     Name = "اختر الأمر",
     Options = {"رفريش (Respawn)", "موت سريع (Kill)"},
@@ -1980,7 +1971,7 @@ local function UpdateNameVisual(player, billboard, distance)
     local baseColor = target and Color3.fromRGB(255, 55, 55) or GetESPColor(player)
 
     if nameLabel then
-        nameLabel.Text = player.DisplayName ~= "" and player.DisplayName or player.Name
+        nameLabel.Text = player.Name
         nameLabel.TextColor3 = target and Color3.fromRGB(255, 85, 85) or Color3.fromRGB(255, 255, 255)
 
         local accent = nameLabel:FindFirstChild("NameStroke")
@@ -2064,7 +2055,7 @@ local function CreateESPName(player)
         nameLabel.TextWrapped = false
         nameLabel.TextXAlignment = Enum.TextXAlignment.Center
         nameLabel.TextYAlignment = Enum.TextYAlignment.Center
-        nameLabel.Text = player.DisplayName ~= "" and player.DisplayName or player.Name
+        nameLabel.Text = player.Name
         nameLabel.Parent = card
 
         local accent = Instance.new("UIStroke")
@@ -2184,12 +2175,38 @@ local function RefreshTargetVisuals()
     end
 end
 
-local function UpdateRadarTargetList()
-    local options = {}
+local function GetPlayersSortedByDistance()
+    local list = {}
+    local myCharacter = LP.Character
+    local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+    local myPosition = myRoot and myRoot.Position
+
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LP then
-            table.insert(options, player.Name)
+            local distance = math.huge
+            local character = player.Character
+            local root = character and character:FindFirstChild("HumanoidRootPart")
+            if myPosition and root then
+                distance = (root.Position - myPosition).Magnitude
+            end
+            table.insert(list, {player = player, distance = distance})
         end
+    end
+
+    table.sort(list, function(a, b)
+        if a.distance == b.distance then
+            return a.player.Name:lower() < b.player.Name:lower()
+        end
+        return a.distance < b.distance
+    end)
+
+    return list
+end
+
+local function UpdateRadarTargetList()
+    local options = {}
+    for _, entry in ipairs(GetPlayersSortedByDistance()) do
+        table.insert(options, entry.player.Name)
     end
 
     if #options == 0 then
@@ -3278,10 +3295,8 @@ end
 
 local function UpdatePlayerList()
     local playerNames = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LP then
-            table.insert(playerNames, player.Name)
-        end
+    for _, entry in ipairs(GetPlayersSortedByDistance()) do
+        table.insert(playerNames, entry.player.Name)
     end
     if #playerNames == 0 then table.insert(playerNames, "لا يوجد لاعبين") end
     
