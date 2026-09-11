@@ -1,5 +1,5 @@
 -- =============================================
--- MONETOR X (FULLY FIXED + MERGED TOGGLES + AUTO REFRESH ON DEATH + HITBOX EXPANDER)
+-- MONETOR X (FULLY FIXED + MERGED TOGGLES + AUTO REFRESH ON DEATH + TARGET STICK SYSTEM)
 -- Original Code Fully Preserved & Corrected
 -- =============================================
 
@@ -427,7 +427,6 @@ local function UpdateMainFlyButton()
     end
 end
 
--- Fly Control Panel (new)
 local FlyPanel = Create("Frame", ScreenGui, {
     Name = "FlyControlPanel",
     Size = UDim2.new(0, 200, 0, 120),
@@ -443,7 +442,7 @@ local FlyPanel = Create("Frame", ScreenGui, {
 Corner(FlyPanel)
 Stroke(FlyPanel)
 
-local FlyPanelTitle = Create("TextLabel", FlyPanel, {
+Create("TextLabel", FlyPanel, {
     Size = UDim2.new(1, 0, 0, 25),
     BackgroundTransparency = 1,
     Text = "التحكم بالطيران",
@@ -668,7 +667,7 @@ for _, child in ipairs(PlayerGui:GetChildren()) do
 end
 
 -- =============================================
--- MAIN UI & INTERFACE (FULLY RESTORED)
+-- MAIN UI & INTERFACE
 -- =============================================
 local Menu = Create("Frame", ScreenGui, {
     Size = UDim2.new(0, 530, 0, 320),
@@ -684,7 +683,6 @@ local Menu = Create("Frame", ScreenGui, {
 Corner(Menu)
 Stroke(Menu)
 
--- Animated red background on a black base
 local BackgroundFX = Create("Frame", Menu, {
     Name = "Monetor_BackgroundFX",
     Size = UDim2.new(1, 0, 1, 0),
@@ -1122,7 +1120,6 @@ function AddButton(parent, Configs)
     return TextButton
 end
 
--- دالة جديدة: زر Toggle (تشغيل/إيقاف في نفس الزر)
 function AddToggleButton(parent, Configs)
     local ButtonName = Configs.Name or "Toggle!!"
     local OnText = Configs.OnText or (ButtonName .. ": تشغيل")
@@ -1235,9 +1232,6 @@ function AddPlayerProfile(parent)
     return Label
 end
 
--- =============================================
--- UPDATED AddDropdown WITH SEARCH FEATURE
--- =============================================
 function AddDropdown(parent, Configs)
     local DropdownName = Configs.Name or "Dropdown!!"
     local Options = Configs.Options or {"1", "2", "3"}
@@ -1440,7 +1434,7 @@ function AddDropdown(parent, Configs)
 end
 
 -- =============================================
--- TABS CREATION (FULLY RESTORED)
+-- TABS CREATION
 -- =============================================
 local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
 local LocalPlayerTab = MakeTab({Name = "شخصيتي ‍️", TabTitle = true})
@@ -1465,10 +1459,7 @@ local function Monetor_SetCommandStatus(message, isError)
     end
 end
 
--- يحاول استخدام نظام الأوامر الموجود في اللعبة.
--- لا يرسل أي شيء إلى TextChatService/Roblox Chat.
 local function Monetor_ExecuteTitleCommand(text)
-    -- المسار الرئيسي المؤكد من لعبتك: HDAdminHDClient → Signals → RequestCommand
     local commandText = ";titler me " .. text
     local hdClient = RepStorage:WaitForChild("HDAdminHDClient", 5)
     if not hdClient then return false, "HDAdminHDClient غير موجود" end
@@ -1686,7 +1677,7 @@ AddButton(LocalPlayerTab, {
 })
 
 -- =============================================
--- MAIN TAB (FULLY RESTORED) + NEW FEATURES
+-- MAIN TAB
 -- =============================================
 AddButton(MainTab, {
     Name = " فك حماية الطيران",
@@ -1748,7 +1739,6 @@ AddButton(MainTab, {
     Callback = function()
         local selected = RespawnKillDropdown.GetSelected()
         if selected == "رفريش (Respawn)" then
-            -- نرسل أمر ;refresh مباشرة عبر HDAdmin
             pcall(function()
                 local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
                 if hdClient then
@@ -1780,7 +1770,7 @@ AddButton(MainTab, {
 })
 
 -- =============================================
--- LOCAL PLAYER TAB — MERGED TOGGLES (تشغيل/إيقاف في نفس الزر)
+-- LOCAL PLAYER TAB
 -- =============================================
 local SpeedEnabled = false
 local JumpEnabled = false
@@ -1879,7 +1869,7 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 -- =============================================
--- ESP TAB (RADAR LITE) — ثابت الحجم + تحديث سريع + استهداف دائم
+-- ESP TAB (RADAR LITE)
 -- =============================================
 local ESP_Active = false
 local ESP_ShowNames = true
@@ -2531,24 +2521,17 @@ RunService.Heartbeat:Connect(function(dt)
 end)
 
 -- =============================================
--- END OF LIGHT RADAR
--- =============================================
-
--- =============================================
--- ️ COMBAT TAB (قتال) — دم حديد + درع + قوة خارقة + Auto Refresh + Auto Refresh On Death + Hitbox Expander
+-- ️ COMBAT TAB (قتال)
 -- =============================================
 local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
 
 local GodMode = false
 local ShieldMode = false
 local SuperDamage = false
-local AimbotMode = false
 local CombatSpeed = false
 local CombatJump = false
 
 local godConnection = nil
-local shieldConnection = nil
-local aimbotConnection = nil
 
 -- =============================================
 --  Auto Refresh (رفريش تلقائي عند الدم)
@@ -2564,7 +2547,7 @@ local LastRefreshTime = 0
 local REFRESH_COOLDOWN = 0.15
 
 -- =============================================
---  Auto Refresh On Death (رفريش تلقائي عند الموت)
+--  Auto Refresh On Death
 -- =============================================
 local AutoRefreshOnDeathEnabled = false
 local AutoRefreshOnDeathConnection = nil
@@ -2608,18 +2591,6 @@ local function SendRefreshCommand()
         return false, tostring(success)
     end
     return success == true, message or (success and "تم إرسال ;refresh" or "تعذر إرسال ;refresh")
-end
-
-local function GetAutoRefreshButtonLabel()
-    return AutoRefreshButton and AutoRefreshButton:FindFirstChild("TextLabel")
-end
-
-local function SetAutoRefreshButtonText(text)
-    if not AutoRefreshButton then return end
-    local label = GetAutoRefreshButtonLabel()
-    if label then
-        label.Text = text
-    end
 end
 
 local function CheckHealthAndRefresh()
@@ -2695,9 +2666,6 @@ local function StartAutoRefreshMonitor()
     end
 end
 
--- =============================================
---  Auto Refresh On Death Functions (رفريش عند الموت)
--- =============================================
 local function DisconnectAutoRefreshOnDeathConnections()
     if AutoRefreshOnDeathConnection then
         AutoRefreshOnDeathConnection:Disconnect()
@@ -2718,16 +2686,11 @@ local function HookAutoRefreshOnDeathToHumanoid(humanoid)
 
     AutoRefreshOnDeathConnection = humanoid.Died:Connect(function()
         if not AutoRefreshOnDeathEnabled then return end
-
-        if DeathRefreshBusy or RefreshBusy then
-            return
-        end
-
+        if DeathRefreshBusy or RefreshBusy then return end
         DeathRefreshBusy = true
 
         task.spawn(function()
             local success, message = SendRefreshCommand()
-
             MakeNotifi({
                 Title = success and "Auto Refresh (Death)" or "Auto Refresh (Death) — خطأ",
                 Text = success
@@ -2735,7 +2698,6 @@ local function HookAutoRefreshOnDeathToHumanoid(humanoid)
                     or ("تعذر إرسال ;refresh: " .. tostring(message)),
                 Time = success and 2 or 3
             })
-
             DeathRefreshBusy = false
         end)
     end)
@@ -2759,7 +2721,6 @@ local function StartAutoRefreshOnDeathMonitor()
     end)
 end
 
--- زر: رفريش تلقائي عند الموت (Toggle)
 AddToggleButton(CombatTab, {
     Name = "رفريش تلقائي عند الموت",
     OnText = "رفريش عند الموت: تشغيل",
@@ -2768,24 +2729,15 @@ AddToggleButton(CombatTab, {
     OnEnable = function()
         AutoRefreshOnDeathEnabled = true
         StartAutoRefreshOnDeathMonitor()
-        MakeNotifi({
-            Title = "Auto Refresh (Death)",
-            Text = "تم التفعيل — عند الموت يُرسل ;refresh تلقائياً",
-            Time = 4
-        })
+        MakeNotifi({Title = "Auto Refresh (Death)", Text = "تم التفعيل", Time = 3})
     end,
     OnDisable = function()
         AutoRefreshOnDeathEnabled = false
         DisconnectAutoRefreshOnDeathConnections()
-        MakeNotifi({
-            Title = "Auto Refresh (Death)",
-            Text = "تم إيقاف رفريش عند الموت",
-            Time = 2
-        })
+        MakeNotifi({Title = "Auto Refresh (Death)", Text = "تم الإيقاف", Time = 2})
     end
 })
 
--- زر: رفريش تلقائي عند الدم (Toggle)
 AddToggleButton(CombatTab, {
     Name = "رفريش تلقائي (عند الدم)",
     OnText = "رفريش تلقائي: تشغيل",
@@ -2794,18 +2746,14 @@ AddToggleButton(CombatTab, {
     OnEnable = function()
         AutoRefreshEnabled = true
         StartAutoRefreshMonitor()
-        MakeNotifi({
-            Title = "Auto Refresh",
-            Text = "تم التفعيل — يراقب الدم كل فريم، وعند 50% أو أقل يرسل ;refresh فوراً",
-            Time = 4
-        })
+        MakeNotifi({Title = "Auto Refresh", Text = "تم التفعيل", Time = 3})
         CheckHealthAndRefresh()
     end,
     OnDisable = function()
         AutoRefreshEnabled = false
         DisconnectAutoRefreshConnections()
         AutoRefreshTriggered = false
-        MakeNotifi({Title="Auto Refresh", Text="تم إيقاف الرفريش التلقائي", Time=2})
+        MakeNotifi({Title="Auto Refresh", Text="تم الإيقاف", Time=2})
     end
 })
 
@@ -2848,7 +2796,7 @@ AddToggleButton(CombatTab, {
                 end
             end
         end)
-        MakeNotifi({Title="قتال", Text=" تم تفعيل الدم الحديد — ما تموت!", Time=3})
+        MakeNotifi({Title="قتال", Text=" تم تفعيل الدم الحديد", Time=3})
     end,
     OnDisable = function()
         GodMode = false
@@ -2865,7 +2813,7 @@ AddToggleButton(CombatTab, {
     OnEnable = function()
         ShieldMode = true
         CreateShield()
-        MakeNotifi({Title="قتال", Text="️ تم تفعيل الدرع — محمي من الضربات!", Time=3})
+        MakeNotifi({Title="قتال", Text="️ تم تفعيل الدرع", Time=3})
     end,
     OnDisable = function()
         ShieldMode = false
@@ -2916,7 +2864,7 @@ AddToggleButton(CombatTab, {
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             LP.Character.Humanoid.WalkSpeed = 150
         end
-        MakeNotifi({Title="قتال", Text=" سرعتك صارت 150 — ما يلحقونك!", Time=3})
+        MakeNotifi({Title="قتال", Text=" سرعتك صارت 150", Time=3})
     end,
     OnDisable = function()
         CombatSpeed = false
@@ -2937,7 +2885,7 @@ AddToggleButton(CombatTab, {
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             LP.Character.Humanoid.JumpPower = 300
         end
-        MakeNotifi({Title="قتال", Text=" قفزك صار خارق — تقفز فوق البنايات!", Time=3})
+        MakeNotifi({Title="قتال", Text=" قفزك صار خارق", Time=3})
     end,
     OnDisable = function()
         CombatJump = false
@@ -2967,7 +2915,7 @@ LP.CharacterAdded:Connect(function(character)
 end)
 
 -- =============================================
--- ️  تطوير (MASS LAUNCH + SPIN) — MERGED TOGGLE
+-- ️  تطوير (MASS LAUNCH + SPIN)
 -- =============================================
 local TATWIR_Active = false
 local TATWIR_SpinSpeed = 200
@@ -2979,21 +2927,9 @@ local TATWIR_BodyAngular = nil
 
 local function TATWIR_Cleanup()
     TATWIR_Active = false
-
-    if TATWIR_SpinConnection then
-        TATWIR_SpinConnection:Disconnect()
-        TATWIR_SpinConnection = nil
-    end
-
-    if TATWIR_TouchConnection then
-        TATWIR_TouchConnection:Disconnect()
-        TATWIR_TouchConnection = nil
-    end
-
-    if TATWIR_BodyAngular then
-        pcall(function() TATWIR_BodyAngular:Destroy() end)
-        TATWIR_BodyAngular = nil
-    end
+    if TATWIR_SpinConnection then TATWIR_SpinConnection:Disconnect() TATWIR_SpinConnection = nil end
+    if TATWIR_TouchConnection then TATWIR_TouchConnection:Disconnect() TATWIR_TouchConnection = nil end
+    if TATWIR_BodyAngular then pcall(function() TATWIR_BodyAngular:Destroy() end) TATWIR_BodyAngular = nil end
 
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LP and plr.Character then
@@ -3031,33 +2967,21 @@ local function TATWIR_LaunchPlayer(targetChar)
     local bv = Instance.new("BodyVelocity")
     bv.Name = "Tatwir_Launch"
     bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    bv.Velocity = Vector3.new(0, 250, 0) + Vector3.new(
-        math.random(-50, 50),
-        0,
-        math.random(-50, 50)
-    )
+    bv.Velocity = Vector3.new(0, 250, 0) + Vector3.new(math.random(-50, 50), 0, math.random(-50, 50))
     bv.Parent = targetRoot
 
     task.delay(0.35, function()
-        if bv and bv.Parent then
-            bv:Destroy()
-        end
+        if bv and bv.Parent then bv:Destroy() end
     end)
 end
 
 local function TATWIR_Start()
     if TATWIR_Active then return end
     local char = LP.Character
-    if not char then
-        MakeNotifi({Title="تطوير", Text="ما موجودة شخصية", Time=2})
-        return
-    end
+    if not char then return end
     local myRoot = char:FindFirstChild("HumanoidRootPart")
     local myHum = char:FindFirstChildOfClass("Humanoid")
-    if not myRoot or not myHum then
-        MakeNotifi({Title="تطوير", Text="ما موجود HumanoidRootPart", Time=2})
-        return
-    end
+    if not myRoot or not myHum then return end
 
     TATWIR_Active = true
 
@@ -3065,9 +2989,7 @@ local function TATWIR_Start()
         if plr ~= LP and plr.Character then
             for _, part in ipairs(plr.Character:GetDescendants()) do
                 if part:IsA("BasePart") then
-                    pcall(function()
-                        part.CanCollide = true
-                    end)
+                    pcall(function() part.CanCollide = true end)
                 end
             end
         end
@@ -3095,11 +3017,9 @@ local function TATWIR_Start()
 
     TATWIR_SpinConnection = RunService.Heartbeat:Connect(function()
         if not TATWIR_Active then return end
-
         if TATWIR_BodyAngular and TATWIR_BodyAngular.Parent then
             TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
         end
-
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LP and plr.Character then
                 for _, part in ipairs(plr.Character:GetDescendants()) do
@@ -3111,38 +3031,24 @@ local function TATWIR_Start()
         end
     end)
 
-    MakeNotifi({
-        Title = "تطوير",
-        Text = "تم التفعيل — كل اللاعبين ملموسين، الدوران: " .. TATWIR_SpinSpeed .. "°/ث، لمس أي لاعب يطير في الجو!",
-        Time = 4
-    })
+    MakeNotifi({Title = "تطوير", Text = "تم التفعيل", Time = 3})
 end
 
 local function TATWIR_Stop()
-    if not TATWIR_Active then
-        MakeNotifi({Title="تطوير", Text="موقّف أصلاً", Time=2})
-        return
-    end
+    if not TATWIR_Active then return end
     TATWIR_Cleanup()
-
-    MakeNotifi({Title="تطوير", Text="تم الإيقاف — رجع كل شي طبيعي", Time=2})
+    MakeNotifi({Title="تطوير", Text="تم الإيقاف", Time=2})
 end
 
--- زر Toggle لتطوير
 TATWIR_Toggle = AddToggleButton(CombatTab, {
     Name = "تطوير",
     OnText = "تطوير: تشغيل",
     OffText = "تطوير: إيقاف",
     StartState = false,
-    OnEnable = function()
-        TATWIR_Start()
-    end,
-    OnDisable = function()
-        TATWIR_Stop()
-    end
+    OnEnable = function() TATWIR_Start() end,
+    OnDisable = function() TATWIR_Stop() end
 })
 
--- صندوق سرعة الدوران (Spin Speed)
 TATWIR_SpeedBox = Create("TextBox", CombatTab, {
     Size = UDim2.new(1, 0, 0, 30),
     BackgroundColor3 = Configs_HUB.Cor_Options,
@@ -3169,18 +3075,14 @@ local function TATWIR_ApplySpeed()
     if TATWIR_BodyAngular then
         TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(v), 0)
     end
-    MakeNotifi({Title="تطوير", Text="سرعة الدوران صارت: " .. v .. "°/ث", Time=2})
+    MakeNotifi({Title="تطوير", Text="سرعة الدوران: " .. v, Time=2})
 end
 
-TATWIR_SpeedBox.FocusLost:Connect(function()
-    TATWIR_ApplySpeed()
-end)
+TATWIR_SpeedBox.FocusLost:Connect(function() TATWIR_ApplySpeed() end)
 
 AddButton(CombatTab, {
     Name = " تطبيق سرعة الدوران",
-    Callback = function()
-        TATWIR_ApplySpeed()
-    end
+    Callback = function() TATWIR_ApplySpeed() end
 })
 
 AddButton(CombatTab, {
@@ -3191,7 +3093,7 @@ AddButton(CombatTab, {
         if TATWIR_BodyAngular then
             TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
         end
-        MakeNotifi({Title="تطوير", Text="سرعة الدوران: " .. TATWIR_SpinSpeed .. "°/ث", Time=1})
+        MakeNotifi({Title="تطوير", Text="سرعة الدوران: " .. TATWIR_SpinSpeed, Time=1})
     end
 })
 
@@ -3203,7 +3105,7 @@ AddButton(CombatTab, {
         if TATWIR_BodyAngular then
             TATWIR_BodyAngular.AngularVelocity = Vector3.new(0, math.rad(TATWIR_SpinSpeed), 0)
         end
-        MakeNotifi({Title="تطوير", Text="سرعة الدوران: " .. TATWIR_SpinSpeed .. "°/ث", Time=1})
+        MakeNotifi({Title="تطوير", Text="سرعة الدوران: " .. TATWIR_SpinSpeed, Time=1})
     end
 })
 
@@ -3217,221 +3119,267 @@ LP.CharacterAdded:Connect(function()
 end)
 
 -- =============================================
---  HITBOX EXPANDER SYSTEM (تكبير الهيت بوكس للاعب محدد)
+--  نظام استهداف الشخص (HandCuffs Follow + Attack)
 -- =============================================
-local HitboxEnabled = false
-local HitboxTargetUserId = nil
-local HitboxTargetName = nil
-local HitboxSize = 500
-local HitboxTransparency = 0.5
-local HitboxConnection = nil
-local HitboxTargetDropdown = nil
-local HitboxSizeBox = nil
-local HitboxToggleObj = nil
+local Target_Enabled = false
+local Target_UserId = nil
+local Target_Name = nil
+local Target_Offset = 3 -- الفاصل قدام اللاعب (ستود)
+local Target_Connection = nil
+local Target_AttackConnection = nil
+local Target_Dropdown = nil
+local Target_OffsetBox = nil
+local Target_ToggleObj = nil
+local Target_Attacking = false
+local Target_AttackedPlayer = nil
 
-local HITBOX_FOLDER_NAME = "Monetor_Hitbox"
+local TOOL_NAME = "HandCuffs"
 
-local function GetHitboxTargetPlayer()
-    if not HitboxTargetUserId then return nil end
+-- فحص وجود الأداة في الحقيبة أو الانفنتوري
+local function HasHandCuffs()
+    local backpack = LP:FindFirstChild("Backpack")
+    if backpack and backpack:FindFirstChild(TOOL_NAME) then
+        return true, backpack:FindFirstChild(TOOL_NAME), "Backpack"
+    end
+    local character = LP.Character
+    if character then
+        local tool = character:FindFirstChild(TOOL_NAME)
+        if tool and tool:IsA("Tool") then
+            return true, tool, "Character"
+        end
+    end
+    return false, nil, nil
+end
+
+-- تجهيز الأداة (تأخذها بيدك)
+local function EquipTool(tool)
+    if not tool then return false end
+    local character = LP.Character
+    if not character then return false end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return false end
+    if tool.Parent == character then return true end
+    pcall(function()
+        humanoid:EquipTool(tool)
+    end)
+    return true
+end
+
+local function GetTargetPlayer()
+    if not Target_UserId then return nil end
     for _, p in ipairs(Players:GetPlayers()) do
-        if p.UserId == HitboxTargetUserId then return p end
+        if p.UserId == Target_UserId then return p end
     end
     return nil
 end
 
-local function CleanupPlayerHitbox(player)
-    if not player or not player.Character then return end
-    local folder = player.Character:FindFirstChild(HITBOX_FOLDER_NAME)
-    if folder then
-        pcall(function() folder:Destroy() end)
-    end
-    -- إرجاع حجم الأجزاء الطبيعية (في حال كانت معدلة)
-    for _, part in ipairs(player.Character:GetDescendants()) do
-        if part:IsA("BasePart") and part:GetAttribute("Monetor_OriginalSize") then
-            local origSize = part:GetAttribute("Monetor_OriginalSize")
-            if typeof(origSize) == "Vector3" then
-                pcall(function() part.Size = origSize end)
-            end
-            pcall(function() part:SetAttribute("Monetor_OriginalSize", nil) end)
-        end
-    end
-end
+local function StopTarget()
+    Target_Enabled = false
+    Target_Attacking = false
+    Target_AttackedPlayer = nil
+    if Target_Connection then Target_Connection:Disconnect() Target_Connection = nil end
+    if Target_AttackConnection then Target_AttackConnection:Disconnect() Target_AttackConnection = nil end
 
-local function CleanupAllHitboxes()
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LP then
-            CleanupPlayerHitbox(p)
-        end
-    end
-end
-
-local function ApplyHitboxToPlayer(player)
-    if not player or player == LP then return end
-    if not HitboxEnabled then return end
-    if not player.Character then return end
-
-    local character = player.Character
-    local root = character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid or humanoid.Health <= 0 then return end
-
-    local folder = character:FindFirstChild(HITBOX_FOLDER_NAME)
-    if not folder then
-        folder = Instance.new("Folder")
-        folder.Name = HITBOX_FOLDER_NAME
-        folder.Parent = character
-    end
-
-    -- تكبير الهيت بوكس الفعلي (HumanoidRootPart + الأجزاء الأخرى)
-    local sizeVec = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
-    for _, part in ipairs(character:GetDescendants()) do
-        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-            if not part:GetAttribute("Monetor_OriginalSize") then
-                pcall(function() part:SetAttribute("Monetor_OriginalSize", part.Size) end)
-            end
-            pcall(function()
-                part.Size = sizeVec
-                part.Transparency = HitboxTransparency
-                part.CanCollide = false
-                part.Massless = true
-            end)
-        end
-    end
-
-    -- HumanoidRootPart يبقى بحجم كبير جداً لاستقبال الضربات
-    if root then
-        if not root:GetAttribute("Monetor_OriginalSize") then
-            pcall(function() root:SetAttribute("Monetor_OriginalSize", root.Size) end)
-        end
+    -- إيقاف أي ضرب نشط
+    local ok, tool, loc = HasHandCuffs()
+    if ok and tool then
         pcall(function()
-            root.Size = sizeVec
-            root.Transparency = 1
-            root.CanCollide = false
+            if tool:FindFirstChild("Deactivate") then
+                tool.Deactivate(tool)
+            end
         end)
     end
 
-    -- إنشاء الجزء الذي يستقبل الضربات (Hitbox Master)
-    local master = folder:FindFirstChild("MasterHitbox")
-    if not master then
-        master = Instance.new("Part")
-        master.Name = "MasterHitbox"
-        master.Shape = Enum.PartType.Ball
-        master.Anchored = false
-        master.CanCollide = false
-        master.Massless = true
-        master.Transparency = HitboxTransparency
-        master.Color = Color3.fromRGB(255, 0, 0)
-        master.Material = Enum.Material.ForceField
-        master.Parent = folder
-
-        local weld = Instance.new("WeldConstraint")
-        weld.Part0 = master
-        weld.Part1 = root
-        weld.Parent = master
-    end
-
-    master.Size = sizeVec
-    master.CFrame = root.CFrame
-    master.Transparency = HitboxTransparency
-    master.CanCollide = false
-
-    -- إخفاء الـ BaseParts المعدلة عن الكوليجن
-    for _, part in ipairs(character:GetDescendants()) do
-        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-            part.CanCollide = false
-        end
+    -- إرجاع السرعة الطبيعية
+    if LP.Character then
+        local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = 16 end
     end
 end
 
-local function UpdateHitboxDropdown()
+-- دالة الضرب (تدوس زر الضرب مرتين متتاليتين بفاصل ثانية)
+local function AttackTwice(tool)
+    if not tool then return end
+    if Target_Attacking then return end
+    Target_Attacking = true
+
+    task.spawn(function()
+        -- الضربة الأولى
+        pcall(function()
+            if tool:FindFirstChild("Activate") then
+                tool:Activate()
+            end
+        end)
+        task.wait(1)
+        -- الضربة الثانية
+        pcall(function()
+            if tool:FindFirstChild("Activate") then
+                tool:Activate()
+            end
+        end)
+        Target_Attacking = false
+    end)
+end
+
+-- التتبع + الالتصاق
+local function StartTargetLoop()
+    if Target_Connection then Target_Connection:Disconnect() end
+
+    Target_Connection = RunService.Heartbeat:Connect(function()
+        if not Target_Enabled then return end
+
+        local target = GetTargetPlayer()
+        if not target or not target.Character then return end
+
+        local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
+            or target.Character:FindFirstChild("UpperTorso")
+            or target.Character:FindFirstChild("Torso")
+        if not targetRoot then return end
+
+        local targetHum = target.Character:FindFirstChildOfClass("Humanoid")
+        if not targetHum or targetHum.Health <= 0 then
+            StopTarget()
+            MakeNotifi({Title="Target", Text="مات اللاعب المستهدف — تم إيقاف التتبع", Time=3})
+            if Target_ToggleObj and Target_ToggleObj.SetState then
+                Target_ToggleObj.SetState(false)
+            end
+            return
+        end
+
+        local myChar = LP.Character
+        if not myChar then return end
+        local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+        local myHum = myChar:FindFirstChildOfClass("Humanoid")
+        if not myRoot or not myHum or myHum.Health <= 0 then return end
+
+        -- نلتصق قدام اللاعب مع فاصل بسيط
+        -- نستخدم اتجاه اللاعب نفسه عشان نكون قدامه دائماً
+        local targetLook = targetRoot.CFrame.LookVector
+        local behindOffset = targetLook * Target_Offset
+        local finalPos = targetRoot.Position + behindOffset
+
+        -- نثبت CFrame مباشرة عشان نلتصق بدون تأخير
+        myRoot.CFrame = CFrame.new(finalPos, targetRoot.Position)
+
+        -- نلزم الأداة بيد اللاعب (لو ما كانت مجهزة)
+        local hasTool, tool = HasHandCuffs()
+        if hasTool and tool and tool.Parent ~= myChar then
+            EquipTool(tool)
+        end
+
+        -- نضرب كل ما يكون قريب من الهدف
+        if hasTool and tool and not Target_Attacking then
+            AttackTwice(tool)
+        end
+    end)
+end
+
+local function UpdateTargetDropdown()
     local options = {}
     for _, entry in ipairs(GetPlayersSortedByDistance()) do
         table.insert(options, entry.player.Name)
     end
     if #options == 0 then options = {"لا يوجد لاعبين"} end
-    if HitboxTargetDropdown then
-        pcall(function() HitboxTargetDropdown:Update(options) end)
+    if Target_Dropdown then
+        pcall(function() Target_Dropdown:Update(options) end)
     end
 end
 
-local function StartHitboxLoop()
-    if HitboxConnection then HitboxConnection:Disconnect() end
-    HitboxConnection = RunService.Heartbeat:Connect(function()
-        if not HitboxEnabled or not HitboxTargetUserId then return end
-        local target = GetHitboxTargetPlayer()
-        if target and target.Character then
-            ApplyHitboxToPlayer(target)
-        end
-    end)
-end
-
--- زر Toggle: تكبير الهيت بوكس
-HitboxToggleObj = AddToggleButton(CombatTab, {
-    Name = "تكبير Hitbox",
-    OnText = "تكبير Hitbox: تشغيل",
-    OffText = "تكبير Hitbox: إيقاف",
+-- زر Toggle: استهداف الشخص
+Target_ToggleObj = AddToggleButton(CombatTab, {
+    Name = " استهداف الشخص (التصاق + ضرب تلقائي)",
+    OnText = " استهداف الشخص: تشغيل",
+    OffText = " استهداف الشخص: إيقاف",
     StartState = false,
     OnEnable = function()
-        if not HitboxTargetUserId then
-            MakeNotifi({Title="Hitbox", Text="⚠ اختر لاعب من القائمة أولاً", Time=3})
-            if HitboxToggleObj and HitboxToggleObj.SetState then
-                HitboxToggleObj.SetState(false)
+        -- فحص وجود الأداة أولاً
+        local hasTool = HasHandCuffs()
+        if not hasTool then
+            MakeNotifi({
+                Title = "Target — خطأ",
+                Text = "️ لازم تكون أداة HandCuffs عندك في الحقيبة أو الانفنتوري!",
+                Time = 4
+            })
+            if Target_ToggleObj and Target_ToggleObj.SetState then
+                Target_ToggleObj.SetState(false)
             end
             return
         end
-        HitboxEnabled = true
-        StartHitboxLoop()
-        local t = GetHitboxTargetPlayer()
-        if t and t.Character then
-            ApplyHitboxToPlayer(t)
+
+        if not Target_UserId then
+            MakeNotifi({Title="Target", Text="⚠ اختر لاعب من القائمة أولاً", Time=3})
+            if Target_ToggleObj and Target_ToggleObj.SetState then
+                Target_ToggleObj.SetState(false)
+            end
+            return
         end
-        MakeNotifi({Title="Hitbox", Text="✅ تم تكبير الهيت بوكس للاعب: " .. (HitboxTargetName or "?"), Time=3})
+
+        local target = GetTargetPlayer()
+        if not target or not target.Character then
+            MakeNotifi({Title="Target", Text="⚠ اللاعب المستهدف غير متوفر حالياً", Time=3})
+            if Target_ToggleObj and Target_ToggleObj.SetState then
+                Target_ToggleObj.SetState(false)
+            end
+            return
+        end
+
+        -- نجهز الأداة أول
+        local _, tool = HasHandCuffs()
+        if tool then EquipTool(tool) end
+
+        -- ننتقل للاعب فوراً
+        task.spawn(function()
+            task.wait(0.1)
+            local myChar = LP.Character
+            local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+            local targetRoot = target.Character and (target.Character:FindFirstChild("HumanoidRootPart") or target.Character:FindFirstChild("Torso"))
+            if myRoot and targetRoot then
+                local look = targetRoot.CFrame.LookVector
+                myRoot.CFrame = CFrame.new(targetRoot.Position + look * Target_Offset, targetRoot.Position)
+            end
+        end)
+
+        Target_Enabled = true
+        StartTargetLoop()
+
+        MakeNotifi({
+            Title = " Target",
+            Text = "تم تفعيل الاستهداف على: " .. (Target_Name or "?") .. " — الأداة مجهزة والضرب تلقائي",
+            Time = 4
+        })
     end,
     OnDisable = function()
-        HitboxEnabled = false
-        if HitboxConnection then HitboxConnection:Disconnect() HitboxConnection = nil end
-        CleanupAllHitboxes()
-        MakeNotifi({Title="Hitbox", Text="تم إلغاء تكبير الهيت بوكس", Time=2})
+        StopTarget()
+        MakeNotifi({Title="Target", Text="تم إيقاف الاستهداف", Time=2})
     end
 })
 
--- قائمة اختيار اللاعب المستهدف للهيت بوكس
-HitboxTargetDropdown = AddDropdown(CombatTab, {
-    Name = " اختر لاعب لتكبير Hitbox",
+-- قائمة اختيار اللاعب المستهدف
+Target_Dropdown = AddDropdown(CombatTab, {
+    Name = " اختر لاعب للاستهداف",
     Options = {"لا يوجد لاعبين"},
     Searchable = true,
     Callback = function(value)
         if value == "لا يوجد لاعبين" then return end
         local targetPlayer = Players:FindFirstChild(value)
         if not targetPlayer or targetPlayer == LP then
-            MakeNotifi({Title="Hitbox", Text="اللاعب غير متوفر", Time=2})
+            MakeNotifi({Title="Target", Text="اللاعب غير متوفر", Time=2})
             return
         end
-
-        -- تنظيف الهدف السابق
-        local oldTarget = GetHitboxTargetPlayer()
-        if oldTarget then CleanupPlayerHitbox(oldTarget) end
-
-        HitboxTargetUserId = targetPlayer.UserId
-        HitboxTargetName = targetPlayer.Name
-
-        if HitboxEnabled and targetPlayer.Character then
-            ApplyHitboxToPlayer(targetPlayer)
-        end
-
-        MakeNotifi({Title="Hitbox", Text="🎯 تم اختيار: " .. targetPlayer.Name .. " — شغل الزر عشان يكبر", Time=3})
+        Target_UserId = targetPlayer.UserId
+        Target_Name = targetPlayer.Name
+        MakeNotifi({Title="Target", Text="🎯 تم اختيار: " .. targetPlayer.Name, Time=3})
     end
 })
 
--- صندوق حجم الهيت بوكس
-HitboxSizeBox = Create("TextBox", CombatTab, {
+-- صندوق الفاصل قدام اللاعب
+Target_OffsetBox = Create("TextBox", CombatTab, {
     Size = UDim2.new(1, 0, 0, 30),
     BackgroundColor3 = Configs_HUB.Cor_Options,
     BackgroundTransparency = 0.25,
     BorderSizePixel = 0,
-    Text = tostring(HitboxSize),
-    PlaceholderText = "اكتب حجم Hitbox (مثال: 500)",
+    Text = tostring(Target_Offset),
+    PlaceholderText = "الفاصل قدام اللاعب (افتراضي 3)",
     TextColor3 = Configs_HUB.Cor_Text,
     PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
     TextSize = 13,
@@ -3440,102 +3388,90 @@ HitboxSizeBox = Create("TextBox", CombatTab, {
     TextXAlignment = Enum.TextXAlignment.Center,
     ZIndex = 20
 })
-Corner(HitboxSizeBox)
-Stroke(HitboxSizeBox)
+Corner(Target_OffsetBox)
+Stroke(Target_OffsetBox)
 
-local function ApplyHitboxSize()
-    local v = tonumber(HitboxSizeBox.Text) or HitboxSize
-    v = math.clamp(math.floor(v), 5, 5000)
-    HitboxSize = v
-    HitboxSizeBox.Text = tostring(v)
-    local t = GetHitboxTargetPlayer()
-    if HitboxEnabled and t and t.Character then
-        ApplyHitboxToPlayer(t)
-    end
-    MakeNotifi({Title="Hitbox", Text="📏 حجم Hitbox صار: " .. v, Time=2})
+local function ApplyTargetOffset()
+    local v = tonumber(Target_OffsetBox.Text) or Target_Offset
+    v = math.clamp(v, 0.5, 50)
+    Target_Offset = v
+    Target_OffsetBox.Text = tostring(v)
+    MakeNotifi({Title="Target", Text="📏 الفاصل صار: " .. v, Time=2})
 end
 
-HitboxSizeBox.FocusLost:Connect(function()
-    ApplyHitboxSize()
-end)
+Target_OffsetBox.FocusLost:Connect(function() ApplyTargetOffset() end)
 
 AddButton(CombatTab, {
-    Name = " تطبيق حجم Hitbox",
+    Name = " تطبيق الفاصل",
+    Callback = function() ApplyTargetOffset() end
+})
+
+AddButton(CombatTab, {
+    Name = " زيادة الفاصل (+1)",
     Callback = function()
-        ApplyHitboxSize()
+        Target_Offset = Target_Offset + 1
+        Target_OffsetBox.Text = tostring(Target_Offset)
+        MakeNotifi({Title="Target", Text="📏 الفاصل: " .. Target_Offset, Time=1})
     end
 })
 
 AddButton(CombatTab, {
-    Name = " زيادة حجم Hitbox (+100)",
+    Name = " تقليل الفاصل (-1)",
     Callback = function()
-        HitboxSize = HitboxSize + 100
-        HitboxSizeBox.Text = tostring(HitboxSize)
-        local t = GetHitboxTargetPlayer()
-        if HitboxEnabled and t and t.Character then
-            ApplyHitboxToPlayer(t)
+        Target_Offset = math.max(0.5, Target_Offset - 1)
+        Target_OffsetBox.Text = tostring(Target_Offset)
+        MakeNotifi({Title="Target", Text="📏 الفاصل: " .. Target_Offset, Time=1})
+    end
+})
+
+-- زر: فحص وجود الأداة
+AddButton(CombatTab, {
+    Name = " فحص وجود أداة HandCuffs",
+    Callback = function()
+        local has, tool, loc = HasHandCuffs()
+        if has then
+            MakeNotifi({Title="HandCuffs", Text=" الأداة موجودة في: " .. tostring(loc), Time=3})
+        else
+            MakeNotifi({Title="HandCuffs", Text="❌ الأداة غير موجودة — لازم تكون في الحقيبة أو الانفنتوري", Time=4})
         end
-        MakeNotifi({Title="Hitbox", Text="📏 حجم Hitbox: " .. HitboxSize, Time=1})
     end
 })
 
-AddButton(CombatTab, {
-    Name = " تقليل حجم Hitbox (-100)",
-    Callback = function()
-        HitboxSize = math.max(5, HitboxSize - 100)
-        HitboxSizeBox.Text = tostring(HitboxSize)
-        local t = GetHitboxTargetPlayer()
-        if HitboxEnabled and t and t.Character then
-            ApplyHitboxToPlayer(t)
-        end
-        MakeNotifi({Title="Hitbox", Text="📏 حجم Hitbox: " .. HitboxSize, Time=1})
-    end
-})
+AddTextLabel(CombatTab, "💡 الاستخدام: 1) اختر لاعب 2) تأكد من وجود HandCuffs 3) فعّل الزر — يلتصق بيه ويضرب تلقائي حتى يموت")
 
-AddTextLabel(CombatTab, "💡 اختر لاعب من القائمة، فعّل الزر، وكل ضربة بالمطرقة بتوصل له من أي مكان في الماب!")
-
--- تحديث القائمة لما يدخل/يخرج لاعب
+-- تحديث القائمة عند دخول/خروج لاعبين
 Players.PlayerAdded:Connect(function()
     task.wait(0.5)
-    UpdateHitboxDropdown()
+    UpdateTargetDropdown()
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    if player.UserId == HitboxTargetUserId then
-        CleanupPlayerHitbox(player)
-        MakeNotifi({Title="Hitbox", Text="خرج اللاعب المستهدف — تم إيقاف تكبير الهيت بوكس", Time=3})
+    if player.UserId == Target_UserId then
+        MakeNotifi({Title="Target", Text="خرج اللاعب المستهدف — تم إيقاف الاستهداف", Time=3})
+        StopTarget()
+        if Target_ToggleObj and Target_ToggleObj.SetState then
+            Target_ToggleObj.SetState(false)
+        end
     end
     task.wait(0.3)
-    UpdateHitboxDropdown()
+    UpdateTargetDropdown()
 end)
 
--- تحديث الهيت بوكس عند respawn اللاعب
+-- إعادة الربط عند respawn اللاعب المستهدف
 for _, p in ipairs(Players:GetPlayers()) do
     if p ~= LP then
         p.CharacterAdded:Connect(function()
-            task.wait(0.5)
-            if HitboxEnabled and HitboxTargetUserId and p.UserId == HitboxTargetUserId then
-                ApplyHitboxToPlayer(p)
+            if Target_Enabled and Target_UserId and p.UserId == Target_UserId then
+                MakeNotifi({Title="Target", Text="رجع المستهدف — استمرار التتبع", Time=2})
             end
         end)
     end
 end
 
-Players.PlayerAdded:Connect(function(p)
-    if p ~= LP then
-        p.CharacterAdded:Connect(function()
-            task.wait(0.5)
-            if HitboxEnabled and HitboxTargetUserId and p.UserId == HitboxTargetUserId then
-                ApplyHitboxToPlayer(p)
-            end
-        end)
-    end
-end)
-
-UpdateHitboxDropdown()
+UpdateTargetDropdown()
 
 -- =============================================
--- TELEPORT TAB (FULLY RESTORED) with Searchable Dropdown
+-- TELEPORT TAB
 -- =============================================
 local TPSelectedPlayer = ""
 
@@ -3569,7 +3505,7 @@ AddButton(TeleportTab, {
 })
 
 -- =============================================
--- TROLL TAB (FULLY RESTORED) with Searchable Player Dropdown
+-- TROLL TAB
 -- =============================================
 local selectedPlayerName = ""
 local playerDropdown = nil
@@ -3588,7 +3524,6 @@ local function StopInvisibilityAndFollow(teleportToSafeSpot)
     local char = LP.Character
     if char then
         local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
-        
         if teleportToSafeSpot and root then
             root.CFrame = CFrame.new(EscapePosition)
         end
@@ -3629,7 +3564,7 @@ AddButton(TrollTab, {
     Name = "️ اقتل اللاعب (تتبع + إخفاء + هروب فوري)",
     Callback = function()
         if selectedPlayerName == "" or selectedPlayerName == "لا يوجد لاعبين" then
-            MakeNotifi({Title = "تنبيه", Text = "يرجى اختيار لاعب أولاً من القائمة أعلاه", Time = 3})
+            MakeNotifi({Title = "تنبيه", Text = "يرجى اختيار لاعب أولاً", Time = 3})
             return
         end
 
@@ -3647,27 +3582,25 @@ AddButton(TrollTab, {
             end
         end)
 
-        MakeNotifi({Title = "Troll", Text = "جاري التحول إلى R6 وتفعيل الهجوم على " .. selectedPlayerName .. "...", Time = 4})
+        MakeNotifi({Title = "Troll", Text = "جاري التحول إلى R6...", Time = 4})
 
         task.spawn(function()
             task.wait(3)
             
             local myChar = LP.Character
             if not myChar or not myChar:FindFirstChild("Torso") then
-                MakeNotifi({Title = "تنبيه", Text = "يرجى التأكد من تحول شخصيتك لـ R6 وإعادة الضغط", Time = 3})
+                MakeNotifi({Title = "تنبيه", Text = "تأكد من التحول لـ R6", Time = 3})
                 return
             end
 
             local targetPlayer = Players:FindFirstChild(selectedPlayerName)
             if not targetPlayer or not targetPlayer.Character then
-                MakeNotifi({Title = "خطأ", Text = "اللاعب غير متوفر في السيرفر", Time = 3})
+                MakeNotifi({Title = "خطأ", Text = "اللاعب غير متوفر", Time = 3})
                 return
             end
 
             StopInvisibilityAndFollow(false)
             isInvisActive = true
-
-            MakeNotifi({Title = "Troll", Text = "تم تفعيل الإخفاء والتتبع بنجاح!", Time = 3})
 
             local myRoot = myChar:WaitForChild("HumanoidRootPart")
             local myHumanoid = myChar:WaitForChild("Humanoid")
@@ -3676,7 +3609,7 @@ AddButton(TrollTab, {
             if targetHumanoid then
                 targetDeathConnection = targetHumanoid.Died:Connect(function()
                     StopInvisibilityAndFollow(true)
-                    MakeNotifi({Title = "تم القتل!! ", Text = "تم القتل والانتقال فوراً للمكان الآمن (284, 40, 118)", Time = 5})
+                    MakeNotifi({Title = "تم القتل!! ", Text = "تم القتل والانتقال للمكان الآمن", Time = 5})
                 end)
             end
 
@@ -3724,7 +3657,7 @@ AddButton(TrollTab, {
     Name = " إيقاف الإخفاء والتتبع",
     Callback = function()
         StopInvisibilityAndFollow(false)
-        MakeNotifi({Title = "Troll", Text = "تم إلغاء الإخفاء والتتبع", Time = 2})
+        MakeNotifi({Title = "Troll", Text = "تم الإلغاء", Time = 2})
     end
 })
 
@@ -3733,7 +3666,7 @@ Players.PlayerAdded:Connect(UpdatePlayerList)
 Players.PlayerRemoved:Connect(UpdatePlayerList)
 
 -- =============================================
--- RIGHTS TAB (FULLY RESTORED)
+-- RIGHTS TAB
 -- =============================================
 AddPlayerProfile(RightsTab)
 
@@ -3741,11 +3674,9 @@ AddButton(RightsTab, {
     Name = " قناة Monetor X على التليجرام",
     Callback = function()
         pcall(function()
-            if setclipboard then
-                setclipboard('https://t.me/Speed_loder')
-            end
+            if setclipboard then setclipboard('https://t.me/Speed_loder') end
         end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ رابط قناة التليجرام", Time = 2})
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ رابط القناة", Time = 2})
     end
 })
 
@@ -3753,11 +3684,9 @@ AddButton(RightsTab, {
     Name = " حساب Monetor X على التليجرام",
     Callback = function()
         pcall(function()
-            if setclipboard then
-                setclipboard('@LXEKE')
-            end
+            if setclipboard then setclipboard('@LXEKE') end
         end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ حساب @monetor_", Time = 2})
+        MakeNotifi({Title = "Monetor X", Text = "تم النسخ", Time = 2})
     end
 })
 
@@ -3765,11 +3694,9 @@ AddButton(RightsTab, {
     Name = " حساب Monetor X على تيك توك",
     Callback = function()
         pcall(function()
-            if setclipboard then
-                setclipboard('@monetor_')
-            end
+            if setclipboard then setclipboard('@monetor_') end
         end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ حساب @monetor_", Time = 2})
+        MakeNotifi({Title = "Monetor X", Text = "تم النسخ", Time = 2})
     end
 })
 
