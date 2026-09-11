@@ -1,5 +1,5 @@
 -- =============================================
--- MONETOR X (FULLY FIXED + MERGED TOGGLES + AUTO REFRESH ON DEATH)
+-- MONETOR X (FULLY FIXED + MERGED TOGGLES + AUTO REFRESH ON DEATH + HITBOX EXPANDER)
 -- Original Code Fully Preserved & Corrected
 -- =============================================
 
@@ -2535,7 +2535,7 @@ end)
 -- =============================================
 
 -- =============================================
--- ️ COMBAT TAB (قتال) — دم حديد + درع + قوة خارقة + Auto Refresh + Auto Refresh On Death
+-- ️ COMBAT TAB (قتال) — دم حديد + درع + قوة خارقة + Auto Refresh + Auto Refresh On Death + Hitbox Expander
 -- =============================================
 local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
 
@@ -2564,13 +2564,12 @@ local LastRefreshTime = 0
 local REFRESH_COOLDOWN = 0.15
 
 -- =============================================
---  Auto Refresh On Death (رفريش تلقائي عند الموت) — جديد
+--  Auto Refresh On Death (رفريش تلقائي عند الموت)
 -- =============================================
 local AutoRefreshOnDeathEnabled = false
 local AutoRefreshOnDeathConnection = nil
 local AutoRefreshOnDeathCharConnection = nil
 
--- حماية من تكرار/تداخل InvokeServer بدون تأخير إرسال الرفريش
 local RefreshBusy = false
 local DeathRefreshBusy = false
 
@@ -2720,18 +2719,15 @@ local function HookAutoRefreshOnDeathToHumanoid(humanoid)
     AutoRefreshOnDeathConnection = humanoid.Died:Connect(function()
         if not AutoRefreshOnDeathEnabled then return end
 
-        -- يمنع إرسال أكثر من refresh لنفس الموت، بدون أي تأخير
         if DeathRefreshBusy or RefreshBusy then
             return
         end
 
         DeathRefreshBusy = true
 
-        -- يبدأ الإرسال بأسرع جدولة ممكنة بدون حبس callback الموت
         task.spawn(function()
             local success, message = SendRefreshCommand()
 
-            -- نفس ظهور الإشعار المعتاد بدون تغيير واجهة السكربت
             MakeNotifi({
                 Title = success and "Auto Refresh (Death)" or "Auto Refresh (Death) — خطأ",
                 Text = success
@@ -2749,13 +2745,11 @@ local function StartAutoRefreshOnDeathMonitor()
     DisconnectAutoRefreshOnDeathConnections()
     DeathRefreshBusy = false
 
-    -- ربط الموت الحالي
     local humanoid = GetAutoRefreshHumanoid()
     if humanoid then
         HookAutoRefreshOnDeathToHumanoid(humanoid)
     end
 
-    -- إعادة ربط النظام مع كل شخصية جديدة
     AutoRefreshOnDeathCharConnection = LP.CharacterAdded:Connect(function(character)
         DeathRefreshBusy = false
         local newHumanoid = character:WaitForChild("Humanoid", 5)
@@ -3221,6 +3215,324 @@ LP.CharacterAdded:Connect(function()
         end
     end
 end)
+
+-- =============================================
+--  HITBOX EXPANDER SYSTEM (تكبير الهيت بوكس للاعب محدد)
+-- =============================================
+local HitboxEnabled = false
+local HitboxTargetUserId = nil
+local HitboxTargetName = nil
+local HitboxSize = 500
+local HitboxTransparency = 0.5
+local HitboxConnection = nil
+local HitboxTargetDropdown = nil
+local HitboxSizeBox = nil
+local HitboxToggleObj = nil
+
+local HITBOX_FOLDER_NAME = "Monetor_Hitbox"
+
+local function GetHitboxTargetPlayer()
+    if not HitboxTargetUserId then return nil end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p.UserId == HitboxTargetUserId then return p end
+    end
+    return nil
+end
+
+local function CleanupPlayerHitbox(player)
+    if not player or not player.Character then return end
+    local folder = player.Character:FindFirstChild(HITBOX_FOLDER_NAME)
+    if folder then
+        pcall(function() folder:Destroy() end)
+    end
+    -- إرجاع حجم الأجزاء الطبيعية (في حال كانت معدلة)
+    for _, part in ipairs(player.Character:GetDescendants()) do
+        if part:IsA("BasePart") and part:GetAttribute("Monetor_OriginalSize") then
+            local origSize = part:GetAttribute("Monetor_OriginalSize")
+            if typeof(origSize) == "Vector3" then
+                pcall(function() part.Size = origSize end)
+            end
+            pcall(function() part:SetAttribute("Monetor_OriginalSize", nil) end)
+        end
+    end
+end
+
+local function CleanupAllHitboxes()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LP then
+            CleanupPlayerHitbox(p)
+        end
+    end
+end
+
+local function ApplyHitboxToPlayer(player)
+    if not player or player == LP then return end
+    if not HitboxEnabled then return end
+    if not player.Character then return end
+
+    local character = player.Character
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return end
+
+    local folder = character:FindFirstChild(HITBOX_FOLDER_NAME)
+    if not folder then
+        folder = Instance.new("Folder")
+        folder.Name = HITBOX_FOLDER_NAME
+        folder.Parent = character
+    end
+
+    -- تكبير الهيت بوكس الفعلي (HumanoidRootPart + الأجزاء الأخرى)
+    local sizeVec = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            if not part:GetAttribute("Monetor_OriginalSize") then
+                pcall(function() part:SetAttribute("Monetor_OriginalSize", part.Size) end)
+            end
+            pcall(function()
+                part.Size = sizeVec
+                part.Transparency = HitboxTransparency
+                part.CanCollide = false
+                part.Massless = true
+            end)
+        end
+    end
+
+    -- HumanoidRootPart يبقى بحجم كبير جداً لاستقبال الضربات
+    if root then
+        if not root:GetAttribute("Monetor_OriginalSize") then
+            pcall(function() root:SetAttribute("Monetor_OriginalSize", root.Size) end)
+        end
+        pcall(function()
+            root.Size = sizeVec
+            root.Transparency = 1
+            root.CanCollide = false
+        end)
+    end
+
+    -- إنشاء الجزء الذي يستقبل الضربات (Hitbox Master)
+    local master = folder:FindFirstChild("MasterHitbox")
+    if not master then
+        master = Instance.new("Part")
+        master.Name = "MasterHitbox"
+        master.Shape = Enum.PartType.Ball
+        master.Anchored = false
+        master.CanCollide = false
+        master.Massless = true
+        master.Transparency = HitboxTransparency
+        master.Color = Color3.fromRGB(255, 0, 0)
+        master.Material = Enum.Material.ForceField
+        master.Parent = folder
+
+        local weld = Instance.new("WeldConstraint")
+        weld.Part0 = master
+        weld.Part1 = root
+        weld.Parent = master
+    end
+
+    master.Size = sizeVec
+    master.CFrame = root.CFrame
+    master.Transparency = HitboxTransparency
+    master.CanCollide = false
+
+    -- إخفاء الـ BaseParts المعدلة عن الكوليجن
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            part.CanCollide = false
+        end
+    end
+end
+
+local function UpdateHitboxDropdown()
+    local options = {}
+    for _, entry in ipairs(GetPlayersSortedByDistance()) do
+        table.insert(options, entry.player.Name)
+    end
+    if #options == 0 then options = {"لا يوجد لاعبين"} end
+    if HitboxTargetDropdown then
+        pcall(function() HitboxTargetDropdown:Update(options) end)
+    end
+end
+
+local function StartHitboxLoop()
+    if HitboxConnection then HitboxConnection:Disconnect() end
+    HitboxConnection = RunService.Heartbeat:Connect(function()
+        if not HitboxEnabled or not HitboxTargetUserId then return end
+        local target = GetHitboxTargetPlayer()
+        if target and target.Character then
+            ApplyHitboxToPlayer(target)
+        end
+    end)
+end
+
+-- زر Toggle: تكبير الهيت بوكس
+HitboxToggleObj = AddToggleButton(CombatTab, {
+    Name = "تكبير Hitbox",
+    OnText = "تكبير Hitbox: تشغيل",
+    OffText = "تكبير Hitbox: إيقاف",
+    StartState = false,
+    OnEnable = function()
+        if not HitboxTargetUserId then
+            MakeNotifi({Title="Hitbox", Text="⚠ اختر لاعب من القائمة أولاً", Time=3})
+            if HitboxToggleObj and HitboxToggleObj.SetState then
+                HitboxToggleObj.SetState(false)
+            end
+            return
+        end
+        HitboxEnabled = true
+        StartHitboxLoop()
+        local t = GetHitboxTargetPlayer()
+        if t and t.Character then
+            ApplyHitboxToPlayer(t)
+        end
+        MakeNotifi({Title="Hitbox", Text="✅ تم تكبير الهيت بوكس للاعب: " .. (HitboxTargetName or "?"), Time=3})
+    end,
+    OnDisable = function()
+        HitboxEnabled = false
+        if HitboxConnection then HitboxConnection:Disconnect() HitboxConnection = nil end
+        CleanupAllHitboxes()
+        MakeNotifi({Title="Hitbox", Text="تم إلغاء تكبير الهيت بوكس", Time=2})
+    end
+})
+
+-- قائمة اختيار اللاعب المستهدف للهيت بوكس
+HitboxTargetDropdown = AddDropdown(CombatTab, {
+    Name = " اختر لاعب لتكبير Hitbox",
+    Options = {"لا يوجد لاعبين"},
+    Searchable = true,
+    Callback = function(value)
+        if value == "لا يوجد لاعبين" then return end
+        local targetPlayer = Players:FindFirstChild(value)
+        if not targetPlayer or targetPlayer == LP then
+            MakeNotifi({Title="Hitbox", Text="اللاعب غير متوفر", Time=2})
+            return
+        end
+
+        -- تنظيف الهدف السابق
+        local oldTarget = GetHitboxTargetPlayer()
+        if oldTarget then CleanupPlayerHitbox(oldTarget) end
+
+        HitboxTargetUserId = targetPlayer.UserId
+        HitboxTargetName = targetPlayer.Name
+
+        if HitboxEnabled and targetPlayer.Character then
+            ApplyHitboxToPlayer(targetPlayer)
+        end
+
+        MakeNotifi({Title="Hitbox", Text="🎯 تم اختيار: " .. targetPlayer.Name .. " — شغل الزر عشان يكبر", Time=3})
+    end
+})
+
+-- صندوق حجم الهيت بوكس
+HitboxSizeBox = Create("TextBox", CombatTab, {
+    Size = UDim2.new(1, 0, 0, 30),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25,
+    BorderSizePixel = 0,
+    Text = tostring(HitboxSize),
+    PlaceholderText = "اكتب حجم Hitbox (مثال: 500)",
+    TextColor3 = Configs_HUB.Cor_Text,
+    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+    TextSize = 13,
+    Font = Configs_HUB.Text_Font,
+    ClearTextOnFocus = false,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    ZIndex = 20
+})
+Corner(HitboxSizeBox)
+Stroke(HitboxSizeBox)
+
+local function ApplyHitboxSize()
+    local v = tonumber(HitboxSizeBox.Text) or HitboxSize
+    v = math.clamp(math.floor(v), 5, 5000)
+    HitboxSize = v
+    HitboxSizeBox.Text = tostring(v)
+    local t = GetHitboxTargetPlayer()
+    if HitboxEnabled and t and t.Character then
+        ApplyHitboxToPlayer(t)
+    end
+    MakeNotifi({Title="Hitbox", Text="📏 حجم Hitbox صار: " .. v, Time=2})
+end
+
+HitboxSizeBox.FocusLost:Connect(function()
+    ApplyHitboxSize()
+end)
+
+AddButton(CombatTab, {
+    Name = " تطبيق حجم Hitbox",
+    Callback = function()
+        ApplyHitboxSize()
+    end
+})
+
+AddButton(CombatTab, {
+    Name = " زيادة حجم Hitbox (+100)",
+    Callback = function()
+        HitboxSize = HitboxSize + 100
+        HitboxSizeBox.Text = tostring(HitboxSize)
+        local t = GetHitboxTargetPlayer()
+        if HitboxEnabled and t and t.Character then
+            ApplyHitboxToPlayer(t)
+        end
+        MakeNotifi({Title="Hitbox", Text="📏 حجم Hitbox: " .. HitboxSize, Time=1})
+    end
+})
+
+AddButton(CombatTab, {
+    Name = " تقليل حجم Hitbox (-100)",
+    Callback = function()
+        HitboxSize = math.max(5, HitboxSize - 100)
+        HitboxSizeBox.Text = tostring(HitboxSize)
+        local t = GetHitboxTargetPlayer()
+        if HitboxEnabled and t and t.Character then
+            ApplyHitboxToPlayer(t)
+        end
+        MakeNotifi({Title="Hitbox", Text="📏 حجم Hitbox: " .. HitboxSize, Time=1})
+    end
+})
+
+AddTextLabel(CombatTab, "💡 اختر لاعب من القائمة، فعّل الزر، وكل ضربة بالمطرقة بتوصل له من أي مكان في الماب!")
+
+-- تحديث القائمة لما يدخل/يخرج لاعب
+Players.PlayerAdded:Connect(function()
+    task.wait(0.5)
+    UpdateHitboxDropdown()
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    if player.UserId == HitboxTargetUserId then
+        CleanupPlayerHitbox(player)
+        MakeNotifi({Title="Hitbox", Text="خرج اللاعب المستهدف — تم إيقاف تكبير الهيت بوكس", Time=3})
+    end
+    task.wait(0.3)
+    UpdateHitboxDropdown()
+end)
+
+-- تحديث الهيت بوكس عند respawn اللاعب
+for _, p in ipairs(Players:GetPlayers()) do
+    if p ~= LP then
+        p.CharacterAdded:Connect(function()
+            task.wait(0.5)
+            if HitboxEnabled and HitboxTargetUserId and p.UserId == HitboxTargetUserId then
+                ApplyHitboxToPlayer(p)
+            end
+        end)
+    end
+end
+
+Players.PlayerAdded:Connect(function(p)
+    if p ~= LP then
+        p.CharacterAdded:Connect(function()
+            task.wait(0.5)
+            if HitboxEnabled and HitboxTargetUserId and p.UserId == HitboxTargetUserId then
+                ApplyHitboxToPlayer(p)
+            end
+        end)
+    end
+end)
+
+UpdateHitboxDropdown()
 
 -- =============================================
 -- TELEPORT TAB (FULLY RESTORED) with Searchable Dropdown
