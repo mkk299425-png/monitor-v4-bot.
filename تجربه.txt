@@ -4,11 +4,11 @@
 -- =============================================
 
 local Players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
 local LP = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
 local RepStorage = game:GetService("ReplicatedStorage")
 local LogService = game:GetService("LogService")
@@ -858,19 +858,57 @@ local Minimize_BTN = Create("TextButton", ButtonsFrame, {
     TextSize = 25
 })
 local IsMinimized = false
-Minimize_BTN.MouseButton1Click:Connect(function()
-    IsMinimized = not IsMinimized
-    Minimize_BTN.Text = IsMinimized and "+" or "-"
 
-    local width, fullHeight = GetResponsiveMenuSize()
-    if IsMinimized then
-        -- 32px keeps the entire top bar visible instead of turning it into
-        -- a clipped line. It also remains a valid drag area.
-        CreateTween(Menu, "Size", UDim2.fromOffset(width, MINIMIZED_HEIGHT), 0.15, true)
-    else
-        CreateTween(Menu, "Size", UDim2.fromOffset(width, fullHeight), 0.15, true)
+-- فقط منع خروج القائمة من حدود الشاشة، بدون تغيير شكلها أو أحجامها
+local MENU_MARGIN = 4
+local _clampingMenu = false
+
+local function ClampMenuPosition()
+    if _clampingMenu or not Menu or not Menu.Parent then return end
+
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+
+    local viewport = camera.ViewportSize
+    local inset = GuiService:GetGuiInset()
+    local size = Menu.AbsoluteSize
+    local absolute = Menu.AbsolutePosition
+
+    local minX = MENU_MARGIN
+    local maxX = math.max(minX, viewport.X - size.X - MENU_MARGIN)
+    local minY = inset.Y + MENU_MARGIN
+    local maxY = math.max(minY, viewport.Y - size.Y - MENU_MARGIN)
+
+    local x = math.clamp(absolute.X, minX, maxX)
+    local y = math.clamp(absolute.Y, minY, maxY)
+
+    if x ~= absolute.X or y ~= absolute.Y then
+        _clampingMenu = true
+        -- نحافظ على نفس الـScale/الشكل، ونعدل الـOffset فقط
+        Menu.Position = UDim2.new(
+            Menu.Position.X.Scale,
+            x - (viewport.X * Menu.Position.X.Scale),
+            Menu.Position.Y.Scale,
+            y - (viewport.Y * Menu.Position.Y.Scale)
+        )
+        _clampingMenu = false
     end
-    ClampMenuNow()
+end
+
+Menu:GetPropertyChangedSignal("Position"):Connect(ClampMenuPosition)
+Menu:GetPropertyChangedSignal("AbsoluteSize"):Connect(ClampMenuPosition)
+
+task.defer(ClampMenuPosition)
+
+Minimize_BTN.MouseButton1Click:Connect(function()
+    Minimize_BTN.Text = not IsMinimized and "+" or "-"
+    if IsMinimized then
+        IsMinimized = false
+        CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.15, false)
+    else
+        IsMinimized = true
+        CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 25), 0.15, true)
+    end
 end)
 
 local Close_Button = Create("TextButton", ButtonsFrame, {
@@ -886,9 +924,7 @@ local Close_Button = Create("TextButton", ButtonsFrame, {
 })
 local function CreateClose()
     IsMinimized = false
-    local closeWidth, closeHeight = GetResponsiveMenuSize()
-    CreateTween(Menu, "Size", UDim2.fromOffset(closeWidth, closeHeight), 0.3, false)
-    task.defer(ClampMenuNow)
+    CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, false)
     local CloseGui = Create("TextButton", Menu, {
         BackgroundTransparency = 0.5,
         BackgroundColor3 = Configs_HUB.Cor_Hub,
@@ -961,172 +997,6 @@ local function CreateClose()
 end
 Close_Button.MouseButton1Click:Connect(CreateClose)
 
--- =============================================
--- BOUNDED MENU DRAG + RESPONSIVE SCREEN LIMITS
--- =============================================
--- The menu can be dragged normally, but it is NEVER allowed to leave
--- the visible screen. The top bar remains usable while minimized.
-local MENU_MARGIN = 6
-local MINIMIZED_HEIGHT = 32
-local FULL_MENU_WIDTH = 530
-local FULL_MENU_HEIGHT = 320
-local draggingMenu = false
-local dragStartInputPosition = nil
-local dragStartMenuPosition = nil
-local dragInputConnection = nil
-
-local function GetViewportSize()
-    local camera = workspace.CurrentCamera
-    if camera then
-        return camera.ViewportSize
-    end
-    return Vector2.new(800, 600)
-end
-
-local function GetSafeViewport()
-    local viewport = GetViewportSize()
-    local insetTopLeft = Vector2.zero
-    pcall(function()
-        local topLeftInset = GuiService:GetGuiInset()
-        insetTopLeft = topLeftInset
-    end)
-    return viewport, insetTopLeft
-end
-
-local function ClampMenuPosition(x, y)
-    local viewport, inset = GetSafeViewport()
-    local menuSize = Menu.AbsoluteSize
-    local maxX = math.max(MENU_MARGIN, viewport.X - menuSize.X - MENU_MARGIN)
-    local minY = math.max(MENU_MARGIN, inset.Y + MENU_MARGIN)
-    local maxY = math.max(minY, viewport.Y - menuSize.Y - MENU_MARGIN)
-
-    x = math.clamp(x, MENU_MARGIN, maxX)
-    y = math.clamp(y, minY, maxY)
-    return x, y
-end
-
-local function ClampMenuNow()
-    local x, y = ClampMenuPosition(Menu.Position.X.Offset, Menu.Position.Y.Offset)
-    Menu.Position = UDim2.fromOffset(x, y)
-end
-
-local function GetResponsiveMenuSize()
-    local viewport = GetViewportSize()
-    local availableWidth = math.max(220, viewport.X - (MENU_MARGIN * 2))
-    local availableHeight = math.max(MINIMIZED_HEIGHT, viewport.Y - (MENU_MARGIN * 2))
-
-    -- Keep the original 530x320 design when there is enough room.
-    -- On smaller phones, reduce the GUI proportionally so it cannot
-    -- become wider/taller than the actual screen.
-    local width = math.min(FULL_MENU_WIDTH, availableWidth)
-    local height = math.min(FULL_MENU_HEIGHT, availableHeight)
-    return width, height
-end
-
-local function ApplyResponsiveMenuSize(forceFull)
-    local width, height = GetResponsiveMenuSize()
-    if forceFull and not IsMinimized then
-        Menu.Size = UDim2.fromOffset(width, height)
-    elseif IsMinimized then
-        Menu.Size = UDim2.fromOffset(width, MINIMIZED_HEIGHT)
-    end
-    ClampMenuNow()
-end
-
-local function PointInside(guiObject, point)
-    if not guiObject or not guiObject.Visible then return false end
-    local pos = guiObject.AbsolutePosition
-    local size = guiObject.AbsoluteSize
-    return point.X >= pos.X and point.X <= pos.X + size.X
-        and point.Y >= pos.Y and point.Y <= pos.Y + size.Y
-end
-
--- Drag from the whole top strip, including the title/icon. The minimize
--- and close buttons stay clickable and do not start a drag.
-local function IsMenuDragPoint(point)
-    if not TopBar.Visible or not PointInside(TopBar, point) then
-        return false
-    end
-    if PointInside(ButtonsFrame, point) then
-        return false
-    end
-    return true
-end
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed or not Menu.Parent or not TopBar.Visible then return end
-    if input.UserInputType ~= Enum.UserInputType.MouseButton1
-        and input.UserInputType ~= Enum.UserInputType.Touch then
-        return
-    end
-
-    if IsMenuDragPoint(input.Position) then
-        draggingMenu = true
-        dragStartInputPosition = input.Position
-        dragStartMenuPosition = Vector2.new(Menu.Position.X.Offset, Menu.Position.Y.Offset)
-
-        if dragInputConnection then
-            dragInputConnection:Disconnect()
-            dragInputConnection = nil
-        end
-
-        dragInputConnection = UserInputService.InputChanged:Connect(function(changedInput)
-            if not draggingMenu then return end
-            if changedInput.UserInputType ~= Enum.UserInputType.MouseMovement
-                and changedInput.UserInputType ~= Enum.UserInputType.Touch then
-                return
-            end
-
-            local delta = changedInput.Position - dragStartInputPosition
-            local x = dragStartMenuPosition.X + delta.X
-            local y = dragStartMenuPosition.Y + delta.Y
-            x, y = ClampMenuPosition(x, y)
-            Menu.Position = UDim2.fromOffset(x, y)
-        end)
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-        draggingMenu = false
-        dragStartInputPosition = nil
-        dragStartMenuPosition = nil
-        if dragInputConnection then
-            dragInputConnection:Disconnect()
-            dragInputConnection = nil
-        end
-        ClampMenuNow()
-    end
-end)
-
--- Re-clamp whenever the phone rotates/resizes, and after minimize/restore.
-local cameraChangedConnection
-local function WatchViewport()
-    if cameraChangedConnection then
-        cameraChangedConnection:Disconnect()
-        cameraChangedConnection = nil
-    end
-    local camera = workspace.CurrentCamera
-    if camera then
-        cameraChangedConnection = camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-            task.defer(function()
-                if not Menu.Parent then return end
-                local width, height = GetResponsiveMenuSize()
-                if IsMinimized then
-                    Menu.Size = UDim2.fromOffset(width, MINIMIZED_HEIGHT)
-                else
-                    Menu.Size = UDim2.fromOffset(width, height)
-                end
-                ClampMenuNow()
-            end)
-        end)
-    end
-end
-
-workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(WatchViewport)
-WatchViewport()
-
 local AnimMenu = Create("Frame", ScreenGui, {
     Position = UDim2.new(0.5, 0, 0.5, 0),
     AnchorPoint = Vector2.new(0.5, 0.5),
@@ -1163,12 +1033,23 @@ task.wait(1)
 for i = 0, 1, 0.1 do task.wait() Anim_Credits.TextTransparency = i end
 Anim_Credits:Destroy(); PlayerHead:Destroy(); AnimMenu:Destroy()
 
-local initialWidth, initialHeight = GetResponsiveMenuSize()
-CreateTween(Menu, "Size", UDim2.fromOffset(initialWidth, MINIMIZED_HEIGHT), 0.5, true)
+CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 35), 0.5, true)
 TopBar.Visible = true
-CreateTween(Menu, "Size", UDim2.fromOffset(initialWidth, initialHeight), 0.3, true)
-Menu.Draggable = false
-ClampMenuNow()
+CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, true)
+Menu.Draggable = true
+
+-- إذا تغير حجم الشاشة/الوضع، فقط أرجع القائمة للداخل إذا احتاجت؛ الشكل يبقى كما هو
+local function WatchMenuViewport()
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    camera:GetPropertyChangedSignal("ViewportSize"):Connect(ClampMenuPosition)
+    ClampMenuPosition()
+end
+
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+    task.defer(WatchMenuViewport)
+end)
+WatchMenuViewport()
 
 local ScrollBar = Create("ScrollingFrame", Menu, {
     Size = UDim2.new(0, 140, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
