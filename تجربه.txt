@@ -3119,7 +3119,7 @@ LP.CharacterAdded:Connect(function()
 end)
 
 -- =============================================
---  نظام استهداف الشخص (HandCuffs Follow + Attack)
+--  نظام استهداف الشخص (BanHammer Follow + Attack)
 -- =============================================
 local Target_Enabled = false
 local Target_UserId = nil
@@ -3133,10 +3133,10 @@ local Target_ToggleObj = nil
 local Target_Attacking = false
 local Target_AttackedPlayer = nil
 
-local TOOL_NAME = "HandCuffs"
+local TOOL_NAME = "BanHammer"
 
 -- فحص وجود الأداة في الحقيبة أو الانفنتوري
-local function HasHandCuffs()
+local function BanHammer()
     local backpack = LP:FindFirstChild("Backpack")
     if backpack and backpack:FindFirstChild(TOOL_NAME) then
         return true, backpack:FindFirstChild(TOOL_NAME), "Backpack"
@@ -3181,7 +3181,7 @@ local function StopTarget()
     if Target_AttackConnection then Target_AttackConnection:Disconnect() Target_AttackConnection = nil end
 
     -- إيقاف أي ضرب نشط
-    local ok, tool, loc = HasHandCuffs()
+    local ok, tool, loc = HasBanHammer()
     if ok and tool then
         pcall(function()
             if tool:FindFirstChild("Deactivate") then
@@ -3262,7 +3262,7 @@ local function StartTargetLoop()
         myRoot.CFrame = CFrame.new(finalPos, targetRoot.Position)
 
         -- نلزم الأداة بيد اللاعب (لو ما كانت مجهزة)
-        local hasTool, tool = HasHandCuffs()
+        local hasTool, tool = HasBanHammer()
         if hasTool and tool and tool.Parent ~= myChar then
             EquipTool(tool)
         end
@@ -3293,11 +3293,11 @@ Target_ToggleObj = AddToggleButton(CombatTab, {
     StartState = false,
     OnEnable = function()
         -- فحص وجود الأداة أولاً
-        local hasTool = HasHandCuffs()
+        local hasTool = HasBanHammer()
         if not hasTool then
             MakeNotifi({
                 Title = "Target — خطأ",
-                Text = "️ لازم تكون أداة HandCuffs عندك في الحقيبة أو الانفنتوري!",
+                Text = "️ لازم تكون أداة BanHammer عندك في الحقيبة أو الانفنتوري!",
                 Time = 4
             })
             if Target_ToggleObj and Target_ToggleObj.SetState then
@@ -3324,7 +3324,7 @@ Target_ToggleObj = AddToggleButton(CombatTab, {
         end
 
         -- نجهز الأداة أول
-        local _, tool = HasHandCuffs()
+        local _, tool = HasBanHammer()
         if tool then EquipTool(tool) end
 
         -- ننتقل للاعب فوراً
@@ -3426,18 +3426,18 @@ AddButton(CombatTab, {
 
 -- زر: فحص وجود الأداة
 AddButton(CombatTab, {
-    Name = " فحص وجود أداة HandCuffs",
+    Name = " فحص وجود أداة BanHammer",
     Callback = function()
-        local has, tool, loc = HasHandCuffs()
+        local has, tool, loc = HasBanHammer()
         if has then
-            MakeNotifi({Title="HandCuffs", Text=" الأداة موجودة في: " .. tostring(loc), Time=3})
+            MakeNotifi({Title="BanHammer", Text=" الأداة موجودة في: " .. tostring(loc), Time=3})
         else
-            MakeNotifi({Title="HandCuffs", Text="❌ الأداة غير موجودة — لازم تكون في الحقيبة أو الانفنتوري", Time=4})
+            MakeNotifi({Title="BanHammer", Text="❌ الأداة غير موجودة — لازم تكون في الحقيبة أو الانفنتوري", Time=4})
         end
     end
 })
 
-AddTextLabel(CombatTab, "💡 الاستخدام: 1) اختر لاعب 2) تأكد من وجود HandCuffs 3) فعّل الزر — يلتصق بيه ويضرب تلقائي حتى يموت")
+AddTextLabel(CombatTab, "💡 الاستخدام: 1) اختر لاعب 2) تأكد من وجود BanHammer 3) فعّل الزر — يلتصق بيه ويضرب تلقائي حتى يموت")
 
 -- تحديث القائمة عند دخول/خروج لاعبين
 Players.PlayerAdded:Connect(function()
