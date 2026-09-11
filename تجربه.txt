@@ -4,7 +4,6 @@
 -- =============================================
 
 local Players = game:GetService("Players")
-local GuiService = game:GetService("GuiService")
 local LP = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
@@ -94,6 +93,106 @@ local function TextSetColor(instance)
     instance.MouseLeave:Connect(function()
         CreateTween(instance, "TextColor3", Configs_HUB.Cor_Text, 0.4, false)
     end)
+end
+
+-- =============================================
+-- PROFILE / SOCIAL HELPERS
+-- =============================================
+local function GetAvatar(userId)
+    local image = ""
+    pcall(function()
+        local content, ready = Players:GetUserThumbnailAsync(
+            userId,
+            Enum.ThumbnailType.HeadShot,
+            Enum.ThumbnailSize.Size420x420
+        )
+        if ready then
+            image = content
+        end
+    end)
+    return image
+end
+
+local MonetorOwnerUserId = nil
+pcall(function()
+    MonetorOwnerUserId = Players:GetUserIdFromNameAsync("sjbcjjs0")
+end)
+
+local function CopyToClipboard(text)
+    local ok = false
+    pcall(function()
+        if setclipboard then
+            setclipboard(text)
+            ok = true
+        elseif toclipboard then
+            toclipboard(text)
+            ok = true
+        end
+    end)
+    return ok
+end
+
+local function TryOpenLink(url)
+    local opened = false
+
+    pcall(function()
+        if open_url then
+            open_url(url)
+            opened = true
+        end
+    end)
+
+    if not opened then
+        pcall(function()
+            if openurl then
+                openurl(url)
+                opened = true
+            end
+        end)
+    end
+
+    if not opened then
+        pcall(function()
+            if open_browser then
+                open_browser(url)
+                opened = true
+            end
+        end)
+    end
+
+    if not opened then
+        pcall(function()
+            local GuiService = game:GetService("GuiService")
+            if GuiService.OpenBrowserWindow then
+                GuiService:OpenBrowserWindow(url)
+                opened = true
+            end
+        end)
+    end
+
+    return opened
+end
+
+local function SocialAction(label, value, url)
+    local copied = CopyToClipboard(value)
+    local opened = false
+
+    if url then
+        opened = TryOpenLink(url)
+    end
+
+    local message
+    if copied and opened then
+        message = "تم فتح الرابط ونسخه للحافظة"
+    elseif copied then
+        message = "تم نسخ الرابط للحافظة — الفتح التلقائي غير متاح"
+    elseif opened then
+        message = "تم فتح الرابط"
+    else
+        message = "تعذر فتح الرابط أو نسخه في بيئتك"
+    end
+
+    MakeNotifi({Title = label, Text = message, Time = 3})
 end
 
 -- =============================================
@@ -858,48 +957,6 @@ local Minimize_BTN = Create("TextButton", ButtonsFrame, {
     TextSize = 25
 })
 local IsMinimized = false
-
--- فقط منع خروج القائمة من حدود الشاشة، بدون تغيير شكلها أو أحجامها
-local MENU_MARGIN = 4
-local _clampingMenu = false
-
-local function ClampMenuPosition()
-    if _clampingMenu or not Menu or not Menu.Parent then return end
-
-    local camera = workspace.CurrentCamera
-    if not camera then return end
-
-    local viewport = camera.ViewportSize
-    local inset = GuiService:GetGuiInset()
-    local size = Menu.AbsoluteSize
-    local absolute = Menu.AbsolutePosition
-
-    local minX = MENU_MARGIN
-    local maxX = math.max(minX, viewport.X - size.X - MENU_MARGIN)
-    local minY = inset.Y + MENU_MARGIN
-    local maxY = math.max(minY, viewport.Y - size.Y - MENU_MARGIN)
-
-    local x = math.clamp(absolute.X, minX, maxX)
-    local y = math.clamp(absolute.Y, minY, maxY)
-
-    if x ~= absolute.X or y ~= absolute.Y then
-        _clampingMenu = true
-        -- نحافظ على نفس الـScale/الشكل، ونعدل الـOffset فقط
-        Menu.Position = UDim2.new(
-            Menu.Position.X.Scale,
-            x - (viewport.X * Menu.Position.X.Scale),
-            Menu.Position.Y.Scale,
-            y - (viewport.Y * Menu.Position.Y.Scale)
-        )
-        _clampingMenu = false
-    end
-end
-
-Menu:GetPropertyChangedSignal("Position"):Connect(ClampMenuPosition)
-Menu:GetPropertyChangedSignal("AbsoluteSize"):Connect(ClampMenuPosition)
-
-task.defer(ClampMenuPosition)
-
 Minimize_BTN.MouseButton1Click:Connect(function()
     Minimize_BTN.Text = not IsMinimized and "+" or "-"
     if IsMinimized then
@@ -1006,18 +1063,21 @@ local AnimMenu = Create("Frame", ScreenGui, {
 Corner(AnimMenu, {CornerRadius = UDim.new(0, 6)})
 Stroke(AnimMenu)
 local PlayerHead = Create("ImageLabel", AnimMenu, {
-    BackgroundTransparency = 1,
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0,
     Size = UDim2.new(0, 55, 0, 55),
     Position = UDim2.new(0.5, -27.5, 0, 8),
-    Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LP.UserId .. "&width=420&height=420&format=png"
+    Image = GetAvatar(LP.UserId),
+    ScaleType = Enum.ScaleType.Crop,
+    BorderSizePixel = 0
 })
 Corner(PlayerHead, {CornerRadius = UDim.new(1, 0)})
 Stroke(PlayerHead)
 local Anim_Credits = Create("TextLabel", AnimMenu, {
-    Text = "مرحبا بك في MONETOR X " .. LP.Name,
+    Text = "أهلاً بك في Monetor X\n" .. LP.Name,
     BackgroundTransparency = 1,
-    Size = UDim2.new(1, 0, 0, 25),
-    Position = UDim2.new(0, 0, 0, 68),
+    Size = UDim2.new(1, -10, 0, 35),
+    Position = UDim2.new(0, 5, 0, 64),
     Visible = false,
     Font = Configs_HUB.Text_Font,
     TextTransparency = 1,
@@ -1037,19 +1097,6 @@ CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 35), 0.5, true)
 TopBar.Visible = true
 CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, true)
 Menu.Draggable = true
-
--- إذا تغير حجم الشاشة/الوضع، فقط أرجع القائمة للداخل إذا احتاجت؛ الشكل يبقى كما هو
-local function WatchMenuViewport()
-    local camera = workspace.CurrentCamera
-    if not camera then return end
-    camera:GetPropertyChangedSignal("ViewportSize"):Connect(ClampMenuPosition)
-    ClampMenuPosition()
-end
-
-workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
-    task.defer(WatchMenuViewport)
-end)
-WatchMenuViewport()
 
 local ScrollBar = Create("ScrollingFrame", Menu, {
     Size = UDim2.new(0, 140, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
@@ -1735,6 +1782,51 @@ AddButton(LocalPlayerTab, {
 -- =============================================
 -- MAIN TAB
 -- =============================================
+
+local MainProfile = Create("Frame", MainTab, {
+    Size = UDim2.new(1, 0, 0, 82),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25,
+    BorderSizePixel = 0
+})
+Corner(MainProfile)
+Stroke(MainProfile)
+
+local MainAvatar = Create("ImageLabel", MainProfile, {
+    Size = UDim2.new(0, 58, 0, 58),
+    Position = UDim2.new(0, 12, 0.5, 0),
+    AnchorPoint = Vector2.new(0, 0.5),
+    BackgroundColor3 = Configs_HUB.Cor_Hub,
+    BackgroundTransparency = 0,
+    BorderSizePixel = 0,
+    Image = GetAvatar(LP.UserId),
+    ScaleType = Enum.ScaleType.Crop
+})
+Corner(MainAvatar, {CornerRadius = UDim.new(1, 0)})
+Stroke(MainAvatar, {Thickness = 2})
+
+Create("TextLabel", MainProfile, {
+    Size = UDim2.new(1, -90, 0, 25),
+    Position = UDim2.new(0, 82, 0, 14),
+    BackgroundTransparency = 1,
+    Text = "أهلاً بك في Monetor X",
+    TextColor3 = Configs_HUB.Cor_Text,
+    Font = Configs_HUB.Text_Font,
+    TextSize = 18,
+    TextXAlignment = Enum.TextXAlignment.Left
+})
+
+Create("TextLabel", MainProfile, {
+    Size = UDim2.new(1, -90, 0, 20),
+    Position = UDim2.new(0, 82, 0, 42),
+    BackgroundTransparency = 1,
+    Text = "@" .. LP.Name,
+    TextColor3 = Configs_HUB.Cor_DarkText,
+    Font = Configs_HUB.Text_Font,
+    TextSize = 12,
+    TextXAlignment = Enum.TextXAlignment.Left
+})
+
 AddButton(MainTab, {
     Name = " فك حماية الطيران",
     Callback = function()
@@ -3719,45 +3811,132 @@ Players.PlayerRemoved:Connect(UpdatePlayerList)
 -- =============================================
 -- RIGHTS TAB
 -- =============================================
-AddPlayerProfile(RightsTab)
+
+local RightsProfile = Create("Frame", RightsTab, {
+    Size = UDim2.new(1, 0, 0, 92),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25,
+    BorderSizePixel = 0
+})
+Corner(RightsProfile)
+Stroke(RightsProfile)
+
+local OwnerAvatar = Create("ImageLabel", RightsProfile, {
+    Size = UDim2.new(0, 64, 0, 64),
+    Position = UDim2.new(0, 12, 0.5, 0),
+    AnchorPoint = Vector2.new(0, 0.5),
+    BackgroundColor3 = Configs_HUB.Cor_Hub,
+    BackgroundTransparency = 0,
+    BorderSizePixel = 0,
+    Image = MonetorOwnerUserId and GetAvatar(MonetorOwnerUserId) or "",
+    ScaleType = Enum.ScaleType.Crop
+})
+Corner(OwnerAvatar, {CornerRadius = UDim.new(1, 0)})
+Stroke(OwnerAvatar, {Thickness = 2})
+
+Create("TextLabel", RightsProfile, {
+    Size = UDim2.new(1, -95, 0, 25),
+    Position = UDim2.new(0, 88, 0, 15),
+    BackgroundTransparency = 1,
+    Text = "Monetor X",
+    TextColor3 = Configs_HUB.Cor_Text,
+    Font = Configs_HUB.Text_Font,
+    TextSize = 19,
+    TextXAlignment = Enum.TextXAlignment.Left
+})
+
+Create("TextLabel", RightsProfile, {
+    Size = UDim2.new(1, -95, 0, 20),
+    Position = UDim2.new(0, 88, 0, 40),
+    BackgroundTransparency = 1,
+    Text = "@sjbcjjs0  •  Developer: monetor",
+    TextColor3 = Configs_HUB.Cor_DarkText,
+    Font = Configs_HUB.Text_Font,
+    TextSize = 12,
+    TextXAlignment = Enum.TextXAlignment.Left
+})
+
+Create("TextLabel", RightsProfile, {
+    Size = UDim2.new(1, -95, 0, 18),
+    Position = UDim2.new(0, 88, 0, 61),
+    BackgroundTransparency = 1,
+    Text = "Official Monetor X account",
+    TextColor3 = Configs_HUB.Cor_DarkText,
+    Font = Configs_HUB.Text_Font,
+    TextSize = 10,
+    TextXAlignment = Enum.TextXAlignment.Left
+})
+
+AddTextLabel(RightsTab,
+    "حقوق واستخدام Monetor X\n\n" ..
+    "• المطور: monetor\n" ..
+    "• الحساب الرسمي: @sjbcjjs0\n" ..
+    "• لا تنسب الأداة لشخص آخر أو تعيد نشرها باسم مختلف.\n" ..
+    "• استخدم الأداة على مسؤوليتك الخاصة واحترم قوانين Roblox.\n" ..
+    "• لا يوجد ضمان بأن جميع الميزات تعمل في كل لعبة أو كل تحديث.\n" ..
+    "• معلومات التواصل أدناه هي روابط الحسابات الرسمية المذكورة في الأداة.")
 
 AddButton(RightsTab, {
-    Name = " قناة Monetor X على التليجرام",
+    Name = " قناة Monetor X — Telegram",
     Callback = function()
-        pcall(function()
-            if setclipboard then setclipboard('https://t.me/Speed_loder') end
-        end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ رابط القناة", Time = 2})
+        SocialAction(
+            "Telegram",
+            "https://t.me/Speed_loder",
+            "https://t.me/Speed_loder"
+        )
     end
 })
 
 AddButton(RightsTab, {
-    Name = " حساب Monetor X على التليجرام",
+    Name = " حساب Monetor X — Telegram",
     Callback = function()
-        pcall(function()
-            if setclipboard then setclipboard('@LXEKE') end
-        end)
-        MakeNotifi({Title = "Monetor X", Text = "تم النسخ", Time = 2})
+        SocialAction(
+            "Telegram",
+            "@LXEKE",
+            "https://t.me/LXEKE"
+        )
     end
 })
 
 AddButton(RightsTab, {
-    Name = " حساب Monetor X على تيك توك",
+    Name = " حساب Monetor X — TikTok",
     Callback = function()
-        pcall(function()
-            if setclipboard then setclipboard('@monetor_') end
-        end)
-        MakeNotifi({Title = "Monetor X", Text = "تم النسخ", Time = 2})
+        SocialAction(
+            "TikTok",
+            "https://www.tiktok.com/@monetor_",
+            "https://www.tiktok.com/@monetor_"
+        )
     end
 })
 
 AddButton(RightsTab, {
-    Name = "️ حقوق Monetor X",
+    Name = " نسخ اسم المطور",
     Callback = function()
+        local copied = CopyToClipboard("monetor")
         MakeNotifi({
-            Title = "حقوق Monetor X",
-            Text = "تم صنع السكربت بواسطة Monetor X\nتيك توك: @monetor_\nتليجرام: @LXEKE\nقناة التليجرام: https://t.me/Speed_loder",
-            Time = 6
+            Title = "Monetor X",
+            Text = copied and "تم نسخ اسم المطور" or "الحافظة غير متاحة في بيئتك",
+            Time = 2
+        })
+    end
+})
+
+AddButton(RightsTab, {
+    Name = " نسخ معلومات الحقوق",
+    Callback = function()
+        local info =
+            "Monetor X\n" ..
+            "Developer: monetor\n" ..
+            "Roblox: @sjbcjjs0\n" ..
+            "Telegram: @LXEKE\n" ..
+            "Telegram Channel: https://t.me/Speed_loder\n" ..
+            "TikTok: https://www.tiktok.com/@monetor_"
+
+        local copied = CopyToClipboard(info)
+        MakeNotifi({
+            Title = "Monetor X",
+            Text = copied and "تم نسخ معلومات الحقوق كاملة" or "الحافظة غير متاحة في بيئتك",
+            Time = 3
         })
     end
 })
