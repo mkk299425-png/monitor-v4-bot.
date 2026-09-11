@@ -96,106 +96,6 @@ local function TextSetColor(instance)
 end
 
 -- =============================================
--- PROFILE / SOCIAL HELPERS
--- =============================================
-local function GetAvatar(userId)
-    local image = ""
-    pcall(function()
-        local content, ready = Players:GetUserThumbnailAsync(
-            userId,
-            Enum.ThumbnailType.HeadShot,
-            Enum.ThumbnailSize.Size420x420
-        )
-        if ready then
-            image = content
-        end
-    end)
-    return image
-end
-
-local MonetorOwnerUserId = nil
-pcall(function()
-    MonetorOwnerUserId = Players:GetUserIdFromNameAsync("sjbcjjs0")
-end)
-
-local function CopyToClipboard(text)
-    local ok = false
-    pcall(function()
-        if setclipboard then
-            setclipboard(text)
-            ok = true
-        elseif toclipboard then
-            toclipboard(text)
-            ok = true
-        end
-    end)
-    return ok
-end
-
-local function TryOpenLink(url)
-    local opened = false
-
-    pcall(function()
-        if open_url then
-            open_url(url)
-            opened = true
-        end
-    end)
-
-    if not opened then
-        pcall(function()
-            if openurl then
-                openurl(url)
-                opened = true
-            end
-        end)
-    end
-
-    if not opened then
-        pcall(function()
-            if open_browser then
-                open_browser(url)
-                opened = true
-            end
-        end)
-    end
-
-    if not opened then
-        pcall(function()
-            local GuiService = game:GetService("GuiService")
-            if GuiService.OpenBrowserWindow then
-                GuiService:OpenBrowserWindow(url)
-                opened = true
-            end
-        end)
-    end
-
-    return opened
-end
-
-local function SocialAction(label, value, url)
-    local copied = CopyToClipboard(value)
-    local opened = false
-
-    if url then
-        opened = TryOpenLink(url)
-    end
-
-    local message
-    if copied and opened then
-        message = "تم فتح الرابط ونسخه للحافظة"
-    elseif copied then
-        message = "تم نسخ الرابط للحافظة — الفتح التلقائي غير متاح"
-    elseif opened then
-        message = "تم فتح الرابط"
-    else
-        message = "تعذر فتح الرابط أو نسخه في بيئتك"
-    end
-
-    MakeNotifi({Title = label, Text = message, Time = 3})
-end
-
--- =============================================
 -- SCREEN GUI SETUP
 -- =============================================
 local ScreenGui = Create("ScreenGui", CoreGui, { Name = "Monetor_Hub" })
@@ -897,6 +797,10 @@ local ButtonsFrame = Create("Frame", TopBar, {
     BackgroundTransparency = 1,
     ZIndex = 15
 })
+
+-- =============================================
+--  صورة الأفاتار الخاصة بصاحب السكربت (sjbcjjs0)
+-- =============================================
 Create("ImageLabel", TopBar, {
     Size = UDim2.new(0, 24, 0, 24),
     Position = UDim2.new(0, 8, 0.5, 0),
@@ -1062,22 +966,28 @@ local AnimMenu = Create("Frame", ScreenGui, {
 })
 Corner(AnimMenu, {CornerRadius = UDim.new(0, 6)})
 Stroke(AnimMenu)
+
+-- =============================================
+--  صورة أفاتار مخصصة للمستخدم sjbcjjs0 (دائرية)
+-- =============================================
 local PlayerHead = Create("ImageLabel", AnimMenu, {
-    BackgroundColor3 = Configs_HUB.Cor_Options,
-    BackgroundTransparency = 0,
+    BackgroundTransparency = 1,
     Size = UDim2.new(0, 55, 0, 55),
     Position = UDim2.new(0.5, -27.5, 0, 8),
-    Image = GetAvatar(LP.UserId),
-    ScaleType = Enum.ScaleType.Crop,
-    BorderSizePixel = 0
+    Image = "https://www.roblox.com/headshot-thumbnail/image?userId=10193279116&width=420&height=420&format=png",
+    ImageColor3 = Color3.fromRGB(255, 255, 255),
+    ZIndex = 5
 })
-Corner(PlayerHead, {CornerRadius = UDim.new(1, 0)})
+local HeadCorner = Instance.new("UICorner")
+HeadCorner.CornerRadius = UDim.new(1, 0)
+HeadCorner.Parent = PlayerHead
 Stroke(PlayerHead)
+
 local Anim_Credits = Create("TextLabel", AnimMenu, {
-    Text = "أهلاً بك في Monetor X\n" .. LP.Name,
+    Text = "مرحبا بك في MONETOR X " .. LP.Name,
     BackgroundTransparency = 1,
-    Size = UDim2.new(1, -10, 0, 35),
-    Position = UDim2.new(0, 5, 0, 64),
+    Size = UDim2.new(1, 0, 0, 25),
+    Position = UDim2.new(0, 0, 0, 68),
     Visible = false,
     Font = Configs_HUB.Text_Font,
     TextTransparency = 1,
@@ -1782,51 +1692,6 @@ AddButton(LocalPlayerTab, {
 -- =============================================
 -- MAIN TAB
 -- =============================================
-
-local MainProfile = Create("Frame", MainTab, {
-    Size = UDim2.new(1, 0, 0, 82),
-    BackgroundColor3 = Configs_HUB.Cor_Options,
-    BackgroundTransparency = 0.25,
-    BorderSizePixel = 0
-})
-Corner(MainProfile)
-Stroke(MainProfile)
-
-local MainAvatar = Create("ImageLabel", MainProfile, {
-    Size = UDim2.new(0, 58, 0, 58),
-    Position = UDim2.new(0, 12, 0.5, 0),
-    AnchorPoint = Vector2.new(0, 0.5),
-    BackgroundColor3 = Configs_HUB.Cor_Hub,
-    BackgroundTransparency = 0,
-    BorderSizePixel = 0,
-    Image = GetAvatar(LP.UserId),
-    ScaleType = Enum.ScaleType.Crop
-})
-Corner(MainAvatar, {CornerRadius = UDim.new(1, 0)})
-Stroke(MainAvatar, {Thickness = 2})
-
-Create("TextLabel", MainProfile, {
-    Size = UDim2.new(1, -90, 0, 25),
-    Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1,
-    Text = "أهلاً بك في Monetor X",
-    TextColor3 = Configs_HUB.Cor_Text,
-    Font = Configs_HUB.Text_Font,
-    TextSize = 18,
-    TextXAlignment = Enum.TextXAlignment.Left
-})
-
-Create("TextLabel", MainProfile, {
-    Size = UDim2.new(1, -90, 0, 20),
-    Position = UDim2.new(0, 82, 0, 42),
-    BackgroundTransparency = 1,
-    Text = "@" .. LP.Name,
-    TextColor3 = Configs_HUB.Cor_DarkText,
-    Font = Configs_HUB.Text_Font,
-    TextSize = 12,
-    TextXAlignment = Enum.TextXAlignment.Left
-})
-
 AddButton(MainTab, {
     Name = " فك حماية الطيران",
     Callback = function()
@@ -3811,132 +3676,87 @@ Players.PlayerRemoved:Connect(UpdatePlayerList)
 -- =============================================
 -- RIGHTS TAB
 -- =============================================
+AddPlayerProfile(RightsTab)
 
-local RightsProfile = Create("Frame", RightsTab, {
-    Size = UDim2.new(1, 0, 0, 92),
-    BackgroundColor3 = Configs_HUB.Cor_Options,
-    BackgroundTransparency = 0.25,
-    BorderSizePixel = 0
-})
-Corner(RightsProfile)
-Stroke(RightsProfile)
-
-local OwnerAvatar = Create("ImageLabel", RightsProfile, {
-    Size = UDim2.new(0, 64, 0, 64),
-    Position = UDim2.new(0, 12, 0.5, 0),
-    AnchorPoint = Vector2.new(0, 0.5),
-    BackgroundColor3 = Configs_HUB.Cor_Hub,
-    BackgroundTransparency = 0,
-    BorderSizePixel = 0,
-    Image = MonetorOwnerUserId and GetAvatar(MonetorOwnerUserId) or "",
-    ScaleType = Enum.ScaleType.Crop
-})
-Corner(OwnerAvatar, {CornerRadius = UDim.new(1, 0)})
-Stroke(OwnerAvatar, {Thickness = 2})
-
-Create("TextLabel", RightsProfile, {
-    Size = UDim2.new(1, -95, 0, 25),
-    Position = UDim2.new(0, 88, 0, 15),
-    BackgroundTransparency = 1,
-    Text = "Monetor X",
-    TextColor3 = Configs_HUB.Cor_Text,
-    Font = Configs_HUB.Text_Font,
-    TextSize = 19,
-    TextXAlignment = Enum.TextXAlignment.Left
-})
-
-Create("TextLabel", RightsProfile, {
-    Size = UDim2.new(1, -95, 0, 20),
-    Position = UDim2.new(0, 88, 0, 40),
-    BackgroundTransparency = 1,
-    Text = "@sjbcjjs0  •  Developer: monetor",
-    TextColor3 = Configs_HUB.Cor_DarkText,
-    Font = Configs_HUB.Text_Font,
-    TextSize = 12,
-    TextXAlignment = Enum.TextXAlignment.Left
-})
-
-Create("TextLabel", RightsProfile, {
-    Size = UDim2.new(1, -95, 0, 18),
-    Position = UDim2.new(0, 88, 0, 61),
-    BackgroundTransparency = 1,
-    Text = "Official Monetor X account",
-    TextColor3 = Configs_HUB.Cor_DarkText,
-    Font = Configs_HUB.Text_Font,
-    TextSize = 10,
-    TextXAlignment = Enum.TextXAlignment.Left
-})
-
-AddTextLabel(RightsTab,
-    "حقوق واستخدام Monetor X\n\n" ..
-    "• المطور: monetor\n" ..
-    "• الحساب الرسمي: @sjbcjjs0\n" ..
-    "• لا تنسب الأداة لشخص آخر أو تعيد نشرها باسم مختلف.\n" ..
-    "• استخدم الأداة على مسؤوليتك الخاصة واحترم قوانين Roblox.\n" ..
-    "• لا يوجد ضمان بأن جميع الميزات تعمل في كل لعبة أو كل تحديث.\n" ..
-    "• معلومات التواصل أدناه هي روابط الحسابات الرسمية المذكورة في الأداة.")
-
+-- زر: قناة التليجرام (ينسخ الرابط ويفتحه)
 AddButton(RightsTab, {
-    Name = " قناة Monetor X — Telegram",
+    Name = " قناة Monetor X على التليجرام",
     Callback = function()
-        SocialAction(
-            "Telegram",
-            "https://t.me/Speed_loder",
-            "https://t.me/Speed_loder"
-        )
+        pcall(function()
+            if setclipboard then setclipboard('https://t.me/Speed_loder') end
+        end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ رابط قناة التليجرام", Time = 2})
+        task.wait(0.5)
+        pcall(function()
+            if request then
+                request({
+                    Url = "https://t.me/Speed_loder",
+                    Method = "GET"
+                })
+            end
+        end)
     end
 })
 
+-- زر: حساب المطور على التليجرام (ينسخ ويفتح)
 AddButton(RightsTab, {
-    Name = " حساب Monetor X — Telegram",
+    Name = " حساب Monetor X على التليجرام",
     Callback = function()
-        SocialAction(
-            "Telegram",
-            "@LXEKE",
-            "https://t.me/LXEKE"
-        )
+        pcall(function()
+            if setclipboard then setclipboard('@LXEKE') end
+        end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ حساب التليجرام", Time = 2})
+        task.wait(0.5)
+        pcall(function()
+            if request then
+                request({
+                    Url = "https://t.me/LXEKE",
+                    Method = "GET"
+                })
+            end
+        end)
     end
 })
 
+-- زر: حساب التيك توك (ينسخ ويفتح)
 AddButton(RightsTab, {
-    Name = " حساب Monetor X — TikTok",
+    Name = " حساب Monetor X على تيك توك",
     Callback = function()
-        SocialAction(
-            "TikTok",
-            "https://www.tiktok.com/@monetor_",
-            "https://www.tiktok.com/@monetor_"
-        )
+        pcall(function()
+            if setclipboard then setclipboard('@monetor_') end
+        end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ حساب التيك توك", Time = 2})
+        task.wait(0.5)
+        pcall(function()
+            if request then
+                request({
+                    Url = "https://www.tiktok.com/@monetor_",
+                    Method = "GET"
+                })
+            end
+        end)
     end
 })
 
+-- زر: حساب المطور على الديسكورد (ينسخ فقط)
 AddButton(RightsTab, {
-    Name = " نسخ اسم المطور",
+    Name = " حساب Monetor X على الديسكورد",
     Callback = function()
-        local copied = CopyToClipboard("monetor")
+        pcall(function()
+            if setclipboard then setclipboard('monetor_x') end
+        end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ حساب الديسكورد", Time = 2})
+    end
+})
+
+-- زر: حقوق السكربت (معلومات كاملة)
+AddButton(RightsTab, {
+    Name = "️ حقوق Monetor X",
+    Callback = function()
         MakeNotifi({
-            Title = "Monetor X",
-            Text = copied and "تم نسخ اسم المطور" or "الحافظة غير متاحة في بيئتك",
-            Time = 2
-        })
-    end
-})
-
-AddButton(RightsTab, {
-    Name = " نسخ معلومات الحقوق",
-    Callback = function()
-        local info =
-            "Monetor X\n" ..
-            "Developer: monetor\n" ..
-            "Roblox: @sjbcjjs0\n" ..
-            "Telegram: @LXEKE\n" ..
-            "Telegram Channel: https://t.me/Speed_loder\n" ..
-            "TikTok: https://www.tiktok.com/@monetor_"
-
-        local copied = CopyToClipboard(info)
-        MakeNotifi({
-            Title = "Monetor X",
-            Text = copied and "تم نسخ معلومات الحقوق كاملة" or "الحافظة غير متاحة في بيئتك",
-            Time = 3
+            Title = "حقوق Monetor X",
+            Text = "تم صنع السكربت بواسطة Monetor X\nتيك توك: @monetor_\nتليجرام: @LXEKE\nقناة التليجرام: https://t.me/Speed_loder\nديسكورد: monetor_x",
+            Time = 6
         })
     end
 })
