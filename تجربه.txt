@@ -1,5 +1,6 @@
 -- =============================================
 -- MONETOR X (FULLY FIXED + MERGED TOGGLES + AUTO REFRESH ON DEATH + TARGET STICK SYSTEM)
+-- + Avatar Icon for Rights Tab (@sjbcjjs0)
 -- Original Code Fully Preserved & Corrected
 -- =============================================
 
@@ -12,16 +13,6 @@ local RunService = game:GetService("RunService")
 local RepStorage = game:GetService("ReplicatedStorage")
 local LogService = game:GetService("LogService")
 local MarketplaceService = game:GetService("MarketplaceService")
-local TeleportService = game:GetService("TeleportService")
-
--- Persistent session state (when the executor keeps its environment alive)
-local MonetorEnv = (getgenv and getgenv()) or _G
-MonetorEnv.MonetorPersistentState = MonetorEnv.MonetorPersistentState or {}
-local MonetorPersistentState = MonetorEnv.MonetorPersistentState
-
--- Optional loader URL for executors that support queue_on_teleport.
--- Put your OWN hosted raw MONETOR X URL here if you want automatic re-loading after server teleport.
-local MONETOR_AUTOLOAD_URL = MonetorEnv.MONETOR_AUTOLOAD_URL or ""
 
 local Configs_HUB = {
     Cor_Hub = Color3.fromRGB(15, 15, 15),
@@ -1035,11 +1026,63 @@ function MakeTab(Configs)
     local TabName = Configs.Name or "Tab"
     local TabTitle = Configs.TabTitle or false
     local TabImage = Configs.Image or nil
-    
-    local Frame = Create("Frame", ScrollBar, { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1 }) Corner(Frame) Stroke(Frame)
+    local AvatarUsername = Configs.AvatarUsername or nil
+
+    local Frame = Create("Frame", ScrollBar, { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1 })
+    Corner(Frame); Stroke(Frame)
     local TextButton = Create("TextButton", Frame, { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "" })
-    if TabImage then Create("ImageLabel", Frame, { Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10), BackgroundTransparency = 1, Image = TabImage, Name = "TabIcon" }) end
-    local textOffset = TabImage and 30 or 5
+
+    local hasIcon = false
+
+    -- ═══ حالة 1: Avatar دائري (جديد) ═══
+    if AvatarUsername then
+        hasIcon = true
+        local avatar = Create("ImageLabel", Frame, {
+            Size = UDim2.new(0, 20, 0, 20),
+            Position = UDim2.new(0, 5, 0.5, -10),
+            BackgroundTransparency = 1,
+            BackgroundColor3 = Configs_HUB.Cor_Options,
+            Image = "",
+            Name = "TabAvatar",
+            ZIndex = 5
+        })
+        Corner(avatar, { CornerRadius = UDim.new(1, 0) })
+
+        local avatarStroke = Instance.new("UIStroke")
+        avatarStroke.Thickness = 1.5
+        avatarStroke.Color = Color3.fromRGB(255, 255, 255)
+        avatarStroke.Transparency = 0.15
+        avatarStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        avatarStroke.Parent = avatar
+
+        task.spawn(function()
+            local ok, userId = pcall(function()
+                return Players:GetUserIdFromNameAsync(AvatarUsername)
+            end)
+            if ok and userId and type(userId) == "number" then
+                pcall(function()
+                    avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(userId) .. "&w=150&h=150"
+                end)
+            else
+                pcall(function()
+                    avatar.Image = "rbxassetid://6031075931"
+                end)
+            end
+        end)
+
+    -- ═══ حالة 2: صورة عادية ═══
+    elseif TabImage then
+        hasIcon = true
+        Create("ImageLabel", Frame, {
+            Size = UDim2.new(0, 20, 0, 20),
+            Position = UDim2.new(0, 5, 0.5, -10),
+            BackgroundTransparency = 1,
+            Image = TabImage,
+            Name = "TabIcon"
+        })
+    end
+
+    local textOffset = hasIcon and 30 or 5
     local TextLabel = Create("TextLabel", Frame, {
         Size = UDim2.new(1, -textOffset, 1, 0),
         Position = UDim2.new(0, textOffset, 0, 0),
@@ -1138,8 +1181,7 @@ function AddToggleButton(parent, Configs)
     local OnEnable = Configs.OnEnable or function() end
     local OnDisable = Configs.OnDisable or function() end
     
-    local persistedState = MonetorPersistentState[ButtonName]
-    local State = persistedState ~= nil and persistedState or StartState
+    local State = StartState
     
     local TextButton = Create("TextButton", parent, {
         Size = UDim2.new(1, 0, 0, 25),
@@ -1169,7 +1211,6 @@ function AddToggleButton(parent, Configs)
     })
     TextButton.MouseButton1Click:Connect(function()
         State = not State
-        MonetorPersistentState[ButtonName] = State
         TextLabel.Text = State and OffText or OnText
         CreateTween(ImageLabel, "ImageColor3", Color3.fromRGB(30, 140, 200), 0.2, true)
         CreateTween(ImageLabel, "ImageColor3", State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke, 0.2, false)
@@ -1180,24 +1221,12 @@ function AddToggleButton(parent, Configs)
         end
     end)
     TextSetColor(TextLabel)
-
-    -- If the executor re-runs Monetor X in the same persistent environment,
-    -- restore the previous toggle state and re-apply its feature.
-    if State then
-        task.defer(function()
-            if TextButton and TextButton.Parent then
-                pcall(OnEnable)
-            end
-        end)
-    end
-
     return {
         Button = TextButton,
         TextLabel = TextLabel,
         GetState = function() return State end,
         SetState = function(newState)
             State = newState
-            MonetorPersistentState[ButtonName] = State
             TextLabel.Text = State and OffText or OnText
             ImageLabel.ImageColor3 = State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke
         end
@@ -1465,7 +1494,7 @@ local LocalPlayerTab = MakeTab({Name = "شخصيتي ‍️", TabTitle = true})
 local ESPTab = MakeTab({Name = "رادار ️", TabTitle = true})
 local TeleportTab = MakeTab({Name = "الانتقال ", TabTitle = true})
 local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
-local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, Image = "rbxassetid://6031075931"})
+local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, AvatarUsername = "sjbcjjs0"})
 
 
 local Monetor_CommandPanel = nil
@@ -2547,132 +2576,7 @@ end)
 -- =============================================
 -- ️ COMBAT TAB (قتال)
 -- =============================================
-local CombatTab = MakeTab({
-    Name = "قتال ️",
-    TabTitle = true,
-    Image = "rbxassetid://6031075931"
-})
-
--- =============================================
---  SAVED POSITION / RESPAWN RETURN
--- =============================================
-local ReturnToSavedPositionEnabled = false
-local SavedPositionCFrame = nil
-local SavedPositionValid = false
-local ReturnPositionConnection = nil
-local ReturnPositionBusy = false
-
-local function GetLocalRoot()
-    local character = LP.Character
-    if not character then return nil end
-    return character:FindFirstChild("HumanoidRootPart")
-        or character:FindFirstChild("Torso")
-end
-
-local function SaveCurrentPosition()
-    local root = GetLocalRoot()
-    if not root then
-        MakeNotifi({
-            Title = "الموقع المحفوظ",
-            Text = "ما لكيت HumanoidRootPart حتى أحفظ موقعك",
-            Time = 3
-        })
-        return false
-    end
-
-    SavedPositionCFrame = root.CFrame
-    SavedPositionValid = true
-
-    MakeNotifi({
-        Title = "الموقع المحفوظ",
-        Text = "تم حفظ موقعك الحالي — راح يرجع بعد الموت أو ;refresh",
-        Time = 3
-    })
-
-    return true
-end
-
-local function RestoreSavedPosition(reason)
-    if not ReturnToSavedPositionEnabled or not SavedPositionValid or not SavedPositionCFrame then
-        return
-    end
-
-    if ReturnPositionBusy then return end
-    ReturnPositionBusy = true
-
-    task.spawn(function()
-        -- ننتظر الشخصية الجديدة حتى تكتمل بعد الموت أو ;refresh
-        local character = LP.Character
-        if not character then
-            character = LP.CharacterAdded:Wait()
-        end
-
-        local root = character:WaitForChild("HumanoidRootPart", 8)
-            or character:FindFirstChild("Torso")
-
-        if not root then
-            ReturnPositionBusy = false
-            return
-        end
-
-        -- أكثر من محاولة حتى لا يضيع الموقع بسبب تأخر الـspawn
-        for i = 1, 12 do
-            if not ReturnToSavedPositionEnabled or not SavedPositionValid then
-                break
-            end
-
-            local currentCharacter = LP.Character
-            local currentRoot = currentCharacter and (
-                currentCharacter:FindFirstChild("HumanoidRootPart")
-                or currentCharacter:FindFirstChild("Torso")
-            )
-
-            if currentRoot then
-                pcall(function()
-                    currentRoot.AssemblyLinearVelocity = Vector3.zero
-                    currentRoot.AssemblyAngularVelocity = Vector3.zero
-                    currentRoot.CFrame = SavedPositionCFrame
-                end)
-            end
-
-            task.wait(0.15)
-        end
-
-        MakeNotifi({
-            Title = "الموقع المحفوظ",
-            Text = "تمت محاولة إرجاعك لنفس المكان" ..
-                (reason and (" — " .. reason) or ""),
-            Time = 2
-        })
-
-        ReturnPositionBusy = false
-    end)
-end
-
-local function DisconnectReturnPosition()
-    if ReturnPositionConnection then
-        ReturnPositionConnection:Disconnect()
-        ReturnPositionConnection = nil
-    end
-end
-
-local function StartReturnPosition()
-    DisconnectReturnPosition()
-
-    ReturnPositionConnection = LP.CharacterAdded:Connect(function()
-        if ReturnToSavedPositionEnabled and SavedPositionValid then
-            task.wait(0.25)
-            RestoreSavedPosition("Respawn / Refresh")
-        end
-    end)
-
-    if LP.Character and SavedPositionValid then
-        task.spawn(function()
-            task.wait(0.25)
-            RestoreSavedPosition("تحديث")
-        end)
-    end
-end
+local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
 
 local GodMode = false
 local ShieldMode = false
@@ -2902,73 +2806,6 @@ AddToggleButton(CombatTab, {
         DisconnectAutoRefreshConnections()
         AutoRefreshTriggered = false
         MakeNotifi({Title="Auto Refresh", Text="تم الإيقاف", Time=2})
-    end
-})
-
--- =============================================
---  SAVED POSITION CONTROLS
--- =============================================
-
-local SavedPositionToggle = AddToggleButton(CombatTab, {
-    Name = "تثبيت موقعي بعد الموت / الرفريش",
-    OnText = "تثبيت الموقع: تشغيل",
-    OffText = "تثبيت الموقع: إيقاف",
-    StartState = false,
-    OnEnable = function()
-        if not SavedPositionValid then
-            if not SaveCurrentPosition() then
-                if SavedPositionToggle and SavedPositionToggle.SetState then
-                    SavedPositionToggle.SetState(false)
-                end
-                return
-            end
-        else
-            MakeNotifi({
-                Title = "الموقع المحفوظ",
-                Text = "استخدم تحديث الموقع إذا تريد تبدل المكان المحفوظ",
-                Time = 2
-            })
-        end
-
-        ReturnToSavedPositionEnabled = true
-        StartReturnPosition()
-        MakeNotifi({
-            Title = "الموقع المحفوظ",
-            Text = "التثبيت شغال — بعد الموت أو ;refresh راح يرجعك لنفس المكان",
-            Time = 3
-        })
-    end,
-    OnDisable = function()
-        ReturnToSavedPositionEnabled = false
-        DisconnectReturnPosition()
-        ReturnPositionBusy = false
-        MakeNotifi({
-            Title = "الموقع المحفوظ",
-            Text = "تم إيقاف الرجوع التلقائي للموقع",
-            Time = 2
-        })
-    end
-})
-
-AddButton(CombatTab, {
-    Name = "تحديث الموقع المحفوظ",
-    Callback = function()
-        if SaveCurrentPosition() and ReturnToSavedPositionEnabled then
-            StartReturnPosition()
-        end
-    end
-})
-
-AddButton(CombatTab, {
-    Name = "مسح الموقع المحفوظ",
-    Callback = function()
-        SavedPositionValid = false
-        SavedPositionCFrame = nil
-        MakeNotifi({
-            Title = "الموقع المحفوظ",
-            Text = "تم مسح الموقع المحفوظ",
-            Time = 2
-        })
     end
 })
 
@@ -3339,7 +3176,7 @@ end)
 local Target_Enabled = false
 local Target_UserId = nil
 local Target_Name = nil
-local Target_Offset = 3 -- الفاصل قدام اللاعب (ستود)
+local Target_Offset = 3
 local Target_Connection = nil
 local Target_Dropdown = nil
 local Target_OffsetBox = nil
@@ -3348,7 +3185,6 @@ local Target_Attacking = false
 
 local TOOL_NAME = "BanHammer"
 
--- فحص وجود الأداة في الحقيبة أو الانفنتوري
 local function HasBanHammer()
     local backpack = LP:FindFirstChild("Backpack")
     if backpack and backpack:FindFirstChild(TOOL_NAME) then
@@ -3364,7 +3200,6 @@ local function HasBanHammer()
     return false, nil, nil
 end
 
--- تجهيز الأداة (تأخذها بيدك)
 local function EquipTool(tool)
     if not tool then return false end
     local character = LP.Character
@@ -3392,7 +3227,6 @@ local function StopTarget()
     if Target_Connection then Target_Connection:Disconnect() Target_Connection = nil end
     
 
-    -- إيقاف أي ضرب نشط
     local ok, tool, loc = HasBanHammer()
     if ok and tool then
         pcall(function()
@@ -3402,28 +3236,24 @@ local function StopTarget()
         end)
     end
 
-    -- إرجاع السرعة الطبيعية
     if LP.Character then
         local hum = LP.Character:FindFirstChildOfClass("Humanoid")
         if hum then hum.WalkSpeed = 16 end
     end
 end
 
--- دالة الضرب (تدوس زر الضرب مرتين متتاليتين بفاصل ثانية)
 local function AttackTwice(tool)
     if not tool then return end
     if Target_Attacking then return end
     Target_Attacking = true
 
     task.spawn(function()
-        -- الضربة الأولى
         pcall(function()
             if tool:FindFirstChild("Activate") then
                 tool:Activate()
             end
         end)
         task.wait(1)
-        -- الضربة الثانية
         pcall(function()
             if tool:FindFirstChild("Activate") then
                 tool:Activate()
@@ -3433,7 +3263,6 @@ local function AttackTwice(tool)
     end)
 end
 
--- التتبع + الالتصاق
 local function StartTargetLoop()
     if Target_Connection then Target_Connection:Disconnect() end
 
@@ -3464,22 +3293,17 @@ local function StartTargetLoop()
         local myHum = myChar:FindFirstChildOfClass("Humanoid")
         if not myRoot or not myHum or myHum.Health <= 0 then return end
 
-        -- نلتصق قدام اللاعب مع فاصل بسيط
-        -- نستخدم اتجاه اللاعب نفسه عشان نكون قدامه دائماً
         local targetLook = targetRoot.CFrame.LookVector
         local behindOffset = targetLook * Target_Offset
         local finalPos = targetRoot.Position + behindOffset
 
-        -- نثبت CFrame مباشرة عشان نلتصق بدون تأخير
         myRoot.CFrame = CFrame.new(finalPos, targetRoot.Position)
 
-        -- نلزم الأداة بيد اللاعب (لو ما كانت مجهزة)
         local hasTool, tool = HasBanHammer()
         if hasTool and tool and tool.Parent ~= myChar then
             EquipTool(tool)
         end
 
-        -- نضرب كل ما يكون قريب من الهدف
         if hasTool and tool and not Target_Attacking then
             AttackTwice(tool)
         end
@@ -3497,14 +3321,12 @@ local function UpdateTargetDropdown()
     end
 end
 
--- زر Toggle: استهداف الشخص
 Target_ToggleObj = AddToggleButton(CombatTab, {
     Name = " استهداف الشخص (التصاق + ضرب تلقائي)",
     OnText = " استهداف الشخص: تشغيل",
     OffText = " استهداف الشخص: إيقاف",
     StartState = false,
     OnEnable = function()
-        -- فحص وجود الأداة أولاً
         local hasTool = HasBanHammer()
         if not hasTool then
             MakeNotifi({
@@ -3535,11 +3357,9 @@ Target_ToggleObj = AddToggleButton(CombatTab, {
             return
         end
 
-        -- نجهز الأداة أول
         local _, tool = HasBanHammer()
         if tool then EquipTool(tool) end
 
-        -- ننتقل للاعب فوراً
         task.spawn(function()
             task.wait(0.1)
             local myChar = LP.Character
@@ -3566,7 +3386,6 @@ Target_ToggleObj = AddToggleButton(CombatTab, {
     end
 })
 
--- قائمة اختيار اللاعب المستهدف
 Target_Dropdown = AddDropdown(CombatTab, {
     Name = " اختر لاعب للاستهداف",
     Options = {"لا يوجد لاعبين"},
@@ -3584,7 +3403,6 @@ Target_Dropdown = AddDropdown(CombatTab, {
     end
 })
 
--- صندوق الفاصل قدام اللاعب
 Target_OffsetBox = Create("TextBox", CombatTab, {
     Size = UDim2.new(1, 0, 0, 30),
     BackgroundColor3 = Configs_HUB.Cor_Options,
@@ -3636,7 +3454,6 @@ AddButton(CombatTab, {
     end
 })
 
--- زر: فحص وجود الأداة
 AddButton(CombatTab, {
     Name = " فحص وجود أداة BanHammer",
     Callback = function()
@@ -3651,7 +3468,6 @@ AddButton(CombatTab, {
 
 AddTextLabel(CombatTab, "💡 الاستخدام: 1) اختر لاعب 2) تأكد من وجود BanHammer 3) فعّل الزر — يلتصق بيه ويضرب تلقائي حتى يموت")
 
--- تحديث القائمة عند دخول/خروج لاعبين
 Players.PlayerAdded:Connect(function()
     task.wait(0.5)
     UpdateTargetDropdown()
@@ -3669,7 +3485,6 @@ Players.PlayerRemoving:Connect(function(player)
     UpdateTargetDropdown()
 end)
 
--- إعادة الربط عند respawn اللاعب المستهدف
 for _, p in ipairs(Players:GetPlayers()) do
     if p ~= LP then
         p.CharacterAdded:Connect(function()
@@ -3713,211 +3528,6 @@ AddButton(TeleportTab, {
         else
             MakeNotifi({Title="خطأ", Text="اللاعب غير موجود أو لم يترسبن", Time=2})
         end
-    end
-})
-
--- =============================================
--- SERVER TELEPORT / SERVER BROWSER
--- =============================================
-local ServerBrowser = {}
-ServerBrowser.Rows = {}
-ServerBrowser.Loading = false
-ServerBrowser.NextCursor = nil
-ServerBrowser.Page = 0
-ServerBrowser.Servers = {}
-
-local function GetHttpRequest()
-    if typeof(request) == "function" then return request end
-    if typeof(http_request) == "function" then return http_request end
-    if syn and typeof(syn.request) == "function" then return syn.request end
-    return nil
-end
-
-local function HttpGetRoblox(url)
-    local req = GetHttpRequest()
-    if req then
-        local ok, response = pcall(req, {Url = url, Method = "GET"})
-        if ok and response and tonumber(response.StatusCode or response.Status) == 200 then
-            return true, response.Body or response.body or ""
-        end
-    end
-    local ok, body = pcall(function()
-        return game:HttpGet(url)
-    end)
-    if ok and body then return true, body end
-    return false, ""
-end
-
-local function QueueMonetorAfterTeleport()
-    local queue = queue_on_teleport
-    if not queue and syn and typeof(syn.queue_on_teleport) == "function" then
-        queue = syn.queue_on_teleport
-    end
-    if typeof(queue) ~= "function" then
-        return false, "Executor لا يدعم queue_on_teleport"
-    end
-    if MONETOR_AUTOLOAD_URL == "" then
-        return false, "ضع رابط MONETOR X المستضاف في MONETOR_AUTOLOAD_URL"
-    end
-
-    local code = [[
-        task.wait(2)
-        local ok, src = pcall(function()
-            return game:HttpGet("]] .. MONETOR_AUTOLOAD_URL .. [[")
-        end)
-        if ok and src and #src > 0 then
-            pcall(function() loadstring(src)() end)
-        end
-    ]]
-    local ok = pcall(queue, code)
-    return ok, ok and "تم تجهيز إعادة تشغيل Monetor X بعد الانتقال" or "فشل تجهيز الاستمرار"
-end
-
-local ServerStatus = AddTextLabel(TeleportTab, "سيرفرات اللعبة • اضغط تحديث لجلب السيرفرات\nالمتاح من Roblox API: العدد، الحد الأقصى، الـPing/FPS إن توفر، وServer ID")
-ServerStatus.TextWrapped = true
-ServerStatus.Size = UDim2.new(1, 0, 0, 55)
-
-local ServerRefreshButton = AddButton(TeleportTab, {
-    Name = " تحديث السيرفرات",
-    Callback = function()
-        ServerBrowser.Loading = false
-        ServerBrowser.Page = 0
-        ServerBrowser.NextCursor = nil
-        ServerBrowser.Servers = {}
-        MakeNotifi({Title="السيرفرات", Text="جاري جلب السيرفرات...", Time=2})
-        task.spawn(function()
-            ServerBrowser.Loading = true
-            local url = "https://games.roblox.com/v1/games/" .. tostring(game.PlaceId) .. "/servers/Public?sortOrder=Asc&limit=100"
-            local ok, body = HttpGetRoblox(url)
-            ServerBrowser.Loading = false
-            if not ok then
-                ServerStatus.Text = "تعذر جلب السيرفرات. جرّب مرة ثانية."
-                MakeNotifi({Title="السيرفرات", Text="فشل الاتصال بواجهة Roblox", Time=3})
-                return
-            end
-            local decodedOk, data = pcall(function()
-                return game:GetService("HttpService"):JSONDecode(body)
-            end)
-            if not decodedOk or type(data) ~= "table" then
-                ServerStatus.Text = "تعذر قراءة بيانات السيرفرات."
-                return
-            end
-
-            ServerBrowser.NextCursor = data.nextPageCursor
-            ServerBrowser.Page = 1
-
-            for _, row in ipairs(ServerBrowser.Rows) do
-                pcall(function() row:Destroy() end)
-            end
-            ServerBrowser.Rows = {}
-
-            local shown = 0
-            for _, server in ipairs(data.data or {}) do
-                if server.id ~= game.JobId then
-                    shown += 1
-                    local id = tostring(server.id or "?")
-                    local playing = tonumber(server.playing) or 0
-                    local maxPlayers = tonumber(server.maxPlayers) or 0
-                    local fps = tonumber(server.fps)
-                    local ping = tonumber(server.ping)
-                    local details = string.format("%d/%d", playing, maxPlayers)
-                    if fps then details = details .. " • FPS " .. math.floor(fps) end
-                    if ping then details = details .. " • Ping " .. math.floor(ping) end
-
-                    ServerBrowser.Servers[shown] = id
-                    local row = AddButton(TeleportTab, {
-                        Name = "سيرفر " .. shown .. " | " .. details,
-                        Callback = function()
-                            local queued, qmsg = QueueMonetorAfterTeleport()
-                            if MONETOR_AUTOLOAD_URL ~= "" then
-                                MakeNotifi({Title="Server Hop", Text=qmsg, Time=2})
-                            end
-                            local okTeleport, err = pcall(function()
-                                TeleportService:TeleportToPlaceInstance(game.PlaceId, id, LP)
-                            end)
-                            if not okTeleport then
-                                MakeNotifi({Title="Server Hop", Text="تعذر الانتقال: " .. tostring(err), Time=3})
-                            end
-                        end
-                    })
-                    row.Size = UDim2.new(1, 0, 0, 40)
-                    table.insert(ServerBrowser.Rows, row)
-
-                    local info = Create("TextLabel", row, {
-                        Size = UDim2.new(1, -45, 0, 14),
-                        Position = UDim2.new(0, 35, 1, -15),
-                        BackgroundTransparency = 1,
-                        Text = "ID: " .. string.sub(id, 1, 22),
-                        TextSize = 9,
-                        TextColor3 = Configs_HUB.Cor_DarkText,
-                        TextXAlignment = Enum.TextXAlignment.Left,
-                        Font = Configs_HUB.Text_Font
-                    })
-                    if shown >= 30 then break end
-                end
-            end
-
-            ServerStatus.Text = "تم العثور على " .. shown .. " سيرفر معروض\nالسيرفر الحالي: " .. tostring(game.JobId)
-            if shown == 0 then
-                ServerStatus.Text = "ماكو سيرفرات أخرى ظاهرة حالياً. جرّب تحديث."
-            end
-        end)
-    end
-})
-
-AddButton(TeleportTab, {
-    Name = " سيرفر عشوائي",
-    Callback = function()
-        local choices = {}
-        for index, id in pairs(ServerBrowser.Servers) do
-            if id and id ~= game.JobId then
-                table.insert(choices, id)
-            end
-        end
-        if #choices == 0 then
-            MakeNotifi({Title="Server Hop", Text="حدث قائمة السيرفرات أولاً", Time=2})
-            return
-        end
-        local id = choices[math.random(1, #choices)]
-        QueueMonetorAfterTeleport()
-        local okTeleport, err = pcall(function()
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, id, LP)
-        end)
-        if not okTeleport then
-            MakeNotifi({Title="Server Hop", Text="تعذر الانتقال: " .. tostring(err), Time=3})
-        end
-    end
-})
-
-AddTextLabel(TeleportTab, "معلومات اللاعبين: Roblox Public Servers API لا يرجّع أسماء لاعبي السيرفرات الأخرى؛ يعرض العدد والحد الأقصى وبيانات السيرفر المتاحة. أسماء اللاعبين تبقى متاحة للسيرفر الحالي فقط.")
-
-AddToggleButton(TeleportTab, {
-    Name = "استمرار Monetor X بعد الانتقال",
-    OnText = "الاستمرار بعد الانتقال: تشغيل",
-    OffText = "الاستمرار بعد الانتقال: إيقاف",
-    StartState = false,
-    OnEnable = function()
-        if MONETOR_AUTOLOAD_URL == "" then
-            MakeNotifi({Title="الاستمرار", Text="حتى يشتغل تلقائياً بعد Server Hop لازم تحط رابط raw لنسختك من السكربت في MONETOR_AUTOLOAD_URL", Time=5})
-        else
-            local ok, msg = QueueMonetorAfterTeleport()
-            MakeNotifi({Title="الاستمرار", Text=msg, Time=3})
-        end
-    end,
-    OnDisable = function()
-        MakeNotifi({Title="الاستمرار", Text="تم إيقاف تجهيز إعادة التشغيل بعد الانتقال", Time=2})
-    end
-})
-
-AddButton(TeleportTab, {
-    Name = " عرض لاعبي السيرفر الحالي",
-    Callback = function()
-        local names = {}
-        for _, p in ipairs(Players:GetPlayers()) do
-            table.insert(names, p.DisplayName .. " (@" .. p.Name .. ")")
-        end
-        local text = #names > 0 and table.concat(names, "\n") or "لا يوجد"
-        MakeNotifi({Title="السيرفر الحالي • " .. #names .. " لاعب", Text=text, Time=7})
     end
 })
 
@@ -4139,9 +3749,5 @@ MakeNotifi({
     Text = "تم تفعيل Monetor X بنجاح! استمتع",
     Time = 3
 })
-
-if MONETOR_AUTOLOAD_URL ~= "" then
-    pcall(QueueMonetorAfterTeleport)
-end
 
 print(" Monetor X Loaded Successfully!")
