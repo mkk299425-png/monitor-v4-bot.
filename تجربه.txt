@@ -1,5 +1,5 @@
 -- =============================================
--- MONETOR X (FULL EDITION + AVATAR + USAGE + CREDITS)
+-- MONETOR X (FULL EDITION + AVATAR + USAGE + CREDITS + ANTI-ADMIN)
 -- Developed by @sjbcjjs0
 -- =============================================
 
@@ -50,6 +50,18 @@ local function Corner(parent, props)
     return new
 end
 
+-- ⚡ Stroke محسّن (بدون تسريب ذاكرة)
+local ActiveStrokes = {}
+RunService.RenderStepped:Connect(function()
+    for stroke, gradient in pairs(ActiveStrokes) do
+        if not stroke.Parent then
+            ActiveStrokes[stroke] = nil
+        else
+            gradient.Rotation = (gradient.Rotation + 2) % 360
+        end
+    end
+end)
+
 local function Stroke(parent, props)
     local new = Create("UIStroke", parent)
     new.Color = Configs_HUB.Cor_Stroke
@@ -65,12 +77,7 @@ local function Stroke(parent, props)
     }
     gradient.Rotation = 0
     gradient.Parent = new
-    coroutine.wrap(function()
-        while new.Parent do
-            gradient.Rotation = (gradient.Rotation + 2) % 360
-            RunService.RenderStepped:Wait()
-        end
-    end)()
+    ActiveStrokes[new] = gradient
     if props then SetProps(new, props) end
     return new
 end
@@ -834,7 +841,7 @@ Menu:GetPropertyChangedSignal("Size"):Connect(function()
 end)
 
 -- =============================================
--- MAKETAB (with Avatar support)
+-- MAKETAB
 -- =============================================
 function MakeTab(Configs)
     local TabName = Configs.Name or "Tab"
@@ -1019,18 +1026,14 @@ end
 -- ADDPLAYERPROFILE
 -- =============================================
 function AddPlayerProfile(parent)
-    -- حاوية البروفايل
     local ProfileFrame = Create("Frame", parent, {
         Size = UDim2.new(1, 0, 0, 90),
         BackgroundColor3 = Configs_HUB.Cor_Options,
         BackgroundTransparency = 0.4,
-        BorderSizePixel = 0,
-        Name = "PlayerProfile"
+        BorderSizePixel = 0, Name = "PlayerProfile"
     })
-    Corner(ProfileFrame)
-    Stroke(ProfileFrame)
+    Corner(ProfileFrame); Stroke(ProfileFrame)
 
-    -- الأفتار
     local AvatarImage = Create("ImageLabel", ProfileFrame, {
         Size = UDim2.new(0, 55, 0, 55),
         Position = UDim2.new(0, 12, 0.5, -27.5),
@@ -1047,63 +1050,42 @@ function AddPlayerProfile(parent)
     avStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     avStroke.Parent = AvatarImage
 
-    -- الاسم
-    local NameLabel = Create("TextLabel", ProfileFrame, {
-        Size = UDim2.new(1, -80, 0, 22),
-        Position = UDim2.new(0, 75, 0, 8),
-        BackgroundTransparency = 1,
-        Text = "👤 " .. LP.Name,
+    Create("TextLabel", ProfileFrame, {
+        Size = UDim2.new(1, -80, 0, 22), Position = UDim2.new(0, 75, 0, 8),
+        BackgroundTransparency = 1, Text = "👤 " .. LP.Name,
         TextColor3 = Color3.fromRGB(255, 255, 255),
-        Font = Configs_HUB.Text_Font,
-        TextSize = 16,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 5
+        Font = Configs_HUB.Text_Font, TextSize = 16,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5
     })
 
-    -- Display name
-    local DisplayLabel = Create("TextLabel", ProfileFrame, {
-        Size = UDim2.new(1, -80, 0, 16),
-        Position = UDim2.new(0, 75, 0, 30),
-        BackgroundTransparency = 1,
-        Text = "Display: " .. LP.DisplayName,
+    Create("TextLabel", ProfileFrame, {
+        Size = UDim2.new(1, -80, 0, 16), Position = UDim2.new(0, 75, 0, 30),
+        BackgroundTransparency = 1, Text = "Display: " .. LP.DisplayName,
         TextColor3 = Configs_HUB.Cor_DarkText,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 5
+        Font = Configs_HUB.Text_Font, TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5
     })
 
-    -- معلومات عامة
     local placeName = "Unknown"
     pcall(function() placeName = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
     
-    local InfoLabel = Create("TextLabel", ProfileFrame, {
-        Size = UDim2.new(1, -80, 0, 16),
-        Position = UDim2.new(0, 75, 0, 48),
-        BackgroundTransparency = 1,
-        Text = "🎮 " .. tostring(placeName),
+    Create("TextLabel", ProfileFrame, {
+        Size = UDim2.new(1, -80, 0, 16), Position = UDim2.new(0, 75, 0, 48),
+        BackgroundTransparency = 1, Text = "🎮 " .. tostring(placeName),
         TextColor3 = Configs_HUB.Cor_DarkText,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 12,
+        Font = Configs_HUB.Text_Font, TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Left,
-        TextTruncate = Enum.TextTruncate.AtEnd,
-        ZIndex = 5
+        TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5
     })
 
-    -- FPS + Ping (يتحدث)
     local StatsLabel = Create("TextLabel", ProfileFrame, {
-        Size = UDim2.new(1, -80, 0, 16),
-        Position = UDim2.new(0, 75, 0, 66),
-        BackgroundTransparency = 1,
-        Text = "FPS: -- | Ping: --",
+        Size = UDim2.new(1, -80, 0, 16), Position = UDim2.new(0, 75, 0, 66),
+        BackgroundTransparency = 1, Text = "FPS: -- | Ping: --",
         TextColor3 = Color3.fromRGB(120, 220, 120),
-        Font = Configs_HUB.Text_Font,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 5
+        Font = Configs_HUB.Text_Font, TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5
     })
 
-    -- عداد FPS
     local fps = 0
     local frameCount = 0
     local lastTime = tick()
@@ -1146,20 +1128,6 @@ function AddDropdown(parent, Configs)
     }) 
     
     local dropdownStroke = Stroke(TextButton, { Color = Configs_HUB.Cor_Stroke, Thickness = 2 })
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Configs_HUB.Cor_Stroke),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 100, 255)),
-        ColorSequenceKeypoint.new(1, Configs_HUB.Cor_Stroke)
-    }
-    gradient.Rotation = 0
-    gradient.Parent = dropdownStroke
-    coroutine.wrap(function()
-        while dropdownStroke.Parent do
-            gradient.Rotation = (gradient.Rotation + 1) % 360
-            RunService.RenderStepped:Wait()
-        end
-    end)()
     Corner(TextButton)
     
     local TextLabel = Create("TextLabel", TextButton, {
@@ -1294,8 +1262,10 @@ end
 local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
 local LocalPlayerTab = MakeTab({Name = "شخصيتي ‍️", TabTitle = true})
 local ESPTab = MakeTab({Name = "رادار ️", TabTitle = true})
+local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
 local TeleportTab = MakeTab({Name = "الانتقال ", TabTitle = true})
 local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
+local AntiAdminTab = MakeTab({Name = "أوامر وحماية ️", TabTitle = true})
 local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, AvatarUsername = "sjbcjjs0"})
 
 -- =============================================
@@ -1417,17 +1387,6 @@ local function Monetor_ToggleCommandPanel(forceState)
 end
 
 AddButton(MainTab, { Name = "️ تنفيذ الأوامر", Callback = function() Monetor_ToggleCommandPanel() end })
-AddButton(LocalPlayerTab, {
-    Name = " الشات — تشغيل / إيقاف",
-    Callback = function()
-        Monetor_ToggleCommandPanel()
-        MakeNotifi({
-            Title = "الشات الخاص",
-            Text = Monetor_ChatEnabled and "تم تشغيل لوحة الإدخال" or "تم إيقاف لوحة الإدخال",
-            Time = 2
-        })
-    end
-})
 
 -- =============================================
 -- MAIN TAB BUTTONS
@@ -2029,8 +1988,6 @@ end)
 -- =============================================
 -- COMBAT TAB
 -- =============================================
-local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
-
 local GodMode = false
 local ShieldMode = false
 local SuperDamage = false
@@ -2338,13 +2295,6 @@ local function TATWIR_Cleanup()
             end
         end
     end
-    if LP.Character then
-        local myRoot = LP.Character:FindFirstChild("HumanoidRootPart")
-        if myRoot then
-            local oldBV = myRoot:FindFirstChild("Tatwir_Spin")
-            if oldBV then pcall(function() oldBV:Destroy() end) end
-        end
-    end
 end
 
 local function TATWIR_LaunchPlayer(targetChar)
@@ -2369,13 +2319,6 @@ local function TATWIR_Start()
     local myHum = char:FindFirstChildOfClass("Humanoid")
     if not myRoot or not myHum then return end
     TATWIR_Active = true
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LP and plr.Character then
-            for _, part in ipairs(plr.Character:GetDescendants()) do
-                if part:IsA("BasePart") then pcall(function() part.CanCollide = true end) end
-            end
-        end
-    end
     local oldSpin = myRoot:FindFirstChild("Tatwir_Spin")
     if oldSpin then pcall(function() oldSpin:Destroy() end) end
     TATWIR_BodyAngular = Instance.new("BodyAngularVelocity")
@@ -2840,21 +2783,609 @@ Players.PlayerAdded:Connect(UpdatePlayerList)
 Players.PlayerRemoving:Connect(UpdatePlayerList)
 
 -- =============================================
--- RIGHTS TAB (المحتوى الكامل)
+-- 🛡️ ANTI-ADMIN PROTECTION + COMMAND MANAGER
 -- =============================================
 
--- الملف الشخصي
+-- 🔧 الإعدادات
+local AdminConfig = {
+    Whitelist = {"refresh", "heal"},
+    Blacklist = {
+        "kick", "ban", "jail", "freeze",
+        "kill", "slay", "explode", "cuff",
+        "arrest", "restrain", "fling", "burn",
+    },
+    CustomCommands = {},
+    Enabled = false,
+    Notify = true,
+    AutoBlock = false,
+    Log = {},
+    MaxLog = 100,
+    BlockedCount = 0,
+    LastNotifyTime = 0,
+    Connections = {},
+}
+
+local function IsCommandAboutMe(text)
+    if not text or text == "" then return false end
+    local lower = string.lower(text)
+    local myName = string.lower(LP.Name)
+    if string.find(lower, myName, 1, true) then return true end
+    if string.find(lower, "%f[%a]me%f[%A]") then return true end
+    if string.find(lower, "%f[%a]all%f[%A]") then return true end
+    return false
+end
+
+local function IsWhitelisted(cmd)
+    if not cmd then return false end
+    local lower = string.lower(cmd)
+    for _, w in ipairs(AdminConfig.Whitelist) do
+        if string.find(lower, string.lower(w), 1, true) then return true end
+    end
+    return false
+end
+
+local function IsBlacklisted(cmd)
+    if not cmd then return false end
+    local lower = string.lower(cmd)
+    for _, b in ipairs(AdminConfig.Blacklist) do
+        if string.find(lower, string.lower(b), 1, true) then return true end
+    end
+    return false
+end
+
+local function ShouldBlock(cmd)
+    if not AdminConfig.AutoBlock then return false end
+    if IsWhitelisted(cmd) then return false end
+    if IsBlacklisted(cmd) then return true end
+    return false
+end
+
+local function NotifyAttacker(name, command, blocked)
+    if not AdminConfig.Notify then return end
+    if os.clock() - AdminConfig.LastNotifyTime < 0.8 then return end
+    AdminConfig.LastNotifyTime = os.clock()
+    MakeNotifi({
+        Title = blocked and "🛡️ تم حجب أمر" or "⚠️ أمر جديد",
+        Text = "👤 المهاجم: " .. name .. "\n📝 الأمر: " .. tostring(command):sub(1, 50),
+        Time = 4
+    })
+end
+
+local LogScroll = nil
+
+local function AddToLog(attacker, cmd, blocked)
+    table.insert(AdminConfig.Log, 1, {
+        time = os.date("%H:%M:%S"),
+        attacker = attacker,
+        cmd = cmd,
+        blocked = blocked,
+    })
+    if #AdminConfig.Log > AdminConfig.MaxLog then
+        table.remove(AdminConfig.Log)
+    end
+    if blocked then AdminConfig.BlockedCount = AdminConfig.BlockedCount + 1 end
+    
+    if LogScroll then
+        for _, child in ipairs(LogScroll:GetChildren()) do
+            if child:IsA("TextLabel") then child:Destroy() end
+        end
+        for i, entry in ipairs(AdminConfig.Log) do
+            if i > 50 then break end
+            local color = entry.blocked and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 150, 150)
+            Create("TextLabel", LogScroll, {
+                Size = UDim2.new(1, -10, 0, 0),
+                BackgroundTransparency = 1,
+                Text = (entry.blocked and "🛡️ " or "⚠️ ") .. entry.time .. " | " .. entry.attacker .. "\n" .. entry.cmd,
+                TextColor3 = color,
+                Font = Configs_HUB.Text_Font,
+                TextSize = 11,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextWrapped = true,
+                AutomaticSize = Enum.AutomaticSize.Y,
+                LayoutOrder = i
+            })
+        end
+    end
+end
+
+local function StartAntiKick()
+    if not hookmetamethod or not getnamecallmethod then return end
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        if AdminConfig.Enabled and method == "Kick" then
+            if self == LP or self == Players then
+                local args = {...}
+                local reason = tostring(args[1] or "بدون سبب")
+                if IsWhitelisted(reason) then return oldNamecall(self, ...) end
+                AddToLog("(النظام)", "Kick: " .. reason, true)
+                NotifyAttacker("(النظام)", "kick: " .. reason, true)
+                return nil
+            end
+        end
+        return oldNamecall(self, ...)
+    end)
+end
+
+local function StartChatMonitor()
+    local function processChat(speaker, message)
+        if not AdminConfig.Enabled then return end
+        if not message or message == "" then return end
+        local firstChar = message:sub(1, 1)
+        if firstChar == ";" or firstChar == ":" or firstChar == "/" then
+            if IsCommandAboutMe(message) then
+                local blocked = ShouldBlock(message)
+                AddToLog(speaker, message, blocked)
+                NotifyAttacker(speaker, message, blocked)
+            end
+        end
+    end
+    
+    pcall(function()
+        local TextChat = game:GetService("TextChatService")
+        if TextChat and TextChat.MessageReceived then
+            local conn = TextChat.MessageReceived:Connect(function(msg)
+                local sender = "?"
+                pcall(function()
+                    if msg.TextSource then
+                        local p = Players:GetPlayerByUserId(msg.TextSource.UserId)
+                        if p then sender = p.Name end
+                    end
+                end)
+                processChat(sender, msg.Text)
+            end)
+            table.insert(AdminConfig.Connections, conn)
+        end
+    end)
+    
+    pcall(function()
+        LP.ChatMessage:Connect(function(msg, _, player)
+            processChat(player and player.Name or "?", msg)
+        end)
+    end)
+end
+
+local function StartAntiFreeze()
+    local conn = RunService.Heartbeat:Connect(function()
+        if not AdminConfig.Enabled then return end
+        local char = LP.Character
+        if not char then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        if hum.WalkSpeed == 0 then hum.WalkSpeed = 16 end
+        if hum.JumpPower == 0 and hum.UseJumpPower then hum.JumpPower = 50 end
+    end)
+    table.insert(AdminConfig.Connections, conn)
+end
+
+local function StartAntiTeleport()
+    local lastPos = nil
+    local ignore = 0
+    LP.CharacterAdded:Connect(function() lastPos = nil ignore = 30 end)
+    
+    local conn = RunService.Heartbeat:Connect(function()
+        if not AdminConfig.Enabled then return end
+        local char = LP.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        if ignore > 0 then ignore = ignore - 1 lastPos = hrp.Position return end
+        if lastPos then
+            local delta = (hrp.Position - lastPos).Magnitude
+            if delta > 30 and not Flying then
+                hrp.CFrame = CFrame.new(lastPos)
+                AddToLog("(النظام)", "سحب CFrame", true)
+                return
+            end
+        end
+        lastPos = hrp.Position
+    end)
+    table.insert(AdminConfig.Connections, conn)
+end
+
+local function StartAntiJailKill()
+    local lastHP = 100
+    local conn = RunService.Heartbeat:Connect(function()
+        if not AdminConfig.Enabled then return end
+        local char = LP.Character
+        if not char then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        for _, obj in ipairs(char:GetChildren()) do
+            if obj:IsA("ForceField") and obj.Name ~= "Monetor_Shield" then
+                obj:Destroy()
+                AddToLog("(النظام)", "سجن", true)
+            end
+        end
+        for _, obj in ipairs(char:GetChildren()) do
+            if obj:IsA("Tool") then
+                local n = string.lower(obj.Name)
+                if string.find(n, "cuff") or string.find(n, "arrest") 
+                   or string.find(n, "jail") or string.find(n, "restrain") then
+                    obj:Destroy()
+                    AddToLog("(النظام)", "كلبشة: " .. obj.Name, true)
+                end
+            end
+        end
+        if lastHP > 20 and hum.Health < lastHP - 30 then
+            hum.Health = lastHP
+            AddToLog("(النظام)", "قتل مفاجئ", true)
+        end
+        if hum.Health > 0 then lastHP = hum.Health end
+    end)
+    table.insert(AdminConfig.Connections, conn)
+end
+
+local function StartAntiAdmin()
+    if AdminConfig.Enabled then return end
+    AdminConfig.Enabled = true
+    AdminConfig.BlockedCount = 0
+    StartAntiKick()
+    StartChatMonitor()
+    StartAntiFreeze()
+    StartAntiTeleport()
+    StartAntiJailKill()
+    MakeNotifi({Title="🛡️", Text="الحماية مفعلة", Time=2})
+end
+
+local function StopAntiAdmin()
+    if not AdminConfig.Enabled then return end
+    AdminConfig.Enabled = false
+    for _, conn in ipairs(AdminConfig.Connections) do
+        pcall(function() conn:Disconnect() end)
+    end
+    AdminConfig.Connections = {}
+    MakeNotifi({Title="🛡️", Text="الحماية معطلة", Time=2})
+end
+
+local function ExecuteCommand(cmdText)
+    if not cmdText or cmdText == "" then return false, "فارغ" end
+    local success = false
+    pcall(function()
+        local hdClient = RepStorage:FindFirstChild("HDAdminHDClient")
+        if hdClient then
+            local signals = hdClient:FindFirstChild("Signals")
+            if signals then
+                local rc = signals:FindFirstChild("RequestCommand")
+                if rc then
+                    rc:InvokeServer(cmdText)
+                    success = true
+                end
+            end
+        end
+    end)
+    if success then return true, "تم التنفيذ" end
+    return false, "فشل التنفيذ"
+end
+
+-- ───── القسم 1: الحماية ─────
+AddTextLabel(AntiAdminTab, "🛡️ [ القسم 1: الحماية ]")
+
+AddToggleButton(AntiAdminTab, {
+    Name = "🛡️ تفعيل الحماية الشاملة",
+    StartState = false,
+    OnEnable = function() StartAntiAdmin() end,
+    OnDisable = function() StopAntiAdmin() end
+})
+
+AddToggleButton(AntiAdminTab, {
+    Name = "🔔 الإشعارات التلقائية",
+    StartState = true,
+    OnEnable = function() AdminConfig.Notify = true end,
+    OnDisable = function() AdminConfig.Notify = false end
+})
+
+AddToggleButton(AntiAdminTab, {
+    Name = "🔒 الحجب التلقائي للأوامر",
+    StartState = false,
+    OnEnable = function() 
+        AdminConfig.AutoBlock = true 
+        MakeNotifi({Title="🔒", Text="الحجب التلقائي مفعل", Time=2})
+    end,
+    OnDisable = function() 
+        AdminConfig.AutoBlock = false 
+        MakeNotifi({Title="🔓", Text="الحجب التلقائي معطل", Time=2})
+    end
+})
+
+Create("Frame", AntiAdminTab, {
+    Size = UDim2.new(1, 0, 0, 2),
+    BackgroundColor3 = Configs_HUB.Cor_Stroke,
+    BorderSizePixel = 0, BackgroundTransparency = 0.5
+})
+
+-- ───── القسم 2: Whitelist ─────
+AddTextLabel(AntiAdminTab, "✅ [ القسم 2: قائمة السماح ]")
+
+local WhiteBox = Create("TextBox", AntiAdminTab, {
+    Size = UDim2.new(1, 0, 0, 32),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25, BorderSizePixel = 0,
+    Text = "", PlaceholderText = "اكتب أمر للسماح (مثل: refresh)",
+    TextColor3 = Configs_HUB.Cor_Text,
+    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+    TextSize = 13, Font = Configs_HUB.Text_Font,
+    ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Center
+})
+Corner(WhiteBox); Stroke(WhiteBox)
+
+AddButton(AntiAdminTab, {
+    Name = "✅ إضافة للسماح",
+    Callback = function()
+        local t = WhiteBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        if t == "" then MakeNotifi({Title="⚠️", Text="اكتب أمر أولاً", Time=2}) return end
+        table.insert(AdminConfig.Whitelist, t)
+        WhiteBox.Text = ""
+        MakeNotifi({Title="✅", Text="أُضيف للسماح: " .. t, Time=2})
+    end
+})
+
+AddButton(AntiAdminTab, {
+    Name = "📋 عرض قائمة السماح",
+    Callback = function()
+        if #AdminConfig.Whitelist == 0 then
+            MakeNotifi({Title="📋", Text="القائمة فارغة", Time=3})
+        else
+            MakeNotifi({Title="✅ المسموح (" .. #AdminConfig.Whitelist .. ")", Text = table.concat(AdminConfig.Whitelist, ", "), Time=6})
+        end
+    end
+})
+
+AddButton(AntiAdminTab, {
+    Name = "🗑️ مسح قائمة السماح",
+    Callback = function()
+        AdminConfig.Whitelist = {}
+        MakeNotifi({Title="🗑️", Text="تم المسح", Time=2})
+    end
+})
+
+Create("Frame", AntiAdminTab, {
+    Size = UDim2.new(1, 0, 0, 2),
+    BackgroundColor3 = Configs_HUB.Cor_Stroke,
+    BorderSizePixel = 0, BackgroundTransparency = 0.5
+})
+
+-- ───── القسم 3: Blacklist ─────
+AddTextLabel(AntiAdminTab, "🚫 [ القسم 3: قائمة الحجب ]")
+
+local BlackBox = Create("TextBox", AntiAdminTab, {
+    Size = UDim2.new(1, 0, 0, 32),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25, BorderSizePixel = 0,
+    Text = "", PlaceholderText = "اكتب أمر للحجب (مثل: kick)",
+    TextColor3 = Configs_HUB.Cor_Text,
+    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+    TextSize = 13, Font = Configs_HUB.Text_Font,
+    ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Center
+})
+Corner(BlackBox); Stroke(BlackBox)
+
+AddButton(AntiAdminTab, {
+    Name = "🚫 إضافة للحجب",
+    Callback = function()
+        local t = BlackBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        if t == "" then MakeNotifi({Title="⚠️", Text="اكتب أمر أولاً", Time=2}) return end
+        table.insert(AdminConfig.Blacklist, t)
+        BlackBox.Text = ""
+        MakeNotifi({Title="🚫", Text="أُضيف للحجب: " .. t, Time=2})
+    end
+})
+
+AddButton(AntiAdminTab, {
+    Name = "📋 عرض قائمة الحجب",
+    Callback = function()
+        MakeNotifi({Title="🚫 المحجوب (" .. #AdminConfig.Blacklist .. ")", Text = table.concat(AdminConfig.Blacklist, ", "), Time=6})
+    end
+})
+
+Create("Frame", AntiAdminTab, {
+    Size = UDim2.new(1, 0, 0, 2),
+    BackgroundColor3 = Configs_HUB.Cor_Stroke,
+    BorderSizePixel = 0, BackgroundTransparency = 0.5
+})
+
+-- ───── القسم 4: الأوامر المخصصة ─────
+AddTextLabel(AntiAdminTab, "⚡ [ القسم 4: أوامري المخصصة ]")
+
+local CustomCmdBox = Create("TextBox", AntiAdminTab, {
+    Size = UDim2.new(1, 0, 0, 32),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25, BorderSizePixel = 0,
+    Text = "", PlaceholderText = "اكتب أمرك (مثل: ;refresh)",
+    TextColor3 = Configs_HUB.Cor_Text,
+    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+    TextSize = 13, Font = Configs_HUB.Text_Font,
+    ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Center
+})
+Corner(CustomCmdBox); Stroke(CustomCmdBox)
+
+local CustomCmdNameBox = Create("TextBox", AntiAdminTab, {
+    Size = UDim2.new(1, 0, 0, 28),
+    BackgroundColor3 = Configs_HUB.Cor_Options,
+    BackgroundTransparency = 0.25, BorderSizePixel = 0,
+    Text = "", PlaceholderText = "اسم للزر (اختياري)",
+    TextColor3 = Configs_HUB.Cor_Text,
+    PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+    TextSize = 12, Font = Configs_HUB.Text_Font,
+    ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Center
+})
+Corner(CustomCmdNameBox); Stroke(CustomCmdNameBox)
+
+AddButton(AntiAdminTab, {
+    Name = "⚡ تنفيذ الأمر الآن",
+    Callback = function()
+        local cmd = CustomCmdBox.Text
+        if cmd == "" then MakeNotifi({Title="⚠️", Text="اكتب أمر أولاً", Time=2}) return end
+        local success, msg = ExecuteCommand(cmd)
+        if success then
+            MakeNotifi({Title="✅ تنفيذ", Text=msg .. ": " .. cmd, Time=3})
+            AddToLog("(أنت)", cmd, false)
+        else
+            MakeNotifi({Title="❌ فشل", Text=msg, Time=3})
+        end
+    end
+})
+
+AddButton(AntiAdminTab, {
+    Name = "➕ حفظ كزر دائم",
+    Callback = function()
+        local cmd = CustomCmdBox.Text
+        local name = CustomCmdNameBox.Text
+        if cmd == "" then MakeNotifi({Title="⚠️", Text="اكتب أمر أولاً", Time=2}) return end
+        if name == "" then name = cmd:sub(1, 20) end
+        table.insert(AdminConfig.CustomCommands, { name = name, command = cmd, enabled = true })
+        AddButton(AntiAdminTab, {
+            Name = "⚡ " .. name,
+            Callback = function()
+                local s, m = ExecuteCommand(cmd)
+                MakeNotifi({Title = s and "✅ تنفيذ" or "❌ فشل", Text = s and (name .. ": " .. cmd) or m, Time = 2})
+            end
+        })
+        CustomCmdBox.Text = ""
+        CustomCmdNameBox.Text = ""
+        MakeNotifi({Title="💾", Text="حُفظ: " .. name, Time=2})
+    end
+})
+
+Create("Frame", AntiAdminTab, {
+    Size = UDim2.new(1, 0, 0, 2),
+    BackgroundColor3 = Configs_HUB.Cor_Stroke,
+    BorderSizePixel = 0, BackgroundTransparency = 0.5
+})
+
+-- ───── القسم 5: السجل ─────
+AddTextLabel(AntiAdminTab, "📋 [ القسم 5: سجل الأوامر ]")
+
+local CommandLogPanel = nil
+
+AddButton(AntiAdminTab, {
+    Name = "📋 فتح سجل الأوامر",
+    Callback = function()
+        if CommandLogPanel and CommandLogPanel.Parent then
+            CommandLogPanel.Visible = not CommandLogPanel.Visible
+            return
+        end
+        
+        CommandLogPanel = Create("Frame", ScreenGui, {
+            Name = "Monetor_CommandLog",
+            Size = UDim2.new(0, 420, 0, 500),
+            Position = UDim2.new(0.5, -210, 0.5, -250),
+            BackgroundColor3 = Configs_HUB.Cor_Hub,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, Active = true, Draggable = true, ZIndex = 250
+        })
+        Corner(CommandLogPanel); Stroke(CommandLogPanel)
+        
+        Create("TextLabel", CommandLogPanel, {
+            Size = UDim2.new(1, -60, 0, 32),
+            Position = UDim2.new(0, 15, 0, 10),
+            BackgroundTransparency = 1,
+            Text = "📋 سجل الأوامر",
+            TextColor3 = Configs_HUB.Cor_Text,
+            Font = Configs_HUB.Text_Font,
+            TextSize = 20,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 252
+        })
+        
+        local closeBtn = Create("TextButton", CommandLogPanel, {
+            Size = UDim2.new(0, 32, 0, 32),
+            Position = UDim2.new(1, -42, 0, 10),
+            BackgroundTransparency = 1, Text = "×",
+            TextColor3 = Configs_HUB.Cor_Text,
+            Font = Configs_HUB.Text_Font, TextSize = 26,
+            AutoButtonColor = false, ZIndex = 252
+        })
+        closeBtn.Activated:Connect(function() CommandLogPanel.Visible = false end)
+        
+        LogScroll = Create("ScrollingFrame", CommandLogPanel, {
+            Size = UDim2.new(1, -20, 1, -110),
+            Position = UDim2.new(0, 10, 0, 55),
+            BackgroundColor3 = Configs_HUB.Cor_Options,
+            BackgroundTransparency = 0.4,
+            BorderSizePixel = 0,
+            CanvasSize = UDim2.new(),
+            AutomaticCanvasSize = "Y",
+            ScrollingDirection = "Y",
+            ScrollBarThickness = 3,
+            ScrollBarImageColor3 = Configs_HUB.Cor_Stroke,
+            ZIndex = 251
+        })
+        Corner(LogScroll)
+        Create("UIListLayout", LogScroll, {
+            Padding = UDim.new(0, 6),
+            SortOrder = Enum.SortOrder.LayoutOrder
+        })
+        Create("UIPadding", LogScroll, {
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
+            PaddingTop = UDim.new(0, 8),
+            PaddingBottom = UDim.new(0, 8)
+        })
+        
+        local clearBtn = Create("TextButton", CommandLogPanel, {
+            Size = UDim2.new(0.45, 0, 0, 32),
+            Position = UDim2.new(0, 10, 1, -42),
+            BackgroundColor3 = Configs_HUB.Cor_Options,
+            Text = "🗑️ مسح",
+            TextColor3 = Color3.fromRGB(255, 120, 120),
+            Font = Configs_HUB.Text_Font,
+            TextSize = 13,
+            AutoButtonColor = false, ZIndex = 252
+        })
+        Corner(clearBtn); Stroke(clearBtn)
+        clearBtn.Activated:Connect(function()
+            AdminConfig.Log = {}
+            AdminConfig.BlockedCount = 0
+            if LogScroll then
+                for _, child in ipairs(LogScroll:GetChildren()) do
+                    if child:IsA("TextLabel") then child:Destroy() end
+                end
+            end
+            MakeNotifi({Title="🗑️", Text="تم المسح", Time=2})
+        end)
+        
+        local copyBtn = Create("TextButton", CommandLogPanel, {
+            Size = UDim2.new(0.45, 0, 0, 32),
+            Position = UDim2.new(1, -10, 1, -42),
+            AnchorPoint = Vector2.new(1, 0),
+            BackgroundColor3 = Configs_HUB.Cor_Options,
+            Text = "📤 نسخ السجل",
+            TextColor3 = Configs_HUB.Cor_Text,
+            Font = Configs_HUB.Text_Font,
+            TextSize = 13,
+            AutoButtonColor = false, ZIndex = 252
+        })
+        Corner(copyBtn); Stroke(copyBtn)
+        copyBtn.Activated:Connect(function()
+            local txt = "📋 سجل الأوامر:\n"
+            for _, e in ipairs(AdminConfig.Log) do
+                txt = txt .. "[" .. e.time .. "] " .. e.attacker .. " → " .. e.cmd .. "\n"
+            end
+            pcall(function() if setclipboard then setclipboard(txt) end end)
+            MakeNotifi({Title="📤", Text="تم النسخ", Time=2})
+        end)
+    end
+})
+
+AddTextLabel(AntiAdminTab, 
+    "\n💡 التوجيهات:\n" ..
+    "• Whitelist = أوامر مسموحة دائماً\n" ..
+    "• Blacklist = أوامر محجوبة دائماً\n" ..
+    "• الأوامر المخصصة = احفظ أي أمر كزر\n" ..
+    "• السجل = يشوف كل المحاولات\n"
+)
+
+-- =============================================
+-- RIGHTS TAB
+-- =============================================
 AddPlayerProfile(RightsTab)
 
--- فاصل
 Create("Frame", RightsTab, {
     Size = UDim2.new(1, 0, 0, 2),
     BackgroundColor3 = Configs_HUB.Cor_Stroke,
-    BorderSizePixel = 0,
-    BackgroundTransparency = 0.5
+    BorderSizePixel = 0, BackgroundTransparency = 0.5
 })
 
--- زر: طريقة الاستخدام
 local UsagePanel = nil
 
 local function CreateUsagePanel()
@@ -2873,31 +3404,23 @@ local function CreateUsagePanel()
     })
     Corner(UsagePanel); Stroke(UsagePanel)
 
-    local Header = Create("Frame", UsagePanel, {
-        Size = UDim2.new(1, 0, 0, 40),
-        BackgroundTransparency = 1, ZIndex = 201
-    })
-
-    Create("TextLabel", Header, {
-        Size = UDim2.new(1, -50, 1, 0),
+    Create("TextLabel", UsagePanel, {
+        Size = UDim2.new(1, -50, 0, 40),
         Position = UDim2.new(0, 15, 0, 0),
         BackgroundTransparency = 1,
         Text = "📖 طريقة الاستخدام",
         TextColor3 = Configs_HUB.Cor_Text,
         Font = Configs_HUB.Text_Font,
         TextSize = 20,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 202
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 202
     })
 
-    local CloseBtn = Create("TextButton", Header, {
+    local CloseBtn = Create("TextButton", UsagePanel, {
         Size = UDim2.new(0, 30, 0, 30),
         Position = UDim2.new(1, -40, 0, 5),
-        BackgroundTransparency = 1,
-        Text = "×",
+        BackgroundTransparency = 1, Text = "×",
         TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 24,
+        Font = Configs_HUB.Text_Font, TextSize = 24,
         AutoButtonColor = false, ZIndex = 202
     })
     CloseBtn.Activated:Connect(function() UsagePanel.Visible = false end)
@@ -2910,8 +3433,7 @@ local function CreateUsagePanel()
         AutomaticCanvasSize = "Y",
         ScrollingDirection = "Y",
         ScrollBarThickness = 3,
-        ScrollBarImageColor3 = Configs_HUB.Cor_Stroke,
-        ZIndex = 201
+        ScrollBarImageColor3 = Configs_HUB.Cor_Stroke, ZIndex = 201
     })
     Corner(ContentScroll)
 
@@ -2936,34 +3458,22 @@ local function CreateUsagePanel()
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
- القتال:
-• دم حديد — صحة لا نهائية
-• درع قوي — ForceField
-• قوة ضربة سوبر — قتل بضربة واحدة
-• رفريش تلقائي — عند الدم أو الموت
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
- استهداف الشخص (BanHammer):
-1. اختر لاعب من القائمة
-2. تأكد أن BanHammer في حقيبتك
-3. فعّل الزر — يلتصق به ويضرب
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
- التطوير:
-• يخليك تدور بسرعة وتقذف اللاعبين
-• عدل سرعة الدوران من الصندوق
+🛡️ حماية الأدمن (تاب "أوامر وحماية"):
+1. فعّل "الحماية الشاملة"
+2. فعّل "الحجب التلقائي" لمنع الأوامر
+3. أضف أوامر للسماح (Whitelist)
+4. أضف أوامر للحجب (Blacklist)
+5. اكتب أوامرك المخصصة ونفذها
+6. افتح السجل لمتابعة كل المحاولات
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ⚠️ ملاحظات:
 • كل الميزات تحتاج تفعيل يدوي
-• إذا خرجت من السيرفر تُطفى الميزات
-• استخدم زر "فك حماية الطيران" أول شي
+• استخدم "فك حماية الطيران" أول شي
 ]]
 
-    local TextLabel = Create("TextLabel", ContentScroll, {
+    Create("TextLabel", ContentScroll, {
         Size = UDim2.new(1, -10, 0, 0),
         Position = UDim2.new(0, 5, 0, 5),
         BackgroundTransparency = 1,
@@ -2974,10 +3484,8 @@ local function CreateUsagePanel()
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top,
         TextWrapped = true,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        ZIndex = 202
+        AutomaticSize = Enum.AutomaticSize.Y, ZIndex = 202
     })
-    Corner(ContentScroll)
 end
 
 AddButton(RightsTab, {
@@ -2988,7 +3496,6 @@ AddButton(RightsTab, {
     end
 })
 
--- زر: حقوق المطور
 local CreditsPanel = nil
 
 local function CreateCreditsPanel()
@@ -3010,33 +3517,24 @@ local function CreateCreditsPanel()
     local CloseBtn = Create("TextButton", CreditsPanel, {
         Size = UDim2.new(0, 30, 0, 30),
         Position = UDim2.new(1, -35, 0, 5),
-        BackgroundTransparency = 1,
-        Text = "×",
+        BackgroundTransparency = 1, Text = "×",
         TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 24,
+        Font = Configs_HUB.Text_Font, TextSize = 24,
         AutoButtonColor = false, ZIndex = 205
     })
     CloseBtn.Activated:Connect(function() CreditsPanel.Visible = false end)
 
-    -- عنوان
     Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 30),
-        Position = UDim2.new(0, 0, 0, 12),
-        BackgroundTransparency = 1,
-        Text = "️ حقوق Monetor X",
+        Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 0, 0, 12),
+        BackgroundTransparency = 1, Text = "️ حقوق Monetor X",
         TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 22,
+        Font = Configs_HUB.Text_Font, TextSize = 22,
         TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
     })
 
-    -- الأفتار الدائري للمطور
     local devAvatar = Create("ImageLabel", CreditsPanel, {
-        Size = UDim2.new(0, 80, 0, 80),
-        Position = UDim2.new(0.5, -40, 0, 50),
-        BackgroundTransparency = 1,
-        BackgroundColor3 = Configs_HUB.Cor_Options,
+        Size = UDim2.new(0, 80, 0, 80), Position = UDim2.new(0.5, -40, 0, 50),
+        BackgroundTransparency = 1, BackgroundColor3 = Configs_HUB.Cor_Options,
         Image = "rbxassetid://0", ZIndex = 202
     })
     Corner(devAvatar, { CornerRadius = UDim.new(1, 0) })
@@ -3047,7 +3545,6 @@ local function CreateCreditsPanel()
     devStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     devStroke.Parent = devAvatar
 
-    -- جلب أفتار المطور
     task.spawn(function()
         local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync("sjbcjjs0") end)
         if ok and userId and type(userId) == "number" then
@@ -3057,77 +3554,43 @@ local function CreateCreditsPanel()
         end
     end)
 
-    -- اسم المطور
     Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 25),
-        Position = UDim2.new(0, 0, 0, 138),
-        BackgroundTransparency = 1,
-        Text = "@sjbcjjs0",
+        Size = UDim2.new(1, 0, 0, 25), Position = UDim2.new(0, 0, 0, 138),
+        BackgroundTransparency = 1, Text = "@sjbcjjs0",
         TextColor3 = Color3.fromRGB(255, 255, 255),
-        Font = Configs_HUB.Text_Font,
-        TextSize = 18,
+        Font = Configs_HUB.Text_Font, TextSize = 18,
         TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
     })
 
     Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 18),
-        Position = UDim2.new(0, 0, 0, 163),
-        BackgroundTransparency = 1,
-        Text = "المطور الرئيسي",
+        Size = UDim2.new(1, 0, 0, 18), Position = UDim2.new(0, 0, 0, 163),
+        BackgroundTransparency = 1, Text = "المطور الرئيسي",
         TextColor3 = Configs_HUB.Cor_DarkText,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 12,
+        Font = Configs_HUB.Text_Font, TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
     })
 
-    -- معلومات السكربت
     local infoBox = Create("Frame", CreditsPanel, {
-        Size = UDim2.new(1, -30, 0, 130),
-        Position = UDim2.new(0, 15, 0, 190),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.4,
+        Size = UDim2.new(1, -30, 0, 130), Position = UDim2.new(0, 15, 0, 190),
+        BackgroundColor3 = Configs_HUB.Cor_Options, BackgroundTransparency = 0.4,
         BorderSizePixel = 0, ZIndex = 202
     })
     Corner(infoBox); Stroke(infoBox)
 
-    local infoText = [[
- Script: MONETOR X
- Version: 2.0 Full Edition
- Platform: Roblox
- Type: Universal Multi-Feature
-
- Features:
- • Flight System
- • Advanced ESP
- • Combat Tools
- • Target Stick
- • Auto Refresh
- • Troll System
- • Bypass Protection
-]]
-
     Create("TextLabel", infoBox, {
-        Size = UDim2.new(1, -20, 1, -20),
-        Position = UDim2.new(0, 10, 0, 10),
+        Size = UDim2.new(1, -20, 1, -20), Position = UDim2.new(0, 10, 0, 10),
         BackgroundTransparency = 1,
-        Text = infoText,
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        TextWrapped = true, ZIndex = 203
+        Text = " Script: MONETOR X\n Version: 2.0 Full Edition\n Platform: Roblox\n Type: Universal Multi-Feature\n\n Features:\n • Flight System\n • Advanced ESP\n • Combat Tools\n • Target Stick\n • Auto Refresh\n • Troll System\n • Bypass Protection\n • Anti-Admin Protection",
+        TextColor3 = Configs_HUB.Cor_Text, Font = Configs_HUB.Text_Font,
+        TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, ZIndex = 203
     })
 
-    -- حقوق النشر
     Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 18),
-        Position = UDim2.new(0, 0, 1, -25),
-        BackgroundTransparency = 1,
-        Text = "© 2025 Monetor X — All Rights Reserved",
+        Size = UDim2.new(1, 0, 0, 18), Position = UDim2.new(0, 0, 1, -25),
+        BackgroundTransparency = 1, Text = "© 2025 Monetor X — All Rights Reserved",
         TextColor3 = Configs_HUB.Cor_DarkText,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 10,
+        Font = Configs_HUB.Text_Font, TextSize = 10,
         TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
     })
 end
@@ -3140,15 +3603,12 @@ AddButton(RightsTab, {
     end
 })
 
--- فاصل
 Create("Frame", RightsTab, {
     Size = UDim2.new(1, 0, 0, 2),
     BackgroundColor3 = Configs_HUB.Cor_Stroke,
-    BorderSizePixel = 0,
-    BackgroundTransparency = 0.5
+    BorderSizePixel = 0, BackgroundTransparency = 0.5
 })
 
--- أزرار الروابط
 AddButton(RightsTab, {
     Name = " قناة التليجرام",
     Callback = function()
@@ -3181,7 +3641,6 @@ AddButton(RightsTab, {
     end
 })
 
--- نص ختامي
 AddTextLabel(RightsTab, "\nشكراً لاستخدامك MONETOR X\nصنع بـ ❤️ بواسطة @sjbcjjs0\nجميع الحقوق محفوظة © 2026")
 
 -- =============================================
