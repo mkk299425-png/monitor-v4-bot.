@@ -105,7 +105,10 @@ end)
 local ScreenFind = CoreGui:FindFirstChild(ScreenGui.Name)
 if ScreenFind and ScreenFind ~= ScreenGui then ScreenFind:Destroy() end
 
-function DestroyScript() pcall(function() ScreenGui:Destroy() end) end
+function DestroyScript()
+    pcall(function() if GraphicsDescendantConnection then GraphicsDescendantConnection:Disconnect() end end)
+    pcall(function() ScreenGui:Destroy() end)
+end
 
 -- =============================================
 -- NOTIFICATION SYSTEM
@@ -603,12 +606,11 @@ end
 -- MAIN UI
 -- =============================================
 local Menu = Create("Frame", ScreenGui, {
-    Size = UDim2.new(0.94, 0, 0.78, 0),
-    Position = UDim2.new(0.5, 0, 0.5, 0),
-    AnchorPoint = Vector2.new(0.5, 0.5),
+    Size = UDim2.new(0, 530, 0, 320),
+    Position = UDim2.new(0.5, -265, 0.5, -160),
     BackgroundColor3 = Configs_HUB.Cor_Hub,
     BackgroundTransparency = 0.05,
-    Active = true, Draggable = false, BorderSizePixel = 0,
+    Active = true, Draggable = true, BorderSizePixel = 0,
     ClipsDescendants = true, ZIndex = 1
 })
 Corner(Menu); Stroke(Menu)
@@ -704,15 +706,9 @@ local TextGradient = Instance.new("UIGradient"); TextGradient.Color = ColorSeque
     ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
 }
 TextGradient.Parent = Title
-task.spawn(function()
-    local speed = 0.008; local offset = 0
-    while Title and Title.Parent do
-        offset = offset + speed
-        if offset >= 1 then offset = 0 end
-        TextGradient.Offset = Vector2.new(-offset, 0)
-        RunService.RenderStepped:Wait()
-    end
-end)
+-- Static title gradient: no RenderStepped loop to reduce mobile load.
+
+
 
 local Minimize_BTN = Create("TextButton", ButtonsFrame, {
     Text = "-", TextColor3 = Configs_HUB.Cor_Text,
@@ -724,7 +720,7 @@ Minimize_BTN.MouseButton1Click:Connect(function()
     Minimize_BTN.Text = not IsMinimized and "+" or "-"
     if IsMinimized then
         IsMinimized = false
-        CreateTween(Menu, "Size", UDim2.new(0.94, 0, 0.78, 0), 0.15, false)
+        CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.15, false)
     else
         IsMinimized = true
         CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 25), 0.15, true)
@@ -739,7 +735,7 @@ local Close_Button = Create("TextButton", ButtonsFrame, {
 })
 local function CreateClose()
     IsMinimized = false
-    CreateTween(Menu, "Size", UDim2.new(0.94, 0, 0.78, 0), 0.3, false)
+    CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, false)
     local CloseGui = Create("TextButton", Menu, {
         BackgroundTransparency = 0.5, BackgroundColor3 = Configs_HUB.Cor_Hub,
         Size = UDim2.new(1, 0, 1, 0), AutoButtonColor = false,
@@ -823,16 +819,16 @@ task.wait(1)
 for i = 0, 1, 0.1 do task.wait() Anim_Credits.TextTransparency = i end
 Anim_Credits:Destroy(); PlayerHead:Destroy(); AnimMenu:Destroy()
 
-CreateTween(Menu, "Size", UDim2.new(0.94, 0, 0.08, 0), 0.5, true)
+CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 25), 0.5, true)
 TopBar.Visible = true
-CreateTween(Menu, "Size", UDim2.new(0.94, 0, 0.78, 0), 0.3, true)
-Menu.Draggable = false
+CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, true)
+Menu.Draggable = true
 
 local ScrollBar = Create("ScrollingFrame", Menu, {
     Size = UDim2.new(0, 140, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
     Position = UDim2.new(0, 0, 1, 0), AnchorPoint = Vector2.new(0, 1),
-    CanvasSize = UDim2.new(), ScrollingDirection = "Y",
-    AutomaticCanvasSize = "Y", BackgroundTransparency = 1, ScrollBarThickness = 2
+    CanvasSize = UDim2.new(), ScrollingDirection = Enum.ScrollingDirection.Y,
+    AutomaticCanvasSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, ScrollBarThickness = 2
 })
 Create("UIPadding", ScrollBar, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
 Create("UIListLayout", ScrollBar, { Padding = UDim.new(0, 14) })
@@ -911,8 +907,8 @@ function MakeTab(Configs)
     })
 
     local Container = Create("ScrollingFrame", Containers, {
-        Size = UDim2.new(1, 0, 1, 0), ScrollingDirection = "Y",
-        AutomaticCanvasSize = "Y", CanvasSize = UDim2.new(),
+        Size = UDim2.new(1, 0, 1, 0), ScrollingDirection = Enum.ScrollingDirection.Y,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y, CanvasSize = UDim2.new(),
         BackgroundTransparency = 1, ScrollBarThickness = 2,
         Visible = firstVisible
     })
@@ -956,7 +952,7 @@ function AddButton(parent, Configs)
     local TextLabel = Create("TextLabel", TextButton, {
         TextSize = 14, TextColor3 = Configs_HUB.Cor_Text, Text = ButtonName,
         Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 35, 0, 0),
-        BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
+        BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Font = Configs_HUB.Text_Font
     })
     local ImageLabel = Create("ImageLabel", TextButton, {
         Image = "rbxassetid://99956220697276",
@@ -994,7 +990,7 @@ function AddToggleButton(parent, Configs)
         TextSize = 14, TextColor3 = Configs_HUB.Cor_Text,
         Text = State and OffText or OnText,
         Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 35, 0, 0),
-        BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
+        BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Font = Configs_HUB.Text_Font
     })
     local ImageLabel = Create("ImageLabel", TextButton, {
         Image = "rbxassetid://99956220697276",
@@ -1187,7 +1183,7 @@ function AddDropdown(parent, Configs)
     local TextLabel = Create("TextLabel", TextButton, {
         TextSize = 12, TextColor3 = Configs_HUB.Cor_Text, Text = DropdownName,
         Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 10, 0, 0),
-        BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
+        BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Font = Configs_HUB.Text_Font
     })
     TextSetColor(TextLabel)
     
@@ -2986,6 +2982,12 @@ AddDropdown(GraphicsTab, {
 AddButton(GraphicsTab, {
     Name = "إيقاف المؤثرات الثقيلة",
     Callback = function()
+        if GraphicsState.Enabled then
+            MakeNotifi({Title="الجرافكس", Text="وضع الأداء مفعّل بالفعل", Time=2})
+            return
+        end
+        GraphicsState.Enabled = true
+        GraphicsState.Saved = {}
         pcall(function()
             for _, obj in ipairs(game:GetDescendants()) do
                 SaveAndDisable(obj)
@@ -3001,24 +3003,17 @@ AddTextLabel(GraphicsTab, [[
 إذا احتجت الجودة الأصلية، أوقف "وضع الأداء" لإرجاع الإعدادات التي تم حفظها.
 ]])
 
-task.spawn(function()
-    while ScreenGui and ScreenGui.Parent do
-        task.wait(2)
-        if GraphicsState.Enabled then
-            pcall(function()
-                for _, obj in ipairs(game:GetDescendants()) do
-                    if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
-                       obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") or
-                       obj:IsA("PostEffect") then
-                        if GraphicsState.Saved[obj] == nil then
-                            SaveAndDisable(obj)
-                        end
-                    end
-                end
-            end)
+local GraphicsDescendantConnection = game.DescendantAdded:Connect(function(obj)
+    if not GraphicsState.Enabled then return end
+    pcall(function()
+        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
+           obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") or
+           obj:IsA("PostEffect") then
+            SaveAndDisable(obj)
         end
-    end
+    end)
 end)
+
 
 -- =============================================
 -- RIGHTS TAB (المحتوى الكامل)
@@ -3047,9 +3042,8 @@ local function CreateUsagePanel()
     -- لوحة شرح ثابتة مناسبة للموبايل: لا يمكن سحبها، والتمرير داخل النص فقط.
     UsagePanel = Create("Frame", ScreenGui, {
         Name = "Monetor_UsagePanel",
-        Size = UDim2.new(0.94, 0, 0.78, 0),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(0.5, 0.5),
+        Size = UDim2.new(0, 530, 0, 320),
+        Position = UDim2.new(0.5, -265, 0.5, -160),
         BackgroundColor3 = Configs_HUB.Cor_Hub,
         BackgroundTransparency = 0.03,
         BorderSizePixel = 0,
@@ -3388,4 +3382,4 @@ MakeNotifi({
     Time = 3
 })
 
-print("✅ Monetor X Loaded Successfully! by @sjbcjjs0")
+print("Monetor X Loaded Successfully! by @monetor")
