@@ -116,43 +116,71 @@ local function CreateCreditsPanel()
 
     CreditsPanel = Create("Frame", ScreenGui, {
         Name = "Monetor_CreditsPanel",
-        Size = UDim2.new(0, 320, 0, 380),
-        Position = UDim2.new(0.5, -160, 0.5, -190),
+        Size = UDim2.new(0, 530, 0, 320),
+        Position = UDim2.new(0.5, -265, 0.5, -160),
         BackgroundColor3 = Configs_HUB.Cor_Hub,
-        BackgroundTransparency = 0.05,
-        BorderSizePixel = 0, Active = true, Draggable = true, ZIndex = 200
+        BackgroundTransparency = 0,
+        BorderSizePixel = 0,
+        Active = true,
+        Draggable = true,
+        ClipsDescendants = true,
+        ZIndex = 200
     })
-    Corner(CreditsPanel); Stroke(CreditsPanel)
+    Corner(CreditsPanel, {CornerRadius = UDim.new(0, 15)})
+    Stroke(CreditsPanel)
 
-    local CloseBtn = Create("TextButton", CreditsPanel, {
+    local Header = Create("Frame", CreditsPanel, {
+        Size = UDim2.new(1, -20, 0, 42),
+        Position = UDim2.new(0, 10, 0, 8),
+        BackgroundColor3 = Color3.fromRGB(18, 19, 24),
+        BorderSizePixel = 0,
+        ZIndex = 201
+    })
+    Corner(Header, {CornerRadius = UDim.new(0, 10)})
+
+    Create("TextLabel", Header, {
+        Size = UDim2.new(1, -55, 1, 0),
+        Position = UDim2.new(0, 15, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "حقوق MONETOR X",
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Enum.Font.GothamBold,
+        TextSize = 16,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 202
+    })
+
+    local CloseBtn = Create("TextButton", Header, {
         Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -35, 0, 5),
-        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -36, 0.5, -15),
+        BackgroundColor3 = Color3.fromRGB(65, 18, 28),
+        BorderSizePixel = 0,
         Text = "×",
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 24,
-        AutoButtonColor = false, ZIndex = 205
+        TextColor3 = Color3.fromRGB(255, 150, 160),
+        Font = Enum.Font.GothamBold,
+        TextSize = 18,
+        AutoButtonColor = false,
+        ZIndex = 203
     })
-    CloseBtn.Activated:Connect(function() CreditsPanel.Visible = false end)
+    Corner(CloseBtn, {CornerRadius = UDim.new(0, 8)})
+    CloseBtn.Activated:Connect(function()
+        CreditsPanel.Visible = false
+    end)
 
-    -- عنوان
-    Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 30),
-        Position = UDim2.new(0, 0, 0, 12),
-        BackgroundTransparency = 1,
-        Text = "️ حقوق Monetor X",
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 22,
-        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
+    -- Avatar card: no "A" fallback; if the image cannot be resolved, it stays clean.
+    local AvatarCard = Create("Frame", CreditsPanel, {
+        Size = UDim2.new(0, 145, 0, 245),
+        Position = UDim2.new(0, 12, 0, 58),
+        BackgroundColor3 = Color3.fromRGB(20, 21, 26),
+        BorderSizePixel = 0,
+        ZIndex = 201
     })
+    Corner(AvatarCard, {CornerRadius = UDim.new(0, 11)})
+    Stroke(AvatarCard)
 
-    -- الأفتار الدائري للمطور
-    -- أفتار الأدمن: @sjbcjjs0
-    local devAvatar = Create("ImageLabel", CreditsPanel, {
-        Size = UDim2.new(0, 84, 0, 84),
-        Position = UDim2.new(0.5, -42, 0, 49),
+    local devAvatar = Create("ImageLabel", AvatarCard, {
+        Size = UDim2.new(0, 92, 0, 92),
+        Position = UDim2.new(0.5, -46, 0, 16),
         BackgroundColor3 = Color3.fromRGB(28, 29, 35),
         BackgroundTransparency = 0,
         Image = "",
@@ -160,136 +188,134 @@ local function CreateCreditsPanel()
         ClipsDescendants = true,
         ZIndex = 202
     })
-    Corner(devAvatar, { CornerRadius = UDim.new(1, 0) })
+    Corner(devAvatar, {CornerRadius = UDim.new(1, 0)})
 
     local devStroke = Instance.new("UIStroke")
     devStroke.Thickness = 3
     devStroke.Color = Color3.fromRGB(195, 20, 42)
-    devStroke.Transparency = 0
     devStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     devStroke.Parent = devAvatar
 
-    -- Placeholder حتى لا تبقى الدائرة فارغة إذا تأخر تحميل الصورة
-    local avatarFallback = Create("TextLabel", devAvatar, {
-        Size = UDim2.fromScale(1, 1),
+    Create("TextLabel", AvatarCard, {
+        Size = UDim2.new(1, -12, 0, 22),
+        Position = UDim2.new(0, 6, 0, 116),
         BackgroundTransparency = 1,
-        Text = "A",
+        Text = "@sjbcjjs0",
         TextColor3 = Color3.fromRGB(255, 255, 255),
         Font = Enum.Font.GothamBold,
-        TextSize = 28,
+        TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Center,
-        TextYAlignment = Enum.TextYAlignment.Center,
-        ZIndex = 203
+        ZIndex = 202
     })
 
-    -- جلب أفتار الحساب المطلوب بالاسم الصحيح
+    Create("TextLabel", AvatarCard, {
+        Size = UDim2.new(1, -12, 0, 18),
+        Position = UDim2.new(0, 6, 0, 140),
+        BackgroundTransparency = 1,
+        Text = "ADMIN • الحساب الإداري",
+        TextColor3 = Configs_HUB.Cor_DarkText,
+        Font = Enum.Font.Gotham,
+        TextSize = 9,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = 202
+    })
+
+    Create("TextLabel", AvatarCard, {
+        Size = UDim2.new(1, -16, 0, 42),
+        Position = UDim2.new(0, 8, 1, -52),
+        BackgroundTransparency = 1,
+        Text = "Monetor X\nPersonal Control Panel",
+        TextColor3 = Configs_HUB.Cor_DarkText,
+        Font = Enum.Font.Gotham,
+        TextSize = 9,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextYAlignment = Enum.TextYAlignment.Center,
+        ZIndex = 202
+    })
+
+    -- Resolve the requested account and load its current Roblox headshot.
     task.spawn(function()
-        local ADMIN_USERNAME = "sjbcjjs0"
-
-        local okId, adminUserId = pcall(function()
-            return Players:GetUserIdFromNameAsync(ADMIN_USERNAME)
+        local adminUserId
+        pcall(function()
+            local p = Players:FindFirstChild("sjbcjjs0")
+            if p then adminUserId = p.UserId end
         end)
-
-        if not okId or type(adminUserId) ~= "number" then
-            -- محاولة احتياطية إذا كان الحساب هو اللاعب الحالي
-            if tostring(LP.Name):lower() == ADMIN_USERNAME:lower() then
-                adminUserId = LP.UserId
-            end
+        if not adminUserId then
+            pcall(function()
+                adminUserId = Players:GetUserIdFromNameAsync("sjbcjjs0")
+            end)
         end
 
-        if type(adminUserId) == "number" then
-            local okThumb, image = pcall(function()
-                local content, ready = Players:GetUserThumbnailAsync(
+        if type(adminUserId) == "number" and devAvatar.Parent then
+            pcall(function()
+                local image, ready = Players:GetUserThumbnailAsync(
                     adminUserId,
                     Enum.ThumbnailType.AvatarHeadShot,
                     Enum.ThumbnailSize.Size150x150
                 )
-                return content, ready
+                if image and image ~= "" and devAvatar.Parent then
+                    devAvatar.Image = image
+                end
             end)
-
-            if okThumb and image and devAvatar.Parent then
-                devAvatar.Image = image
-                avatarFallback.Visible = false
-            end
         end
     end)
 
-    -- اسم المطور
-    Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 25),
-        Position = UDim2.new(0, 0, 0, 138),
-        BackgroundTransparency = 1,
-        Text = "@sjbcjjs0",
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        Font = Configs_HUB.Text_Font,
-        TextSize = 18,
-        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
+    -- Scrollable credits/info area so nothing is cut off.
+    local CreditsScroll = Create("ScrollingFrame", CreditsPanel, {
+        Size = UDim2.new(1, -170, 0, 245),
+        Position = UDim2.new(0, 158, 0, 58),
+        BackgroundColor3 = Color3.fromRGB(16, 17, 21),
+        BorderSizePixel = 0,
+        BackgroundTransparency = 0,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = Configs_HUB.Cor_Stroke,
+        ZIndex = 201
     })
-
-    Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 18),
-        Position = UDim2.new(0, 0, 0, 163),
-        BackgroundTransparency = 1,
-        Text = "ADMIN • الحساب الإداري",
-        TextColor3 = Configs_HUB.Cor_DarkText,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
+    Corner(CreditsScroll, {CornerRadius = UDim.new(0, 11)})
+    Stroke(CreditsScroll)
+    Create("UIPadding", CreditsScroll, {
+        PaddingLeft = UDim.new(0, 12),
+        PaddingRight = UDim.new(0, 12),
+        PaddingTop = UDim.new(0, 12),
+        PaddingBottom = UDim.new(0, 12)
     })
-
-    -- معلومات السكربت
-    local infoBox = Create("Frame", CreditsPanel, {
-        Size = UDim2.new(1, -30, 0, 130),
-        Position = UDim2.new(0, 15, 0, 190),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.4,
-        BorderSizePixel = 0, ZIndex = 202
+    Create("UIListLayout", CreditsScroll, {
+        Padding = UDim.new(0, 8),
+        SortOrder = Enum.SortOrder.LayoutOrder
     })
-    Corner(infoBox); Stroke(infoBox)
 
     local infoText = [[
- Script: MONETOR X
- Version: 2.0 Full Edition
- Platform: Roblox
- Type: Universal Multi-Feature
+MONETOR X
+Version: 2.0 Full Edition
+Platform: Roblox
 
- Features:
- • Flight System
- • Advanced ESP
- • Combat Tools
- • Target Stick
- • Auto Refresh
- • Troll System
- • Bypass Protection
+الحساب الإداري: @sjbcjjs0
+المطور: Monetor
+
+الروابط:
+Telegram: @LXEKE
+TikTok: @monetor_
+Channel: Speed_loder
+
+جميع الحقوق محفوظة © 2026
 ]]
-
-    Create("TextLabel", infoBox, {
-        Size = UDim2.new(1, -20, 1, -20),
-        Position = UDim2.new(0, 10, 0, 10),
+    Create("TextLabel", CreditsScroll, {
+        Size = UDim2.new(1, 0, 0, 0),
         BackgroundTransparency = 1,
         Text = infoText,
         TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
+        Font = Enum.Font.Gotham,
         TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top,
-        TextWrapped = true, ZIndex = 203
-    })
-
-    -- حقوق النشر
-    Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 18),
-        Position = UDim2.new(0, 0, 1, -25),
-        BackgroundTransparency = 1,
-        Text = "© 2025 Monetor X — All Rights Reserved",
-        TextColor3 = Configs_HUB.Cor_DarkText,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 10,
-        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
+        TextWrapped = true,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        ZIndex = 202
     })
 end
-
-
 
 local ClickSound = Instance.new("Sound", ScreenGui)
 ClickSound.SoundId = "rbxassetid://88442833509532"
@@ -1270,9 +1296,9 @@ end
 function AddPlayerProfile(parent)
     -- حاوية البروفايل
     local ProfileFrame = Create("Frame", parent, {
-        Size = UDim2.new(1, 0, 0, 90),
+        Size = UDim2.new(1, 0, 0, 82),
         BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.4,
+        BackgroundTransparency = 0,
         BorderSizePixel = 0,
         Name = "PlayerProfile"
     })
@@ -3154,119 +3180,137 @@ local function CreateUsagePanel()
 
     UsagePanel = Create("Frame", ScreenGui, {
         Name = "Monetor_UsagePanel",
-        Size = UDim2.new(0, 400, 0, 480),
-        Position = UDim2.new(0.5, -200, 0.5, -240),
+        Size = UDim2.new(0, 530, 0, 320),
+        Position = UDim2.new(0.5, -265, 0.5, -160),
         BackgroundColor3 = Configs_HUB.Cor_Hub,
-        BackgroundTransparency = 0.05,
-        BorderSizePixel = 0, Active = true, Draggable = true, ZIndex = 200
+        BackgroundTransparency = 0,
+        BorderSizePixel = 0,
+        Active = true,
+        Draggable = true,
+        ClipsDescendants = true,
+        ZIndex = 200
     })
-    Corner(UsagePanel); Stroke(UsagePanel)
+    Corner(UsagePanel, {CornerRadius = UDim.new(0, 15)})
+    Stroke(UsagePanel)
 
     local Header = Create("Frame", UsagePanel, {
-        Size = UDim2.new(1, 0, 0, 40),
-        BackgroundTransparency = 1, ZIndex = 201
+        Size = UDim2.new(1, -20, 0, 42),
+        Position = UDim2.new(0, 10, 0, 8),
+        BackgroundColor3 = Color3.fromRGB(18, 19, 24),
+        BorderSizePixel = 0,
+        ZIndex = 201
     })
+    Corner(Header, {CornerRadius = UDim.new(0, 10)})
 
     Create("TextLabel", Header, {
-        Size = UDim2.new(1, -50, 1, 0),
+        Size = UDim2.new(1, -55, 1, 0),
         Position = UDim2.new(0, 15, 0, 0),
         BackgroundTransparency = 1,
-        Text = "📖 طريقة الاستخدام",
+        Text = "طريقة الاستخدام",
         TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 20,
+        Font = Enum.Font.GothamBold,
+        TextSize = 16,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 202
     })
 
     local CloseBtn = Create("TextButton", Header, {
         Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -40, 0, 5),
-        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -36, 0.5, -15),
+        BackgroundColor3 = Color3.fromRGB(65, 18, 28),
+        BorderSizePixel = 0,
         Text = "×",
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 24,
-        AutoButtonColor = false, ZIndex = 202
+        TextColor3 = Color3.fromRGB(255, 150, 160),
+        Font = Enum.Font.GothamBold,
+        TextSize = 18,
+        AutoButtonColor = false,
+        ZIndex = 203
     })
-    CloseBtn.Activated:Connect(function() UsagePanel.Visible = false end)
+    Corner(CloseBtn, {CornerRadius = UDim.new(0, 8)})
+    CloseBtn.Activated:Connect(function()
+        UsagePanel.Visible = false
+    end)
 
     local ContentScroll = Create("ScrollingFrame", UsagePanel, {
-        Size = UDim2.new(1, -20, 1, -50),
-        Position = UDim2.new(0, 10, 0, 45),
-        BackgroundTransparency = 1,
-        CanvasSize = UDim2.new(),
-        AutomaticCanvasSize = "Y",
-        ScrollingDirection = "Y",
-        ScrollBarThickness = 3,
+        Size = UDim2.new(1, -20, 0, 255),
+        Position = UDim2.new(0, 10, 0, 57),
+        BackgroundColor3 = Color3.fromRGB(16, 17, 21),
+        BackgroundTransparency = 0,
+        BorderSizePixel = 0,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        ScrollBarThickness = 4,
         ScrollBarImageColor3 = Configs_HUB.Cor_Stroke,
         ZIndex = 201
     })
-    Corner(ContentScroll)
+    Corner(ContentScroll, {CornerRadius = UDim.new(0, 11)})
+    Stroke(ContentScroll)
+
+    Create("UIPadding", ContentScroll, {
+        PaddingLeft = UDim.new(0, 16),
+        PaddingRight = UDim.new(0, 16),
+        PaddingTop = UDim.new(0, 14),
+        PaddingBottom = UDim.new(0, 14)
+    })
+    Create("UIListLayout", ContentScroll, {
+        Padding = UDim.new(0, 8),
+        SortOrder = Enum.SortOrder.LayoutOrder
+    })
 
     local UsageText = [[
-🎯 الأزرار الرئيسية:
+الأزرار الرئيسية
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-️ الطيران:
-1. اضغط "تشغيل وضع طيران" لتشغيله
-2. تحرك بالأسهم أو WASD
-3. زد / قلل السرعة من نفس القائمة
-4. اضغط "هبوط" لإيقافه
+الطيران:
+1. اضغط "تشغيل وضع طيران" لتشغيله.
+2. تحرك بالأسهم أو WASD.
+3. زد أو قلل السرعة من قائمة الطيران.
+4. اضغط "هبوط" لإيقافه.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-️ الرادار (ESP):
-1. اضغط "الرادار المطور" للتشغيل
-2. من "اختر المستهدف" حدد لاعب
-3. المستهدف يصير أحمر دائم
-4. عدل مدى الرادار من الصندوق
+الرادار (ESP):
+1. اضغط "الرادار المطور" للتشغيل.
+2. من "اختر المستهدف" حدد لاعب.
+3. المستهدف يظهر باللون الأحمر.
+4. عدل مدى الرادار من الصندوق.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
- القتال:
-• دم حديد — صحة لا نهائية
-• درع قوي — ForceField
-• قوة ضربة سوبر — قتل بضربة واحدة
-• رفريش تلقائي — عند الدم أو الموت
+القتال:
+• دم حديد — صحة لا نهائية.
+• درع قوي — ForceField.
+• قوة ضربة سوبر — ضربة قوية.
+• رفريش تلقائي — عند الدم أو الموت.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
- استهداف الشخص (BanHammer):
-1. اختر لاعب من القائمة
-2. تأكد أن BanHammer في حقيبتك
-3. فعّل الزر — يلتصق به ويضرب
+BanHammer:
+1. اختر لاعب من القائمة.
+2. تأكد أن BanHammer موجودة.
+3. فعّل الزر من قسم التحكم.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
- التطوير:
-• يخليك تدور بسرعة وتقذف اللاعبين
-• عدل سرعة الدوران من الصندوق
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-⚠️ ملاحظات:
-• كل الميزات تحتاج تفعيل يدوي
-• إذا خرجت من السيرفر تُطفى الميزات
-• استخدم زر "فك حماية الطيران" أول شي
+ملاحظات:
+• كل الميزات تحتاج تفعيل يدوي.
+• عند الخروج من السيرفر تتوقف الميزات.
 ]]
-
-    local TextLabel = Create("TextLabel", ContentScroll, {
-        Size = UDim2.new(1, -10, 0, 0),
-        Position = UDim2.new(0, 5, 0, 5),
+    Create("TextLabel", ContentScroll, {
+        Size = UDim2.new(1, 0, 0, 0),
         BackgroundTransparency = 1,
         Text = UsageText,
         TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top,
         TextWrapped = true,
         AutomaticSize = Enum.AutomaticSize.Y,
         ZIndex = 202
     })
-    Corner(ContentScroll)
 end
 
 AddButton(RightsTab, {
