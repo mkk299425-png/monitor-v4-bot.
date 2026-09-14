@@ -1,6 +1,6 @@
 -- =============================================
 -- MONETOR X (FULL EDITION + AVATAR + USAGE + CREDITS)
--- Developed by Monetor
+-- Developed by @monetor_
 -- =============================================
 
 local Players = game:GetService("Players")
@@ -54,7 +54,23 @@ local function Stroke(parent, props)
     local new = Create("UIStroke", parent)
     new.Color = Configs_HUB.Cor_Stroke
     new.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    new.Thickness = 1
+    new.Thickness = 2
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(180, 180, 180)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 15, 15)),
+        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(90, 90, 90)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+    gradient.Rotation = 0
+    gradient.Parent = new
+    coroutine.wrap(function()
+        while new.Parent do
+            gradient.Rotation = (gradient.Rotation + 2) % 360
+            RunService.RenderStepped:Wait()
+        end
+    end)()
     if props then SetProps(new, props) end
     return new
 end
@@ -105,16 +121,20 @@ end)
 local ScreenFind = CoreGui:FindFirstChild(ScreenGui.Name)
 if ScreenFind and ScreenFind ~= ScreenGui then ScreenFind:Destroy() end
 
+local CleanupScript = function() end
+
 function DestroyScript()
-    pcall(function() if GraphicsDescendantConnection then GraphicsDescendantConnection:Disconnect() end end)
-    pcall(function() ScreenGui:Destroy() end)
+    pcall(CleanupScript)
+    pcall(function()
+        if ScreenGui then ScreenGui:Destroy() end
+    end)
 end
 
 -- =============================================
 -- NOTIFICATION SYSTEM
 -- =============================================
 local Menu_Notifi = Create("Frame", ScreenGui, {
-    Size = UDim2.new(0, 250, 1, 0),
+    Size = UDim2.new(0, 300, 1, 0),
     Position = UDim2.new(1, 0, 0, 0),
     AnchorPoint = Vector2.new(1, 0),
     BackgroundTransparency = 1
@@ -122,136 +142,73 @@ local Menu_Notifi = Create("Frame", ScreenGui, {
 Create("UIPadding", Menu_Notifi, { PaddingLeft = UDim.new(0, 25), PaddingTop = UDim.new(0, 25), PaddingBottom = UDim.new(0, 50) })
 Create("UIListLayout", Menu_Notifi, { Padding = UDim.new(0, 15), VerticalAlignment = "Bottom" })
 
-local MAX_NOTIFICATIONS = 3
-local ActiveNotifications = {}
-local NotificationSerial = 0
-
-local function NotificationKey(title, text)
-    return tostring(title or "Monetor X") .. "\31" .. tostring(text or "")
-end
-
-local function RemoveNotification(frame)
-    if not frame or not frame.Parent then return end
-    for i = #ActiveNotifications, 1, -1 do
-        if ActiveNotifications[i].Frame == frame then
-            table.remove(ActiveNotifications, i)
-            break
-        end
-    end
-    pcall(function() frame:Destroy() end)
-end
-
 function MakeNotifi(Configs)
-    Configs = Configs or {}
     local Title = Configs.Title or "Monetor X"
     local text = Configs.Text or "تم التنفيذ"
-    local timewait = math.max(0.5, tonumber(Configs.Time) or 5)
-    local key = NotificationKey(Title, text)
-
-    -- لا تسمح بتكرار نفس الإشعار: احذف النسخة القديمة قبل إنشاء الجديدة.
-    for i = #ActiveNotifications, 1, -1 do
-        local item = ActiveNotifications[i]
-        if item.Key == key then
-            RemoveNotification(item.Frame)
-        end
-    end
-
-    -- الحد الأقصى 3 إشعارات فقط.
-    while #ActiveNotifications >= MAX_NOTIFICATIONS do
-        local oldest = table.remove(ActiveNotifications, 1)
-        if oldest and oldest.Frame then
-            pcall(function() oldest.Frame:Destroy() end)
-        end
-    end
-
-    NotificationSerial += 1
-    local id = NotificationSerial
-
+    local timewait = Configs.Time or 5
+    
     local Frame1 = Create("Frame", Menu_Notifi, {
-        Size = UDim2.new(1, 0, 0, 0),
+        Size = UDim2.new(2, 0, 0, 0),
         BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Name = "Notification_" .. id,
-        LayoutOrder = id
+        AutomaticSize = "Y",
+        Name = "Title"
     })
-
     local Frame2 = Create("Frame", Frame1, {
-        Size = UDim2.new(1, -25, 0, 0),
+        Size = UDim2.new(0, Menu_Notifi.Size.X.Offset - 50, 0, 0),
         BackgroundColor3 = Configs_HUB.Cor_Hub,
-        Position = UDim2.new(1, 0, 0, 0),
-        AnchorPoint = Vector2.new(1, 0),
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BorderSizePixel = 0
-    })
-    Corner(Frame2)
-    -- لا نستخدم Stroke المتحرك هنا حتى لا يكون لكل إشعار حلقة RenderStepped.
-    Create("UIStroke", Frame2, {
-        Color = Configs_HUB.Cor_Stroke,
-        Thickness = 1
-    })
-
+        Position = UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0),
+        AutomaticSize = "Y"
+    }) 
+    Corner(Frame2); Stroke(Frame2)
+    
     Create("TextLabel", Frame2, {
-        Size = UDim2.new(1, -55, 0, 25),
-        Position = UDim2.new(0, 15, 0, 5),
-        Font = Configs_HUB.Text_Font,
-        BackgroundTransparency = 1,
-        Text = Title,
-        TextSize = 16,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextColor3 = Configs_HUB.Cor_Text
+        Size = UDim2.new(1, 0, 0, 25),
+        Font = Configs_HUB.Text_Font, BackgroundTransparency = 1,
+        Text = Title, TextSize = 20,
+        Position = UDim2.new(0, 20, 0, 5),
+        TextXAlignment = "Left", TextColor3 = Configs_HUB.Cor_Text
     })
-
+    
     local CloseNotifi = Create("TextButton", Frame2, {
-        Text = "X",
-        Font = Configs_HUB.Text_Font,
-        TextSize = 17,
-        BackgroundTransparency = 1,
-        TextColor3 = Color3.fromRGB(200, 200, 200),
+        Text = "X", Font = Configs_HUB.Text_Font, TextSize = 20,
+        BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(200, 200, 200),
         Position = UDim2.new(1, -5, 0, 5),
-        AnchorPoint = Vector2.new(1, 0),
-        Size = UDim2.new(0, 25, 0, 25),
-        AutoButtonColor = false
+        AnchorPoint = Vector2.new(1, 0), Size = UDim2.new(0, 25, 0, 25)
     })
-
-    local Body = Create("TextLabel", Frame2, {
+    
+    Create("TextLabel", Frame2, {
         Size = UDim2.new(1, -30, 0, 0),
-        Position = UDim2.new(0, 15, 0, 35),
-        TextSize = 13,
-        TextColor3 = Configs_HUB.Cor_DarkText,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Text = text,
-        Font = Configs_HUB.Text_Font,
-        BackgroundTransparency = 1,
-        TextWrapped = true
+        Position = UDim2.new(0, 20, 0, CloseNotifi.Size.Y.Offset + 10),
+        TextSize = 15, TextColor3 = Configs_HUB.Cor_DarkText,
+        TextXAlignment = "Left", TextYAlignment = "Top",
+        AutomaticSize = "Y", Text = text,
+        Font = Configs_HUB.Text_Font, BackgroundTransparency = 1, TextWrapped = true
     })
-
+    
     local FrameSize = Create("Frame", Frame2, {
-        Size = UDim2.new(1, 0, 0, 2),
-        BackgroundColor3 = Configs_HUB.Cor_Stroke,
-        Position = UDim2.new(0, 0, 1, 0),
-        AnchorPoint = Vector2.new(0, 1),
-        BorderSizePixel = 0
-    })
-
-    local item = {Frame = Frame1, Key = key, Id = id}
-    table.insert(ActiveNotifications, item)
-
-    local function close()
-        if not Frame1.Parent then return end
-        CreateTween(Frame2, "Position", UDim2.new(1, 15, 0, 0), 0.12, false)
-        task.delay(0.13, function()
-            RemoveNotification(Frame1)
-        end)
-    end
-
-    CloseNotifi.Activated:Connect(close)
-
+        Size = UDim2.new(1, 0, 0, 2), BackgroundColor3 = Configs_HUB.Cor_Stroke,
+        Position = UDim2.new(0, 2, 0, 30), BorderSizePixel = 0
+    }) 
+    Corner(FrameSize)
+    Create("Frame", Frame2, { Size = UDim2.new(0, 0, 0, 5), Position = UDim2.new(0, 0, 1, 5), BackgroundTransparency = 1 })
+    
+    task.spawn(function() CreateTween(FrameSize, "Size", UDim2.new(0, 0, 0, 2), timewait, true) end)
+    
+    CloseNotifi.MouseButton1Click:Connect(function()
+        CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.1, true)
+        CreateTween(Frame2, "Position", UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0), 0.5, true)
+        Frame1:Destroy()
+    end)
+    
     task.spawn(function()
-        CreateTween(Frame2, "Position", UDim2.new(0, 0, 0, 0), 0.18, false)
-        CreateTween(FrameSize, "Size", UDim2.new(0, 0, 0, 2), timewait, false)
-        if Frame1.Parent then close() end
+        CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.5, true)
+        CreateTween(Frame2, "Position", UDim2.new(), 0.1, true)
+        task.wait(timewait)
+        if Frame2 then
+            CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.1, true)
+            CreateTween(Frame2, "Position", UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0), 0.5, true)
+            Frame1:Destroy()
+        end
     end)
 end
 
@@ -633,7 +590,33 @@ local RedGlowData = {
     {Size = 90, X = 0.05, Y = 0.30, DX = 0.15, DY = -0.10, Duration = 12}
 }
 
--- خلفية ثابتة خفيفة بدون حلقات RenderStepped/Tween مستمرة لتقليل استهلاك الهاتف.
+for index, data in ipairs(RedGlowData) do
+    local glow = Create("Frame", BackgroundFX, {
+        Name = "RedGlow_" .. index,
+        Size = UDim2.new(0, data.Size, 0, data.Size),
+        Position = UDim2.new(data.X, 0, data.Y, 0),
+        BackgroundColor3 = Color3.fromRGB(170, 0, 0),
+        BackgroundTransparency = 0.82, BorderSizePixel = 0, ZIndex = 0
+    })
+    Corner(glow, {CornerRadius = UDim.new(1, 0)})
+    task.spawn(function()
+        local baseX, baseY = data.X, data.Y
+        while glow.Parent do
+            local targetX = math.clamp(baseX + data.DX, -0.12, 0.90)
+            local targetY = math.clamp(baseY + data.DY, -0.12, 0.82)
+            local tweenOut = TweenService:Create(glow,
+                TweenInfo.new(data.Duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                {Position = UDim2.new(targetX, 0, targetY, 0), BackgroundTransparency = 0.74})
+            tweenOut:Play(); tweenOut.Completed:Wait()
+            if not glow.Parent then break end
+            local tweenBack = TweenService:Create(glow,
+                TweenInfo.new(data.Duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                {Position = UDim2.new(baseX, 0, baseY, 0), BackgroundTransparency = 0.84})
+            tweenBack:Play(); tweenBack.Completed:Wait()
+        end
+    end)
+end
+
 local IntroSound = Instance.new("Sound")
 IntroSound.SoundId = "rbxassetid://8426701399"
 IntroSound.Volume = 2
@@ -706,9 +689,15 @@ local TextGradient = Instance.new("UIGradient"); TextGradient.Color = ColorSeque
     ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
 }
 TextGradient.Parent = Title
--- Static title gradient: no RenderStepped loop to reduce mobile load.
-
-
+task.spawn(function()
+    local speed = 0.008; local offset = 0
+    while Title and Title.Parent do
+        offset = offset + speed
+        if offset >= 1 then offset = 0 end
+        TextGradient.Offset = Vector2.new(-offset, 0)
+        RunService.RenderStepped:Wait()
+    end
+end)
 
 local Minimize_BTN = Create("TextButton", ButtonsFrame, {
     Text = "-", TextColor3 = Configs_HUB.Cor_Text,
@@ -744,7 +733,7 @@ local function CreateClose()
     Corner(CloseGui)
     local CloseMenu = Create("Frame", CloseGui, {
         Size = UDim2.new(), AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0), Transparency = 1,
+        Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1,
         BackgroundColor3 = Configs_HUB.Cor_Hub
     })
     Corner(CloseMenu); Stroke(CloseMenu)
@@ -773,10 +762,10 @@ local function CreateClose()
     end
     SetVisible()
     Menu:GetPropertyChangedSignal("Size"):Connect(SetVisible)
-    CreateTween(CloseMenu, "Transparency", 0, 0.2, false)
+    CreateTween(CloseMenu, "BackgroundTransparency", 0, 0.2, false)
     CreateTween(CloseMenu, "Size", UDim2.new(0.7, 0, 0.7, 0), 0.2, false)
     Cancel.MouseButton1Click:Connect(function()
-        CreateTween(CloseMenu, "Transparency", 1, 0.3, false)
+        CreateTween(CloseMenu, "BackgroundTransparency", 1, 0.3, false)
         CreateTween(CloseMenu, "Size", UDim2.new(), 0.2, true)
         CloseGui:Destroy()
     end)
@@ -786,7 +775,7 @@ local function CreateClose()
         DestroyScript()
     end)
     CloseGui.MouseButton1Click:Connect(function()
-        CreateTween(CloseMenu, "Transparency", 1, 0.3, false)
+        CreateTween(CloseMenu, "BackgroundTransparency", 1, 0.3, false)
         CreateTween(CloseMenu, "Size", UDim2.new(), 0.2, true)
         CloseGui:Destroy()
     end)
@@ -819,26 +808,37 @@ task.wait(1)
 for i = 0, 1, 0.1 do task.wait() Anim_Credits.TextTransparency = i end
 Anim_Credits:Destroy(); PlayerHead:Destroy(); AnimMenu:Destroy()
 
-CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 25), 0.5, true)
+CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 35), 0.5, true)
 TopBar.Visible = true
 CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, true)
 Menu.Draggable = true
 
 local ScrollBar = Create("ScrollingFrame", Menu, {
-    Size = UDim2.new(0, 140, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
+    Name = "Sidebar",
+    Size = UDim2.new(0, 150, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
     Position = UDim2.new(0, 0, 1, 0), AnchorPoint = Vector2.new(0, 1),
-    CanvasSize = UDim2.new(), ScrollingDirection = Enum.ScrollingDirection.Y,
-    AutomaticCanvasSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, ScrollBarThickness = 2
+    CanvasSize = UDim2.new(), ScrollingDirection = "Y",
+    AutomaticCanvasSize = "Y", BackgroundTransparency = 0.12,
+    BackgroundColor3 = Color3.fromRGB(8, 8, 8), BorderSizePixel = 0,
+    ScrollBarThickness = 2, ScrollBarImageTransparency = 0.35
 })
-Create("UIPadding", ScrollBar, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
-Create("UIListLayout", ScrollBar, { Padding = UDim.new(0, 14) })
+Corner(ScrollBar); Stroke(ScrollBar, {Thickness = 1})
+Create("UIPadding", ScrollBar, {
+    PaddingLeft = UDim.new(0, 9), PaddingRight = UDim.new(0, 9),
+    PaddingTop = UDim.new(0, 9), PaddingBottom = UDim.new(0, 9)
+})
+Create("UIListLayout", ScrollBar, {
+    Padding = UDim.new(0, 7), SortOrder = Enum.SortOrder.LayoutOrder
+})
 
 local Containers = Create("Frame", Menu, {
-    Size = UDim2.new(1, -tonumber(ScrollBar.Size.X.Offset + 2), 1, -tonumber(TopBar.Size.Y.Offset + 2)),
+    Name = "ContentArea",
+    Size = UDim2.new(1, -152, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
     AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 1
+    BackgroundTransparency = 0.08, BackgroundColor3 = Color3.fromRGB(10, 10, 10),
+    BorderSizePixel = 0
 })
-Corner(Containers); Stroke(Containers)
+Corner(Containers); Stroke(Containers, {Thickness = 1})
 
 local firstVisible = true
 local textsize = 15
@@ -869,7 +869,7 @@ function MakeTab(Configs)
     if AvatarUsername then
         hasIcon = true
         local avatar = Create("ImageLabel", Frame, {
-            Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
+            Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
             BackgroundTransparency = 1, BackgroundColor3 = Configs_HUB.Cor_Options,
             Image = "", Name = "TabAvatar", ZIndex = 5
         })
@@ -893,28 +893,33 @@ function MakeTab(Configs)
     elseif TabImage then
         hasIcon = true
         Create("ImageLabel", Frame, {
-            Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
+            Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
             BackgroundTransparency = 1, Image = TabImage, Name = "TabIcon"
         })
     end
 
-    local textOffset = hasIcon and 30 or 5
+    local textOffset = hasIcon and 35 or 10
     local TextLabel = Create("TextLabel", Frame, {
-        Size = UDim2.new(1, -textOffset, 1, 0), Position = UDim2.new(0, textOffset, 0, 0),
+        Size = UDim2.new(1, -textOffset - 5, 1, 0), Position = UDim2.new(0, textOffset, 0, 0),
         BackgroundTransparency = 1, Font = Configs_HUB.Text_Font,
         TextColor3 = textcolor, TextSize = textsize,
         Text = TabName, TextXAlignment = Enum.TextXAlignment.Left
     })
 
     local Container = Create("ScrollingFrame", Containers, {
-        Size = UDim2.new(1, 0, 1, 0), ScrollingDirection = Enum.ScrollingDirection.Y,
-        AutomaticCanvasSize = Enum.AutomaticSize.Y, CanvasSize = UDim2.new(),
+        Size = UDim2.new(1, 0, 1, 0), ScrollingDirection = "Y",
+        AutomaticCanvasSize = "Y", CanvasSize = UDim2.new(),
         BackgroundTransparency = 1, ScrollBarThickness = 2,
-        Visible = firstVisible
+        ScrollBarImageTransparency = 0.35, Visible = firstVisible
     })
     Corner(Container); Stroke(Container)
-    Create("UIPadding", Container, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
-    Create("UIListLayout", Container, { Padding = UDim.new(0, 5) })
+    Create("UIPadding", Container, {
+        PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12),
+        PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12)
+    })
+    Create("UIListLayout", Container, {
+        Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder
+    })
 
     TextButton.MouseButton1Click:Connect(function()
         for _, container in pairs(Containers:GetChildren()) do
@@ -945,18 +950,18 @@ function AddButton(parent, Configs)
     local Callback = Configs.Callback or function() end
     
     local TextButton = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.5, Name = "Frame", Text = "", AutoButtonColor = false
+        Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.22, Name = "MonetorButton", Text = "", AutoButtonColor = false
     })
     Corner(TextButton); Stroke(TextButton)
     local TextLabel = Create("TextLabel", TextButton, {
         TextSize = 14, TextColor3 = Configs_HUB.Cor_Text, Text = ButtonName,
-        Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 35, 0, 0),
-        BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Font = Configs_HUB.Text_Font
+        Size = UDim2.new(1, -48, 1, 0), Position = UDim2.new(0, 38, 0, 0),
+        BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
     })
     local ImageLabel = Create("ImageLabel", TextButton, {
         Image = "rbxassetid://99956220697276",
-        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
+        Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
         BackgroundTransparency = 1, ImageColor3 = Configs_HUB.Cor_Stroke
     })
     TextButton.MouseButton1Click:Connect(function()
@@ -982,19 +987,19 @@ function AddToggleButton(parent, Configs)
     local State = StartState
     
     local TextButton = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.5, Name = "Frame", Text = "", AutoButtonColor = false
+        Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.22, Name = "MonetorToggle", Text = "", AutoButtonColor = false
     })
     Corner(TextButton); Stroke(TextButton)
     local TextLabel = Create("TextLabel", TextButton, {
         TextSize = 14, TextColor3 = Configs_HUB.Cor_Text,
         Text = State and OffText or OnText,
-        Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 35, 0, 0),
-        BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Font = Configs_HUB.Text_Font
+        Size = UDim2.new(1, -48, 1, 0), Position = UDim2.new(0, 38, 0, 0),
+        BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
     })
     local ImageLabel = Create("ImageLabel", TextButton, {
         Image = "rbxassetid://99956220697276",
-        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
+        Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
         BackgroundTransparency = 1,
         ImageColor3 = State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke
     })
@@ -1183,7 +1188,7 @@ function AddDropdown(parent, Configs)
     local TextLabel = Create("TextLabel", TextButton, {
         TextSize = 12, TextColor3 = Configs_HUB.Cor_Text, Text = DropdownName,
         Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 10, 0, 0),
-        BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Font = Configs_HUB.Text_Font
+        BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
     })
     TextSetColor(TextLabel)
     
@@ -1310,12 +1315,12 @@ end
 -- TABS
 -- =============================================
 local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
-local LocalPlayerTab = MakeTab({Name = "شخصيتي ‍️", TabTitle = true})
-local ESPTab = MakeTab({Name = "رادار ️", TabTitle = true})
-local TeleportTab = MakeTab({Name = "الانتقال ", TabTitle = true})
+local LocalPlayerTab = MakeTab({Name = "شخصيتي", TabTitle = true})
+local ESPTab = MakeTab({Name = "الرادار", TabTitle = true})
+local TeleportTab = MakeTab({Name = "الانتقال", TabTitle = true})
+local CombatTab = MakeTab({Name = "القتال", TabTitle = true})
 local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
-local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, AvatarUsername = "monetor"})
-local GraphicsTab = MakeTab({Name = "الجرافكس", TabTitle = true})
+local RightsTab = MakeTab({Name = "الحقوق", TabTitle = true, AvatarUsername = "monetor"})
 
 -- =============================================
 -- COMMAND PANEL
@@ -2048,7 +2053,6 @@ end)
 -- =============================================
 -- COMBAT TAB
 -- =============================================
-local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
 
 local GodMode = false
 local ShieldMode = false
@@ -2858,163 +2862,6 @@ UpdatePlayerList()
 Players.PlayerAdded:Connect(UpdatePlayerList)
 Players.PlayerRemoving:Connect(UpdatePlayerList)
 
-
--- =============================================
--- GRAPHICS / PERFORMANCE TAB
--- =============================================
-local GraphicsState = {
-    Enabled = false,
-    Saved = {},
-    SavedQuality = nil
-}
-
-local function SaveAndDisable(obj)
-    if not obj or GraphicsState.Saved[obj] ~= nil then return end
-    if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
-        GraphicsState.Saved[obj] = obj.Enabled
-        obj.Enabled = false
-    elseif obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
-        GraphicsState.Saved[obj] = obj.Enabled
-        obj.Enabled = false
-    elseif obj:IsA("PostEffect") then
-        GraphicsState.Saved[obj] = obj.Enabled
-        obj.Enabled = false
-    end
-end
-
-local function ApplyPerformanceMode()
-    if GraphicsState.Enabled then return end
-    GraphicsState.Enabled = true
-    GraphicsState.Saved = {}
-
-    pcall(function()
-        local settings = UserSettings():GetService("UserGameSettings")
-        GraphicsState.SavedQuality = settings.GraphicsQualityLevel
-        settings.GraphicsQualityLevel = Enum.SavedQualitySetting.QualityLevel1
-    end)
-
-    pcall(function()
-        GraphicsState.Saved.GlobalShadows = game:GetService("Lighting").GlobalShadows
-        game:GetService("Lighting").GlobalShadows = false
-        if workspace:FindFirstChildOfClass("Terrain") then
-            local terrain = workspace:FindFirstChildOfClass("Terrain")
-            GraphicsState.Saved.TerrainDecoration = terrain.Decoration
-            terrain.Decoration = false
-        end
-    end)
-
-    pcall(function()
-        for _, obj in ipairs(game:GetDescendants()) do
-            SaveAndDisable(obj)
-        end
-    end)
-
-    MakeNotifi({Title="الجرافكس", Text="تم تفعيل وضع الأداء لتقليل الحمل على الهاتف", Time=2})
-end
-
-local function RestoreGraphics()
-    if not GraphicsState.Enabled then return end
-    GraphicsState.Enabled = false
-
-    pcall(function()
-        local settings = UserSettings():GetService("UserGameSettings")
-        if GraphicsState.SavedQuality then
-            settings.GraphicsQualityLevel = GraphicsState.SavedQuality
-        end
-    end)
-
-    pcall(function()
-        local lighting = game:GetService("Lighting")
-        if GraphicsState.Saved.GlobalShadows ~= nil then
-            lighting.GlobalShadows = GraphicsState.Saved.GlobalShadows
-        end
-        local terrain = workspace:FindFirstChildOfClass("Terrain")
-        if terrain and GraphicsState.Saved.TerrainDecoration ~= nil then
-            terrain.Decoration = GraphicsState.Saved.TerrainDecoration
-        end
-    end)
-
-    pcall(function()
-        for obj, oldValue in pairs(GraphicsState.Saved) do
-            if typeof(obj) == "Instance" and obj.Parent then
-                local isSupported =
-                    obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
-                    obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") or
-                    obj:IsA("PostEffect")
-                if isSupported then
-                    obj.Enabled = oldValue
-                end
-            end
-        end
-    end)
-
-    GraphicsState.Saved = {}
-    MakeNotifi({Title="الجرافكس", Text="تم إيقاف وضع الأداء وإرجاع الإعدادات", Time=2})
-end
-
-AddToggleButton(GraphicsTab, {
-    Name = "وضع الأداء",
-    OnText = "وضع الأداء: تشغيل",
-    OffText = "وضع الأداء: إيقاف",
-    StartState = false,
-    OnEnable = ApplyPerformanceMode,
-    OnDisable = RestoreGraphics
-})
-
-AddDropdown(GraphicsTab, {
-    Name = "جودة الرسومات",
-    Options = {"منخفضة", "متوسطة", "عالية"},
-    Default = "منخفضة",
-    Callback = function(value)
-        pcall(function()
-            local settings = UserSettings():GetService("UserGameSettings")
-            local map = {
-                ["منخفضة"] = Enum.SavedQualitySetting.QualityLevel1,
-                ["متوسطة"] = Enum.SavedQualitySetting.QualityLevel5,
-                ["عالية"] = Enum.SavedQualitySetting.Automatic
-            }
-            if map[value] then settings.GraphicsQualityLevel = map[value] end
-        end)
-        MakeNotifi({Title="الجرافكس", Text="الجودة: " .. tostring(value), Time=2})
-    end
-})
-
-AddButton(GraphicsTab, {
-    Name = "إيقاف المؤثرات الثقيلة",
-    Callback = function()
-        if GraphicsState.Enabled then
-            MakeNotifi({Title="الجرافكس", Text="وضع الأداء مفعّل بالفعل", Time=2})
-            return
-        end
-        GraphicsState.Enabled = true
-        GraphicsState.Saved = {}
-        pcall(function()
-            for _, obj in ipairs(game:GetDescendants()) do
-                SaveAndDisable(obj)
-            end
-        end)
-        MakeNotifi({Title="الجرافكس", Text="تم تقليل المؤثرات الثقيلة", Time=2})
-    end
-})
-
-AddTextLabel(GraphicsTab, [[
-وضع الأداء يقلل جودة الرسومات ويوقف المؤثرات المحلية الثقيلة مثل الجزيئات والأنوار وبعض مؤثرات الشاشة لتخفيف استهلاك المعالج والذاكرة قدر الإمكان.
-
-إذا احتجت الجودة الأصلية، أوقف "وضع الأداء" لإرجاع الإعدادات التي تم حفظها.
-]])
-
-local GraphicsDescendantConnection = game.DescendantAdded:Connect(function(obj)
-    if not GraphicsState.Enabled then return end
-    pcall(function()
-        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
-           obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") or
-           obj:IsA("PostEffect") then
-            SaveAndDisable(obj)
-        end
-    end)
-end)
-
-
 -- =============================================
 -- RIGHTS TAB (المحتوى الكامل)
 -- =============================================
@@ -3039,112 +2886,109 @@ local function CreateUsagePanel()
         return
     end
 
-    -- لوحة شرح ثابتة مناسبة للموبايل: لا يمكن سحبها، والتمرير داخل النص فقط.
     UsagePanel = Create("Frame", ScreenGui, {
         Name = "Monetor_UsagePanel",
-        Size = UDim2.new(0, 530, 0, 320),
-        Position = UDim2.new(0.5, -265, 0.5, -160),
+        Size = UDim2.new(0, 400, 0, 480),
+        Position = UDim2.new(0.5, -200, 0.5, -240),
         BackgroundColor3 = Configs_HUB.Cor_Hub,
-        BackgroundTransparency = 0.03,
-        BorderSizePixel = 0,
-        Active = true,
-        Draggable = false,
-        ZIndex = 200
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0, Active = true, Draggable = true, ZIndex = 200
     })
-    Corner(UsagePanel)
-    Create("UIStroke", UsagePanel, {
-        Color = Configs_HUB.Cor_Stroke,
-        Thickness = 1
-    })
+    Corner(UsagePanel); Stroke(UsagePanel)
 
     local Header = Create("Frame", UsagePanel, {
-        Size = UDim2.new(1, 0, 0, 38),
-        BackgroundTransparency = 1,
-        ZIndex = 201
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundTransparency = 1, ZIndex = 201
     })
 
     Create("TextLabel", Header, {
-        Size = UDim2.new(1, -55, 1, 0),
+        Size = UDim2.new(1, -50, 1, 0),
         Position = UDim2.new(0, 15, 0, 0),
         BackgroundTransparency = 1,
-        Text = "طريقة الاستخدام والمساعدة",
+        Text = "📖 طريقة الاستخدام",
         TextColor3 = Configs_HUB.Cor_Text,
         Font = Configs_HUB.Text_Font,
-        TextSize = 17,
+        TextSize = 20,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 202
     })
 
     local CloseBtn = Create("TextButton", Header, {
-        Size = UDim2.new(0, 32, 0, 32),
-        Position = UDim2.new(1, -40, 0, 3),
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -40, 0, 5),
         BackgroundTransparency = 1,
-        Text = "X",
+        Text = "×",
         TextColor3 = Configs_HUB.Cor_Text,
         Font = Configs_HUB.Text_Font,
-        TextSize = 22,
-        AutoButtonColor = false,
-        ZIndex = 202
+        TextSize = 24,
+        AutoButtonColor = false, ZIndex = 202
     })
-    CloseBtn.Activated:Connect(function()
-        UsagePanel.Visible = false
-    end)
+    CloseBtn.Activated:Connect(function() UsagePanel.Visible = false end)
 
     local ContentScroll = Create("ScrollingFrame", UsagePanel, {
-        Size = UDim2.new(1, -16, 1, -48),
-        Position = UDim2.new(0, 8, 0, 42),
+        Size = UDim2.new(1, -20, 1, -50),
+        Position = UDim2.new(0, 10, 0, 45),
         BackgroundTransparency = 1,
         CanvasSize = UDim2.new(),
-        AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        ScrollingDirection = Enum.ScrollingDirection.Y,
+        AutomaticCanvasSize = "Y",
+        ScrollingDirection = "Y",
         ScrollBarThickness = 3,
         ScrollBarImageColor3 = Configs_HUB.Cor_Stroke,
-        BorderSizePixel = 0,
-        Active = true,
         ZIndex = 201
     })
-
-    Create("UIPadding", ContentScroll, {
-        PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 8),
-        PaddingTop = UDim.new(0, 5),
-        PaddingBottom = UDim.new(0, 12)
-    })
+    Corner(ContentScroll)
 
     local UsageText = [[
-طريقة الاستخدام
+🎯 الأزرار الرئيسية:
 
-الطيران
-1. افتح قسم الطيران من الرئيسية.
-2. شغّل وضع الطيران.
-3. عدّل السرعة عند الحاجة.
-4. اضغط هبوط لإيقافه.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-الرادار
-1. افتح قسم الرادار.
-2. فعّل الرادار.
-3. اختر اللاعب من القائمة.
-4. عدّل المدى حسب حاجتك.
+️ الطيران:
+1. اضغط "تشغيل وضع طيران" لتشغيله
+2. تحرك بالأسهم أو WASD
+3. زد / قلل السرعة من نفس القائمة
+4. اضغط "هبوط" لإيقافه
 
-القتال والاستهداف
-• اختر اللاعب من القائمة.
-• تأكد من وجود BanHammer عند الحاجة.
-• فعّل الميزة المطلوبة فقط.
-• أوقف الميزة بعد الانتهاء لتقليل الحمل.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-الجرافكس والأداء
-• استخدم وضع الأداء إذا كان الهاتف يواجه لاك.
-• الجودة المنخفضة تخفف الحمل الرسومي.
-• إيقاف المؤثرات الثقيلة يقلل الجزيئات والأنوار وبعض مؤثرات الشاشة.
-• عند الحاجة للجودة الأصلية، أوقف وضع الأداء.
+️ الرادار (ESP):
+1. اضغط "الرادار المطور" للتشغيل
+2. من "اختر المستهدف" حدد لاعب
+3. المستهدف يصير أحمر دائم
+4. عدل مدى الرادار من الصندوق
 
-ملاحظات
-• لا تشغّل ميزات كثيرة في نفس الوقت إذا كان الهاتف ضعيفاً.
-• إذا ظهرت مشكلة، أوقف الميزة التي شغلتها مؤخراً.
-• هذه الصفحة ثابتة؛ اسحب النص إلى الأسفل لقراءة باقي التعليمات.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ القتال:
+• دم حديد — صحة لا نهائية
+• درع قوي — ForceField
+• قوة ضربة سوبر — قتل بضربة واحدة
+• رفريش تلقائي — عند الدم أو الموت
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ استهداف الشخص (BanHammer):
+1. اختر لاعب من القائمة
+2. تأكد أن BanHammer في حقيبتك
+3. فعّل الزر — يلتصق به ويضرب
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ التطوير:
+• يخليك تدور بسرعة وتقذف اللاعبين
+• عدل سرعة الدوران من الصندوق
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ ملاحظات:
+• كل الميزات تحتاج تفعيل يدوي
+• إذا خرجت من السيرفر تُطفى الميزات
+• استخدم زر "فك حماية الطيران" أول شي
 ]]
-    Create("TextLabel", ContentScroll, {
-        Size = UDim2.new(1, 0, 0, 0),
+
+    local TextLabel = Create("TextLabel", ContentScroll, {
+        Size = UDim2.new(1, -10, 0, 0),
+        Position = UDim2.new(0, 5, 0, 5),
         BackgroundTransparency = 1,
         Text = UsageText,
         TextColor3 = Configs_HUB.Cor_Text,
@@ -3156,16 +3000,18 @@ local function CreateUsagePanel()
         AutomaticSize = Enum.AutomaticSize.Y,
         ZIndex = 202
     })
+    Corner(ContentScroll)
 end
 
 AddButton(RightsTab, {
-    Name = "طريقة الاستخدام والمساعدة",
+    Name = "📖 طريقة الاستخدام (اقرأني)",
     Callback = function()
         CreateUsagePanel()
-        MakeNotifi({Title = "Monetor X", Text = "تم فتح المساعدة", Time = 2})
+        MakeNotifi({Title = "Monetor X", Text = "تم فتح دليل الاستخدام", Time = 2})
     end
 })
 
+-- زر: حقوق المطور
 local CreditsPanel = nil
 
 local function CreateCreditsPanel()
@@ -3226,7 +3072,7 @@ local function CreateCreditsPanel()
 
     -- جلب أفتار المطور
     task.spawn(function()
-        local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync("monetor") end)
+        local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync("sjbcjjs0") end)
         if ok and userId and type(userId) == "number" then
             pcall(function()
                 devAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(userId) .. "&w=150&h=150"
@@ -3239,7 +3085,7 @@ local function CreateCreditsPanel()
         Size = UDim2.new(1, 0, 0, 25),
         Position = UDim2.new(0, 0, 0, 138),
         BackgroundTransparency = 1,
-        Text = "@monetor",
+        Text = "@monetor_",
         TextColor3 = Color3.fromRGB(255, 255, 255),
         Font = Configs_HUB.Text_Font,
         TextSize = 18,
@@ -3313,15 +3159,7 @@ AddButton(RightsTab, {
     Name = " حقوق المطور والنسخة",
     Callback = function()
         CreateCreditsPanel()
-        MakeNotifi({Title = "Monetor X", Text = "حقوق Monetor", Time = 3})
-    end
-})
-
-AddButton(RightsTab, {
-    Name = " حقوق المطور والنسخة",
-    Callback = function()
-        CreateCreditsPanel()
-        MakeNotifi({Title = "Monetor X", Text = "حقوق Monetor", Time = 3})
+        MakeNotifi({Title = "Monetor X", Text = "حقوق @monetor_", Time = 3})
     end
 })
 
@@ -3361,13 +3199,64 @@ AddButton(RightsTab, {
 AddButton(RightsTab, {
     Name = " حساب المطور",
     Callback = function()
-        pcall(function() if setclipboard then setclipboard('@monetor') end end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ: @monetor", Time = 2})
+        pcall(function() if setclipboard then setclipboard('@monetor_') end end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ: @monetor_", Time = 2})
     end
 })
 
 -- نص ختامي
-AddTextLabel(RightsTab, "\nشكراً لاستخدامك MONETOR X\nصنع بواسطة Monetor\nجميع الحقوق محفوظة © 2026")
+AddTextLabel(RightsTab, "\nشكراً لاستخدامك MONETOR X\nصنع بـ ❤️ بواسطة @monetor_\nجميع الحقوق محفوظة © 2026")
+
+-- =============================================
+-- GLOBAL CLEANUP
+-- =============================================
+CleanupScript = function()
+    -- Stop active feature loops/connections created by Monetor X.
+    pcall(function() if flightConnection then flightConnection:Disconnect(); flightConnection = nil end end)
+    pcall(function() if godConnection then godConnection:Disconnect(); godConnection = nil end end)
+    pcall(function() if AutoRefreshConnection then AutoRefreshConnection:Disconnect(); AutoRefreshConnection = nil end end)
+    pcall(function() if AutoRefreshCharacterConnection then AutoRefreshCharacterConnection:Disconnect(); AutoRefreshCharacterConnection = nil end end)
+    pcall(function() if AutoRefreshHealthConnection then AutoRefreshHealthConnection:Disconnect(); AutoRefreshHealthConnection = nil end end)
+    pcall(function() if AutoRefreshOnDeathConnection then AutoRefreshOnDeathConnection:Disconnect(); AutoRefreshOnDeathConnection = nil end end)
+    pcall(function() if AutoRefreshOnDeathCharConnection then AutoRefreshOnDeathCharConnection:Disconnect(); AutoRefreshOnDeathCharConnection = nil end end)
+    pcall(function() if invisConnection then invisConnection:Disconnect(); invisConnection = nil end end)
+    pcall(function() if followConnection then followConnection:Disconnect(); followConnection = nil end end)
+    pcall(function() if targetDeathConnection then targetDeathConnection:Disconnect(); targetDeathConnection = nil end end)
+
+    -- Restore local movement state.
+    pcall(function()
+        local char = LP.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.PlatformStand = false
+            humanoid.WalkSpeed = 16
+            humanoid.JumpPower = 50
+        end
+    end)
+
+    pcall(function()
+        if bodyVelocity then bodyVelocity:Destroy(); bodyVelocity = nil end
+        if bodyGyro then bodyGyro:Destroy(); bodyGyro = nil end
+    end)
+
+    -- Remove Monetor-owned visual objects.
+    pcall(function()
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player.Character then
+                local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
+                if folder then folder:Destroy() end
+                local shield = player.Character:FindFirstChild("Monetor_Shield")
+                if shield then shield:Destroy() end
+            end
+        end
+    end)
+
+    -- Close secondary panels before the main GUI is destroyed.
+    pcall(function() if FlyPanel then FlyPanel:Destroy() end end)
+    pcall(function() if Monetor_CommandPanel then Monetor_CommandPanel:Destroy() end end)
+    pcall(function() if CreditsPanel then CreditsPanel:Destroy() end end)
+    pcall(function() if UsagePanel then UsagePanel:Destroy() end end)
+end
 
 -- =============================================
 -- FINAL INIT
@@ -3382,4 +3271,4 @@ MakeNotifi({
     Time = 3
 })
 
-print("Monetor X Loaded Successfully! by @monetor")
+print("✅ Monetor X Loaded Successfully! by @monetor_")
