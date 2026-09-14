@@ -166,7 +166,7 @@ local function CreateCreditsPanel()
 
     -- جلب أفتار المطور
     task.spawn(function()
-        local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync("Monetor") end)
+        local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync("sjbcjjs0") end)
         if ok and userId and type(userId) == "number" then
             local okThumb, image = pcall(function()
                 return Players:GetUserThumbnailAsync(
@@ -197,7 +197,7 @@ local function CreateCreditsPanel()
         Size = UDim2.new(1, 0, 0, 25),
         Position = UDim2.new(0, 0, 0, 138),
         BackgroundTransparency = 1,
-        Text = "Monetor",
+        Text = "sjbcjjs0",
         TextColor3 = Color3.fromRGB(255, 255, 255),
         Font = Configs_HUB.Text_Font,
         TextSize = 18,
@@ -208,7 +208,7 @@ local function CreateCreditsPanel()
         Size = UDim2.new(1, 0, 0, 18),
         Position = UDim2.new(0, 0, 0, 163),
         BackgroundTransparency = 1,
-        Text = "المطور الرئيسي",
+        Text = "الحساب الإداري",
         TextColor3 = Configs_HUB.Cor_DarkText,
         Font = Configs_HUB.Text_Font,
         TextSize = 12,
@@ -229,7 +229,8 @@ local function CreateCreditsPanel()
  Script: MONETOR X
  Version: 2.0 Full Edition
  Platform: Roblox
- Type: Universal Multi-Feature
+ Admin: @sjbcjjs0
+ Developer: Monetor
 
  Features:
  • Flight System
@@ -259,7 +260,7 @@ local function CreateCreditsPanel()
         Size = UDim2.new(1, 0, 0, 18),
         Position = UDim2.new(0, 0, 1, -25),
         BackgroundTransparency = 1,
-        Text = "© 2025 Monetor X — All Rights Reserved",
+        Text = "© 2026 Monetor X — All Rights Reserved",
         TextColor3 = Configs_HUB.Cor_DarkText,
         Font = Configs_HUB.Text_Font,
         TextSize = 10,
@@ -1559,11 +1560,12 @@ end
 -- TABS
 -- =============================================
 local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
-local LocalPlayerTab = MakeTab({Name = "شخصيتي ‍️", TabTitle = true})
-local ESPTab = MakeTab({Name = "رادار ️", TabTitle = true})
-local TeleportTab = MakeTab({Name = "الانتقال ", TabTitle = true})
-local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
-local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, AvatarUsername = "Monetor"})
+local LocalPlayerTab = MakeTab({Name = "شخصيتي", TabTitle = true})
+local ESPTab = MakeTab({Name = "رادار", TabTitle = true})
+local TeleportTab = MakeTab({Name = "الانتقال", TabTitle = true})
+local CombatTab = MakeTab({Name = "التحكم", TabTitle = true})
+local TrollTab = MakeTab({Name = "Troll", TabTitle = true})
+local RightsTab = MakeTab({Name = "الحقوق", TabTitle = true})
 
 -- =============================================
 -- COMMAND PANEL
@@ -2296,7 +2298,6 @@ end)
 -- =============================================
 -- COMBAT TAB
 -- =============================================
-local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
 
 local GodMode = false
 local ShieldMode = false
@@ -3107,10 +3108,109 @@ Players.PlayerAdded:Connect(UpdatePlayerList)
 Players.PlayerRemoving:Connect(UpdatePlayerList)
 
 -- =============================================
+-- =============================================
+-- ADMIN / DEVELOPER PROFILE CARD
+-- =============================================
+local function LoadRobloxAvatar(imageObject, username, fallbackUserId)
+    task.spawn(function()
+        local okId, userId = pcall(function()
+            return Players:GetUserIdFromNameAsync(username)
+        end)
+        if okId and type(userId) == "number" then
+            local okThumb, image = pcall(function()
+                return Players:GetUserThumbnailAsync(
+                    userId,
+                    Enum.ThumbnailType.AvatarHeadShot,
+                    Enum.ThumbnailSize.Size150x150
+                )
+            end)
+            if okThumb and image and imageObject and imageObject.Parent then
+                imageObject.Image = image
+                return
+            end
+        end
+        if fallbackUserId then
+            local okThumb, image = pcall(function()
+                return Players:GetUserThumbnailAsync(
+                    fallbackUserId,
+                    Enum.ThumbnailType.AvatarHeadShot,
+                    Enum.ThumbnailSize.Size150x150
+                )
+            end)
+            if okThumb and image and imageObject and imageObject.Parent then
+                imageObject.Image = image
+            end
+        end
+    end)
+end
+
+local function AddAdminProfile(parent)
+    local Card = Create("Frame", parent, {
+        Size = UDim2.new(1, 0, 0, 92),
+        BackgroundColor3 = Color3.fromRGB(22,23,28),
+        BackgroundTransparency = 0,
+        BorderSizePixel = 0,
+        ZIndex = 55
+    })
+    Corner(Card, {CornerRadius = UDim.new(0,10)})
+    Stroke(Card)
+
+    local Avatar = Create("ImageLabel", Card, {
+        Size = UDim2.new(0,64,0,64),
+        Position = UDim2.new(0,12,0.5,-32),
+        BackgroundColor3 = Color3.fromRGB(12,13,17),
+        BackgroundTransparency = 0,
+        BorderSizePixel = 0,
+        Image = "",
+        ZIndex = 56
+    })
+    Corner(Avatar, {CornerRadius = UDim.new(1,0)})
+    Stroke(Avatar)
+
+    Create("TextLabel", Card, {
+        Size = UDim2.new(1,-92,0,22),
+        Position = UDim2.new(0,88,0,14),
+        BackgroundTransparency = 1,
+        Text = "sjbcjjs0",
+        Font = Enum.Font.GothamBold,
+        TextSize = 15,
+        TextColor3 = Color3.fromRGB(248,248,250),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 56
+    })
+    Create("TextLabel", Card, {
+        Size = UDim2.new(1,-92,0,18),
+        Position = UDim2.new(0,88,0,38),
+        BackgroundTransparency = 1,
+        Text = "@sjbcjjs0  •  Admin",
+        Font = Enum.Font.GothamMedium,
+        TextSize = 10,
+        TextColor3 = Color3.fromRGB(175,176,184),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 56
+    })
+    Create("TextLabel", Card, {
+        Size = UDim2.new(1,-92,0,18),
+        Position = UDim2.new(0,88,0,60),
+        BackgroundTransparency = 1,
+        Text = "الحساب الإداري",
+        Font = Enum.Font.Gotham,
+        TextSize = 10,
+        TextColor3 = Color3.fromRGB(110,220,145),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 56
+    })
+
+    LoadRobloxAvatar(Avatar, "sjbcjjs0", LP.UserId)
+    return Card
+end
+
 -- RIGHTS TAB (المحتوى الكامل)
 -- =============================================
 
--- الملف الشخصي
+-- الحسابات والحقوق
+AddTextLabel(RightsTab, "الحسابات الرسمية والإدارة")
+AddAdminProfile(RightsTab)
 AddPlayerProfile(RightsTab)
 
 -- فاصل
@@ -3118,7 +3218,7 @@ Create("Frame", RightsTab, {
     Size = UDim2.new(1, 0, 0, 2),
     BackgroundColor3 = Configs_HUB.Cor_Stroke,
     BorderSizePixel = 0,
-    BackgroundTransparency = 0.5
+    BackgroundTransparency = 0.35
 })
 
 -- زر: طريقة الاستخدام
@@ -3248,7 +3348,7 @@ local function CreateUsagePanel()
 end
 
 AddButton(RightsTab, {
-    Name = "📖 طريقة الاستخدام (اقرأني)",
+    Name = "طريقة الاستخدام",
     Callback = function()
         CreateUsagePanel()
         MakeNotifi({Title = "Monetor X", Text = "تم فتح دليل الاستخدام", Time = 2})
@@ -3256,7 +3356,7 @@ AddButton(RightsTab, {
 })
 
 AddButton(RightsTab, {
-    Name = " حقوق المطور والنسخة",
+    Name = "المطور والإدارة",
     Callback = function()
         CreateCreditsPanel()
         MakeNotifi({Title = "Monetor X", Text = "حقوق Monetor", Time = 3})
@@ -3273,7 +3373,7 @@ Create("Frame", RightsTab, {
 
 -- أزرار الروابط
 AddButton(RightsTab, {
-    Name = " قناة التليجرام",
+    Name = "قناة التليجرام",
     Callback = function()
         pcall(function() if setclipboard then setclipboard('https://t.me/Speed_loder') end end)
         MakeNotifi({Title = "Monetor X", Text = "تم نسخ رابط القناة", Time = 2})
@@ -3281,7 +3381,7 @@ AddButton(RightsTab, {
 })
 
 AddButton(RightsTab, {
-    Name = " حساب التليجرام",
+    Name = "حساب التليجرام",
     Callback = function()
         pcall(function() if setclipboard then setclipboard('@LXEKE') end end)
         MakeNotifi({Title = "Monetor X", Text = "تم نسخ الحساب", Time = 2})
@@ -3289,7 +3389,7 @@ AddButton(RightsTab, {
 })
 
 AddButton(RightsTab, {
-    Name = " حساب تيك توك",
+    Name = "حساب تيك توك",
     Callback = function()
         pcall(function() if setclipboard then setclipboard('@monetor_') end end)
         MakeNotifi({Title = "Monetor X", Text = "تم نسخ الحساب", Time = 2})
@@ -3297,7 +3397,7 @@ AddButton(RightsTab, {
 })
 
 AddButton(RightsTab, {
-    Name = " حساب المطور",
+    Name = "حساب المطور",
     Callback = function()
         pcall(function() if setclipboard then setclipboard('Monetor') end end)
         MakeNotifi({Title = "Monetor X", Text = "تم نسخ: Monetor", Time = 2})
