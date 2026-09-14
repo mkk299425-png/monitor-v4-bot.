@@ -702,418 +702,396 @@ end
 
 -- =============================================
 -- =============================================
--- MAIN UI - MONETOR X CUSTOM REDESIGN
 -- =============================================
-local Menu = Create("Frame", ScreenGui, {
+-- MONETOR X - PROFESSIONAL CUSTOM UI
+-- =============================================
+-- ملاحظة: الواجهة هنا مستقلة عن وظائف التبويبات.
+-- كل عناصر الواجهة لها خلفية واضحة حتى لا تختفي فوق اللعبة.
+local UI = {}
+
+UI.Menu = Create("Frame", ScreenGui, {
     Size = UDim2.new(0, 530, 0, 320),
     Position = UDim2.new(0.5, -265, 0.5, -160),
-    BackgroundColor3 = Configs_HUB.Cor_Hub,
+    BackgroundColor3 = Color3.fromRGB(11, 12, 15),
     BackgroundTransparency = 0,
-    Active = true, Draggable = true, BorderSizePixel = 0,
-    ClipsDescendants = true, ZIndex = 1
+    BorderSizePixel = 0,
+    Active = true,
+    Draggable = true,
+    ClipsDescendants = true,
+    ZIndex = 50
 })
-Corner(Menu, {CornerRadius = UDim.new(0, 14)})
+Corner(UI.Menu, {CornerRadius = UDim.new(0, 15)})
+Stroke(UI.Menu)
 
--- خلفية بسيطة بحركة خفيفة
-local BackgroundFX = Create("Frame", Menu, {
-    Name = "Monetor_BackgroundFX",
-    Size = UDim2.new(1, 0, 1, 0),
-    BackgroundColor3 = Color3.fromRGB(7, 7, 9),
-    BorderSizePixel = 0, ClipsDescendants = true, ZIndex = 0
+-- شريط علوي
+UI.Header = Create("Frame", UI.Menu, {
+    Size = UDim2.new(1, -20, 0, 50),
+    Position = UDim2.new(0, 10, 0, 8),
+    BackgroundColor3 = Color3.fromRGB(18, 19, 24),
+    BackgroundTransparency = 0,
+    BorderSizePixel = 0,
+    ZIndex = 51
 })
-Corner(BackgroundFX, {CornerRadius = UDim.new(0, 14)})
+Corner(UI.Header, {CornerRadius = UDim.new(0, 11)})
 
-for i, data in ipairs({
-    {Size = 180, X = -0.16, Y = -0.30, T = 0.90, D = 15},
-    {Size = 130, X = 0.72, Y = 0.65, T = 0.94, D = 18},
-    {Size = 90, X = 0.42, Y = -0.20, T = 0.96, D = 13}
-}) do
-    local glow = Create("Frame", BackgroundFX, {
-        Name = "Glow_" .. i,
-        Size = UDim2.new(0, data.Size, 0, data.Size),
-        Position = UDim2.new(data.X, 0, data.Y, 0),
-        BackgroundColor3 = Color3.fromRGB(190, 15, 35),
-        BackgroundTransparency = data.T,
-        BorderSizePixel = 0, ZIndex = 0
-    })
-    Corner(glow, {CornerRadius = UDim.new(1, 0)})
-    task.spawn(function()
-        while glow.Parent do
-            local a = TweenService:Create(glow,
-                TweenInfo.new(data.D, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                {Position = UDim2.new(data.X + 0.08, 0, data.Y + 0.06, 0), BackgroundTransparency = math.max(0.82, data.T - 0.04)})
-            a:Play(); a.Completed:Wait()
-            if not glow.Parent then break end
-            local b = TweenService:Create(glow,
-                TweenInfo.new(data.D, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                {Position = UDim2.new(data.X, 0, data.Y, 0), BackgroundTransparency = data.T})
-            b:Play(); b.Completed:Wait()
-        end
-    end)
-end
-
--- رأس مخصص
-local Header = Create("Frame", Menu, {
-    Size = UDim2.new(1, 0, 0, 46),
-    BackgroundTransparency = 1,
-    BorderSizePixel = 0, ZIndex = 10
+UI.Logo = Create("Frame", UI.Header, {
+    Size = UDim2.new(0, 34, 0, 34),
+    Position = UDim2.new(0, 8, 0.5, -17),
+    BackgroundColor3 = Color3.fromRGB(190, 20, 40),
+    BorderSizePixel = 0,
+    ZIndex = 52
 })
+Corner(UI.Logo, {CornerRadius = UDim.new(0, 9)})
 
-local BrandMark = Create("Frame", Header, {
-    Size = UDim2.new(0, 30, 0, 30),
-    Position = UDim2.new(0, 12, 0.5, -15),
-    BackgroundColor3 = Color3.fromRGB(190, 15, 35),
-    BorderSizePixel = 0, ZIndex = 11
-})
-Corner(BrandMark, {CornerRadius = UDim.new(0, 9)})
-Create("TextLabel", BrandMark, {
+Create("TextLabel", UI.Logo, {
     Size = UDim2.new(1, 0, 1, 0),
     BackgroundTransparency = 1,
-    Text = "M", Font = Configs_HUB.Text_Font,
-    TextSize = 17, TextColor3 = Color3.fromRGB(255,255,255),
-    ZIndex = 12
+    Text = "M",
+    Font = Enum.Font.GothamBold,
+    TextSize = 19,
+    TextColor3 = Color3.fromRGB(255,255,255),
+    ZIndex = 53
 })
 
-Create("TextLabel", Header, {
-    Size = UDim2.new(0, 170, 0, 22),
-    Position = UDim2.new(0, 50, 0, 7),
+Create("TextLabel", UI.Header, {
+    Size = UDim2.new(0, 190, 0, 23),
+    Position = UDim2.new(0, 51, 0, 7),
     BackgroundTransparency = 1,
-    Text = "MONETOR X", Font = Configs_HUB.Text_Font,
-    TextSize = 18, TextColor3 = Configs_HUB.Cor_Text,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 11
+    Text = "MONETOR X",
+    Font = Enum.Font.GothamBold,
+    TextSize = 17,
+    TextColor3 = Color3.fromRGB(248,248,250),
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 52
 })
 
-Create("TextLabel", Header, {
-    Size = UDim2.new(0, 170, 0, 15),
-    Position = UDim2.new(0, 50, 0, 27),
+Create("TextLabel", UI.Header, {
+    Size = UDim2.new(0, 190, 0, 15),
+    Position = UDim2.new(0, 51, 0, 28),
     BackgroundTransparency = 1,
-    Text = "CUSTOM EDITION", Font = Enum.Font.GothamMedium,
-    TextSize = 9, TextColor3 = Configs_HUB.Cor_DarkText,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 11
+    Text = "PERSONAL CONTROL PANEL",
+    Font = Enum.Font.GothamMedium,
+    TextSize = 8,
+    TextColor3 = Color3.fromRGB(125,127,136),
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 52
 })
 
-local HeaderLine = Create("Frame", Header, {
-    Size = UDim2.new(1, -110, 0, 1),
-    Position = UDim2.new(0, 12, 1, -1),
-    BackgroundColor3 = Color3.fromRGB(55, 55, 62),
-    BackgroundTransparency = 0.25,
-    BorderSizePixel = 0, ZIndex = 11
+-- حالة الاتصال/التشغيل
+UI.Status = Create("Frame", UI.Header, {
+    Size = UDim2.new(0, 78, 0, 24),
+    Position = UDim2.new(1, -145, 0.5, -12),
+    BackgroundColor3 = Color3.fromRGB(20, 55, 39),
+    BackgroundTransparency = 0,
+    BorderSizePixel = 0,
+    ZIndex = 52
+})
+Corner(UI.Status, {CornerRadius = UDim.new(0, 7)})
+
+Create("Frame", UI.Status, {
+    Size = UDim2.new(0, 6, 0, 6),
+    Position = UDim2.new(0, 9, 0.5, -3),
+    BackgroundColor3 = Color3.fromRGB(80, 220, 130),
+    BorderSizePixel = 0,
+    ZIndex = 53
+})
+Corner(UI.Status, {CornerRadius = UDim.new(1,0)})
+
+Create("TextLabel", UI.Status, {
+    Size = UDim2.new(1, -23, 1, 0),
+    Position = UDim2.new(0, 20, 0, 0),
+    BackgroundTransparency = 1,
+    Text = "READY",
+    Font = Enum.Font.GothamBold,
+    TextSize = 8,
+    TextColor3 = Color3.fromRGB(150,235,180),
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 53
 })
 
-local HeaderButtons = Create("Frame", Header, {
-    Size = UDim2.new(0, 66, 0, 30),
-    Position = UDim2.new(1, -12, 0.5, -15),
-    BackgroundTransparency = 1, ZIndex = 20
-})
-
-local Minimize_BTN = Create("TextButton", HeaderButtons, {
+UI.Minimize = Create("TextButton", UI.Header, {
     Size = UDim2.new(0, 30, 0, 30),
-    Position = UDim2.new(0, 0, 0, 0),
-    BackgroundColor3 = Color3.fromRGB(22,22,26),
-    BackgroundTransparency = 0.1,
-    Text = "−", TextColor3 = Configs_HUB.Cor_DarkText,
-    Font = Enum.Font.GothamBold, TextSize = 18,
-    AutoButtonColor = false, ZIndex = 21
+    Position = UDim2.new(1, -67, 0.5, -15),
+    BackgroundColor3 = Color3.fromRGB(27,28,34),
+    BorderSizePixel = 0,
+    Text = "−",
+    Font = Enum.Font.GothamBold,
+    TextSize = 17,
+    TextColor3 = Color3.fromRGB(205,205,210),
+    AutoButtonColor = false,
+    ZIndex = 53
 })
-Corner(Minimize_BTN, {CornerRadius = UDim.new(0, 8)})
+Corner(UI.Minimize, {CornerRadius = UDim.new(0,8)})
 
-local Close_Button = Create("TextButton", HeaderButtons, {
+UI.Close = Create("TextButton", UI.Header, {
     Size = UDim2.new(0, 30, 0, 30),
-    Position = UDim2.new(1, -30, 0, 0),
-    BackgroundColor3 = Color3.fromRGB(65, 14, 22),
-    BackgroundTransparency = 0.05,
-    Text = "×", TextColor3 = Color3.fromRGB(255, 120, 130),
-    Font = Enum.Font.GothamBold, TextSize = 18,
-    AutoButtonColor = false, ZIndex = 21
+    Position = UDim2.new(1, -33, 0.5, -15),
+    BackgroundColor3 = Color3.fromRGB(70,18,28),
+    BorderSizePixel = 0,
+    Text = "×",
+    Font = Enum.Font.GothamBold,
+    TextSize = 18,
+    TextColor3 = Color3.fromRGB(255,145,155),
+    AutoButtonColor = false,
+    ZIndex = 53
 })
-Corner(Close_Button, {CornerRadius = UDim.new(0, 8)})
+Corner(UI.Close, {CornerRadius = UDim.new(0,8)})
 
-local IsMinimized = false
-Minimize_BTN.MouseButton1Click:Connect(function()
-    IsMinimized = not IsMinimized
-    Minimize_BTN.Text = IsMinimized and "+" or "−"
-    CreateTween(Menu, "Size",
-        IsMinimized and UDim2.new(0, 530, 0, 46) or UDim2.new(0, 530, 0, 320),
-        0.18, true)
+-- شريط التبويبات الأفقي: تصميم مختلف بالكامل
+UI.Nav = Create("ScrollingFrame", UI.Menu, {
+    Size = UDim2.new(1, -20, 0, 39),
+    Position = UDim2.new(0, 10, 0, 65),
+    BackgroundColor3 = Color3.fromRGB(16,17,21),
+    BackgroundTransparency = 0,
+    BorderSizePixel = 0,
+    ScrollBarThickness = 0,
+    ScrollingDirection = Enum.ScrollingDirection.X,
+    AutomaticCanvasSize = Enum.AutomaticSize.X,
+    CanvasSize = UDim2.new(),
+    ZIndex = 51
+})
+Corner(UI.Nav, {CornerRadius = UDim.new(0,10)})
+Create("UIPadding", UI.Nav, {
+    PaddingLeft = UDim.new(0,7),
+    PaddingRight = UDim.new(0,7),
+    PaddingTop = UDim.new(0,5),
+    PaddingBottom = UDim.new(0,5)
+})
+Create("UIListLayout", UI.Nav, {
+    FillDirection = Enum.FillDirection.Horizontal,
+    Padding = UDim.new(0,5),
+    VerticalAlignment = Enum.VerticalAlignment.Center
+})
+
+-- مساحة المحتوى الواضحة
+UI.Content = Create("Frame", UI.Menu, {
+    Size = UDim2.new(1, -20, 1, -116),
+    Position = UDim2.new(0, 10, 0, 110),
+    BackgroundColor3 = Color3.fromRGB(16,17,21),
+    BackgroundTransparency = 0,
+    BorderSizePixel = 0,
+    ClipsDescendants = true,
+    ZIndex = 51
+})
+Corner(UI.Content, {CornerRadius = UDim.new(0,11)})
+Stroke(UI.Content)
+
+UI.FirstTab = true
+
+-- تصغير/تكبير
+UI.Minimized = false
+UI.Minimize.MouseButton1Click:Connect(function()
+    UI.Minimized = not UI.Minimized
+    UI.Minimize.Text = UI.Minimized and "+" or "−"
+    CreateTween(
+        UI.Menu,
+        "Size",
+        UI.Minimized and UDim2.new(0,530,0,66) or UDim2.new(0,530,0,320),
+        0.18,
+        true
+    )
 end)
 
-local function CreateClose()
-    IsMinimized = false
-    CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.2, false)
+-- نافذة تأكيد الإغلاق
+local function ShowCloseConfirm()
+    if UI.CloseDialog and UI.CloseDialog.Parent then return end
 
-    local CloseGui = Create("TextButton", Menu, {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundColor3 = Color3.fromRGB(0,0,0),
-        BackgroundTransparency = 0.28,
-        Text = "", AutoButtonColor = false, ZIndex = 80
+    UI.CloseDialog = Create("Frame", UI.Menu, {
+        Size = UDim2.new(0, 285, 0, 145),
+        Position = UDim2.new(0.5, -142, 0.5, -70),
+        BackgroundColor3 = Color3.fromRGB(18,19,24),
+        BorderSizePixel = 0,
+        ZIndex = 100
     })
-    Corner(CloseGui, {CornerRadius = UDim.new(0, 14)})
+    Corner(UI.CloseDialog, {CornerRadius = UDim.new(0,12)})
+    Stroke(UI.CloseDialog)
 
-    local Box = Create("Frame", CloseGui, {
-        Size = UDim2.new(0, 280, 0, 145),
-        Position = UDim2.new(0.5, -140, 0.5, -72),
-        BackgroundColor3 = Color3.fromRGB(15,15,18),
-        BorderSizePixel = 0, ZIndex = 81
-    })
-    Corner(Box, {CornerRadius = UDim.new(0, 12)}); Stroke(Box)
-
-    Create("TextLabel", Box, {
-        Size = UDim2.new(1, -30, 0, 30),
-        Position = UDim2.new(0, 15, 0, 16),
+    Create("TextLabel", UI.CloseDialog, {
+        Size = UDim2.new(1,-24,0,26),
+        Position = UDim2.new(0,12,0,14),
         BackgroundTransparency = 1,
-        Text = "إغلاق Monetor X؟",
-        Font = Configs_HUB.Text_Font, TextSize = 18,
-        TextColor3 = Configs_HUB.Cor_Text,
-        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 82
+        Text = "إغلاق Monetor X",
+        Font = Enum.Font.GothamBold,
+        TextSize = 17,
+        TextColor3 = Color3.fromRGB(248,248,250),
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = 101
     })
 
-    Create("TextLabel", Box, {
-        Size = UDim2.new(1, -30, 0, 22),
-        Position = UDim2.new(0, 15, 0, 48),
+    Create("TextLabel", UI.CloseDialog, {
+        Size = UDim2.new(1,-24,0,30),
+        Position = UDim2.new(0,12,0,43),
         BackgroundTransparency = 1,
-        Text = "سيتم إيقاف واجهة السكربت.",
-        Font = Enum.Font.Gotham, TextSize = 11,
-        TextColor3 = Configs_HUB.Cor_DarkText,
-        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 82
+        Text = "هل تريد إغلاق الواجهة؟",
+        Font = Enum.Font.Gotham,
+        TextSize = 11,
+        TextColor3 = Color3.fromRGB(145,146,154),
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = 101
     })
 
-    local Confirm = Create("TextButton", Box, {
-        Size = UDim2.new(0.42, 0, 0, 34),
-        Position = UDim2.new(0.05, 0, 1, -46),
-        BackgroundColor3 = Color3.fromRGB(155, 18, 35),
-        Text = "إغلاق", Font = Enum.Font.GothamBold,
-        TextColor3 = Color3.fromRGB(255,255,255), TextSize = 12,
-        AutoButtonColor = false, ZIndex = 82
+    UI.ConfirmClose = Create("TextButton", UI.CloseDialog, {
+        Size = UDim2.new(0.42,0,0,34),
+        Position = UDim2.new(0.05,0,1,-45),
+        BackgroundColor3 = Color3.fromRGB(165,20,40),
+        BorderSizePixel = 0,
+        Text = "إغلاق",
+        Font = Enum.Font.GothamBold,
+        TextSize = 11,
+        TextColor3 = Color3.fromRGB(255,255,255),
+        AutoButtonColor = false,
+        ZIndex = 101
     })
-    Corner(Confirm, {CornerRadius = UDim.new(0, 8)})
+    Corner(UI.ConfirmClose, {CornerRadius = UDim.new(0,8)})
 
-    local Cancel = Create("TextButton", Box, {
-        Size = UDim2.new(0.42, 0, 0, 34),
-        Position = UDim2.new(0.53, 0, 1, -46),
-        BackgroundColor3 = Color3.fromRGB(28,28,33),
-        Text = "إلغاء", Font = Enum.Font.GothamBold,
-        TextColor3 = Configs_HUB.Cor_Text, TextSize = 12,
-        AutoButtonColor = false, ZIndex = 82
+    UI.CancelClose = Create("TextButton", UI.CloseDialog, {
+        Size = UDim2.new(0.42,0,0,34),
+        Position = UDim2.new(0.53,0,1,-45),
+        BackgroundColor3 = Color3.fromRGB(30,31,37),
+        BorderSizePixel = 0,
+        Text = "إلغاء",
+        Font = Enum.Font.GothamBold,
+        TextSize = 11,
+        TextColor3 = Color3.fromRGB(225,225,230),
+        AutoButtonColor = false,
+        ZIndex = 101
     })
-    Corner(Cancel, {CornerRadius = UDim.new(0, 8)})
+    Corner(UI.CancelClose, {CornerRadius = UDim.new(0,8)})
 
-    Cancel.MouseButton1Click:Connect(function() CloseGui:Destroy() end)
-    CloseGui.MouseButton1Click:Connect(function()
-        if CloseGui then CloseGui:Destroy() end
+    UI.CancelClose.MouseButton1Click:Connect(function()
+        if UI.CloseDialog then UI.CloseDialog:Destroy(); UI.CloseDialog = nil end
     end)
-    Confirm.MouseButton1Click:Connect(function()
-        CloseGui:Destroy()
-        CreateTween(Menu, "Size", UDim2.new(), 0.25, true)
-        DestroyScript()
+
+    UI.ConfirmClose.MouseButton1Click:Connect(function()
+        if UI.CloseDialog then UI.CloseDialog:Destroy(); UI.CloseDialog = nil end
+        CreateTween(UI.Menu, "Size", UDim2.new(0,530,0,0), 0.2, true)
+        task.delay(0.22, function()
+            pcall(DestroyScript)
+        end)
     end)
 end
-Close_Button.MouseButton1Click:Connect(CreateClose)
 
-local Content = Create("Frame", Menu, {
-    Size = UDim2.new(1, -24, 1, -58),
-    Position = UDim2.new(0, 12, 0, 52),
-    BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 5
-})
-
--- شريط تنقل صغير ومختلف
-local ScrollBar = Create("ScrollingFrame", Content, {
-    Size = UDim2.new(0, 88, 1, 0),
-    Position = UDim2.new(0, 0, 0, 0),
-    CanvasSize = UDim2.new(),
-    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    ScrollingDirection = Enum.ScrollingDirection.Y,
-    BackgroundColor3 = Color3.fromRGB(12,12,15),
-    BackgroundTransparency = 0.12,
-    BorderSizePixel = 0,
-    ScrollBarThickness = 0, ZIndex = 6
-})
-Corner(ScrollBar, {CornerRadius = UDim.new(0, 11)})
-Create("UIPadding", ScrollBar, {
-    PaddingLeft = UDim.new(0, 7), PaddingRight = UDim.new(0, 7),
-    PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8)
-})
-Create("UIListLayout", ScrollBar, {
-    Padding = UDim.new(0, 6),
-    HorizontalAlignment = Enum.HorizontalAlignment.Center
-})
-
-local Containers = Create("Frame", Content, {
-    Size = UDim2.new(1, -98, 1, 0),
-    Position = UDim2.new(0, 98, 0, 0),
-    BackgroundColor3 = Color3.fromRGB(11,11,14),
-    BackgroundTransparency = 0.08,
-    BorderSizePixel = 0, ZIndex = 6
-})
-Corner(Containers, {CornerRadius = UDim.new(0, 11)})
-
-local firstVisible = true
-local textsize = 12
-local textcolor = Configs_HUB.Cor_DarkText
-
--- حركة ظهور بسيطة
-Menu.BackgroundTransparency = 1
-CreateTween(Menu, "BackgroundTransparency", 0, 0.35, false)
+UI.Close.MouseButton1Click:Connect(ShowCloseConfirm)
 
 -- =============================================
--- =============================================
--- MAKETAB - COMPACT CUSTOM NAV
+-- MAKETAB - PROFESSIONAL HORIZONTAL TABS
 -- =============================================
 function MakeTab(Configs)
     local TabName = Configs.Name or "Tab"
-    local TabImage = Configs.Image or nil
 
-    local Frame = Create("Frame", ScrollBar, {
-        Size = UDim2.new(1, 0, 0, 34),
-        BackgroundColor3 = Color3.fromRGB(20,20,24),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0, ZIndex = 7
-    })
-    Corner(Frame, {CornerRadius = UDim.new(0, 8)})
-
-    local TextButton = Create("TextButton", Frame, {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency = 1,
-        Text = "", AutoButtonColor = false, ZIndex = 8
-    })
-
-    local Dot = Create("Frame", Frame, {
-        Size = UDim2.new(0, 4, 0, 16),
-        Position = UDim2.new(0, 5, 0.5, -8),
-        BackgroundColor3 = Color3.fromRGB(190,15,35),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0, ZIndex = 9
-    })
-    Corner(Dot, {CornerRadius = UDim.new(0, 3)})
-
-    local Icon = Create("TextLabel", Frame, {
-        Size = UDim2.new(0, 20, 1, 0),
-        Position = UDim2.new(0, 10, 0, 0),
-        BackgroundTransparency = 1,
-        Text = TabImage and "◆" or "•",
-        Font = Enum.Font.GothamBold,
-        TextSize = 10,
-        TextColor3 = Configs_HUB.Cor_DarkText,
-        ZIndex = 9
-    })
-
-    local TextLabel = Create("TextLabel", Frame, {
-        Size = UDim2.new(1, -34, 1, 0),
-        Position = UDim2.new(0, 30, 0, 0),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamMedium,
-        TextColor3 = textcolor,
-        TextSize = textsize,
+    local Chip = Create("TextButton", UI.Nav, {
+        Size = UDim2.new(0, 72, 0, 29),
+        BackgroundColor3 = Color3.fromRGB(25,26,31),
+        BackgroundTransparency = 0,
+        BorderSizePixel = 0,
         Text = TabName,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 9
+        Font = Enum.Font.GothamMedium,
+        TextSize = 10,
+        TextColor3 = Color3.fromRGB(155,156,165),
+        AutoButtonColor = false,
+        ZIndex = 53
     })
+    Corner(Chip, {CornerRadius = UDim.new(0,7)})
 
-    local Container = Create("ScrollingFrame", Containers, {
-        Size = UDim2.new(1, 0, 1, 0),
-        ScrollingDirection = Enum.ScrollingDirection.Y,
-        AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        CanvasSize = UDim2.new(),
+    local Page = Create("ScrollingFrame", UI.Content, {
+        Size = UDim2.new(1,0,1,0),
+        Position = UDim2.new(0,0,0,0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         ScrollBarThickness = 2,
-        Visible = firstVisible,
-        ZIndex = 7
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        CanvasSize = UDim2.new(),
+        Visible = UI.FirstTab,
+        ZIndex = 52
     })
-    Create("UIPadding", Container, {
-        PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12),
-        PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12)
+    Create("UIPadding", Page, {
+        PaddingLeft = UDim.new(0,12),
+        PaddingRight = UDim.new(0,12),
+        PaddingTop = UDim.new(0,12),
+        PaddingBottom = UDim.new(0,12)
     })
-    Create("UIListLayout", Container, {Padding = UDim.new(0, 7)})
+    Create("UIListLayout", Page, {
+        Padding = UDim.new(0,8)
+    })
 
     local function Select()
-        for _, container in pairs(Containers:GetChildren()) do
-            if container:IsA("ScrollingFrame") then
-                container.Visible = false
+        for _, child in ipairs(UI.Content:GetChildren()) do
+            if child:IsA("ScrollingFrame") then child.Visible = false end
+        end
+
+        for _, child in ipairs(UI.Nav:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.BackgroundColor3 = Color3.fromRGB(25,26,31)
+                child.TextColor3 = Color3.fromRGB(155,156,165)
             end
         end
-        for _, frame in pairs(ScrollBar:GetChildren()) do
-            if frame:IsA("Frame") then
-                local lbl = frame:FindFirstChild("TextLabel")
-                local dot = frame:FindFirstChildOfClass("Frame")
-                if lbl then
-                    lbl.TextColor3 = Configs_HUB.Cor_DarkText
-                    lbl.TextSize = 12
-                end
-                if dot and dot ~= Dot then dot.BackgroundTransparency = 1 end
-                frame.BackgroundTransparency = 1
-            end
-        end
-        Container.Visible = true
-        TextLabel.TextColor3 = Configs_HUB.Cor_Text
-        TextLabel.TextSize = 13
-        Dot.BackgroundTransparency = 0
-        Frame.BackgroundTransparency = 0
+
+        Page.Visible = true
+        Chip.BackgroundColor3 = Color3.fromRGB(150,18,38)
+        Chip.TextColor3 = Color3.fromRGB(255,255,255)
     end
 
-    TextButton.MouseButton1Click:Connect(Select)
+    Chip.MouseButton1Click:Connect(Select)
 
-    if firstVisible then
+    if UI.FirstTab then
         task.defer(Select)
+        UI.FirstTab = false
     end
 
-    firstVisible = false
-    textsize = 12
-    textcolor = Configs_HUB.Cor_DarkText
-    return Container
+    return Page
 end
 
 -- =============================================
--- ADDBUTTON
+-- ADDBUTTON - واضح وعالي التباين
 -- =============================================
 function AddButton(parent, Configs)
     local ButtonName = Configs.Name or "Button"
     local Callback = Configs.Callback or function() end
 
-    local TextButton = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 32),
-        BackgroundColor3 = Color3.fromRGB(20,20,24),
-        BackgroundTransparency = 0.08,
+    local Button = Create("TextButton", parent, {
+        Size = UDim2.new(1,0,0,40),
+        BackgroundColor3 = Color3.fromRGB(27,28,34),
+        BackgroundTransparency = 0,
         BorderSizePixel = 0,
-        Name = "MonetorButton",
         Text = "",
-        AutoButtonColor = false
+        AutoButtonColor = false,
+        ZIndex = 55
     })
-    Corner(TextButton, {CornerRadius = UDim.new(0, 8)})
+    Corner(Button, {CornerRadius = UDim.new(0,9)})
+    Stroke(Button)
 
-    local Accent = Create("Frame", TextButton, {
-        Size = UDim2.new(0, 3, 0, 14),
-        Position = UDim2.new(0, 8, 0.5, -7),
-        BackgroundColor3 = Color3.fromRGB(190,15,35),
-        BorderSizePixel = 0
+    Create("Frame", Button, {
+        Size = UDim2.new(0,4,0,22),
+        Position = UDim2.new(0,10,0.5,-11),
+        BackgroundColor3 = Color3.fromRGB(190,20,40),
+        BorderSizePixel = 0,
+        ZIndex = 56
     })
-    Corner(Accent, {CornerRadius = UDim.new(0, 2)})
 
-    local TextLabel = Create("TextLabel", TextButton, {
-        TextSize = 12,
-        TextColor3 = Configs_HUB.Cor_Text,
-        Text = ButtonName,
-        Size = UDim2.new(1, -30, 1, 0),
-        Position = UDim2.new(0, 20, 0, 0),
+    Create("TextLabel", Button, {
+        Size = UDim2.new(1,-35,1,0),
+        Position = UDim2.new(0,25,0,0),
         BackgroundTransparency = 1,
+        Text = ButtonName,
+        Font = Enum.Font.GothamMedium,
+        TextSize = 12,
+        TextColor3 = Color3.fromRGB(238,238,242),
         TextXAlignment = Enum.TextXAlignment.Left,
-        Font = Enum.Font.GothamMedium
+        ZIndex = 56
     })
 
-    TextButton.MouseEnter:Connect(function()
-        CreateTween(TextButton, "BackgroundTransparency", 0, 0.12, false)
-        CreateTween(Accent, "Size", UDim2.new(0, 5, 0, 18), 0.12, false)
+    Button.MouseEnter:Connect(function()
+        CreateTween(Button, "BackgroundColor3", Color3.fromRGB(34,35,42), 0.1, false)
     end)
-    TextButton.MouseLeave:Connect(function()
-        CreateTween(TextButton, "BackgroundTransparency", 0.08, 0.12, false)
-        CreateTween(Accent, "Size", UDim2.new(0, 3, 0, 14), 0.12, false)
+    Button.MouseLeave:Connect(function()
+        CreateTween(Button, "BackgroundColor3", Color3.fromRGB(27,28,34), 0.1, false)
     end)
-    TextButton.MouseButton1Click:Connect(function()
+    Button.MouseButton1Click:Connect(function()
         pcall(Callback)
-        CreateTween(Accent, "Size", UDim2.new(0, 8, 0, 22), 0.08, true)
-        CreateTween(Accent, "Size", UDim2.new(0, 3, 0, 14), 0.14, false)
     end)
 
-    return TextButton
+    return Button
 end
 
 -- =============================================
