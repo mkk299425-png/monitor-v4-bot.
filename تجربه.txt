@@ -95,7 +95,13 @@ end
 -- =============================================
 -- SCREEN GUI
 -- =============================================
-local ScreenGui = Create("ScreenGui", CoreGui, { Name = "Monetor_Hub" })
+local ScreenGui = Create("ScreenGui", CoreGui, {
+    Name = "Monetor_Hub",
+    IgnoreGuiInset = true,
+    ResetOnSpawn = false,
+    DisplayOrder = 9999,
+    ZIndexBehavior = Enum.ZIndexBehavior.Global
+})
 -- =============================================
 -- CREDITS PANEL (DEFINED EARLY TO AVOID LOCAL REGISTER LIMIT)
 -- =============================================
@@ -162,9 +168,27 @@ local function CreateCreditsPanel()
     task.spawn(function()
         local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync("Monetor") end)
         if ok and userId and type(userId) == "number" then
-            pcall(function()
-                devAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(userId) .. "&w=150&h=150"
+            local okThumb, image = pcall(function()
+                return Players:GetUserThumbnailAsync(
+                    userId,
+                    Enum.ThumbnailType.AvatarHeadShot,
+                    Enum.ThumbnailSize.Size150x150
+                )
             end)
+            if okThumb and image and devAvatar.Parent then
+                devAvatar.Image = image
+            end
+        else
+            local okThumb, image = pcall(function()
+                return Players:GetUserThumbnailAsync(
+                    LP.UserId,
+                    Enum.ThumbnailType.AvatarHeadShot,
+                    Enum.ThumbnailSize.Size150x150
+                )
+            end)
+            if okThumb and image and devAvatar.Parent then
+                devAvatar.Image = image
+            end
         end
     end)
 
@@ -980,14 +1004,14 @@ function MakeTab(Configs)
     local TabName = Configs.Name or "Tab"
 
     local Chip = Create("TextButton", UI.Nav, {
-        Size = UDim2.new(0, 72, 0, 29),
+        Size = UDim2.new(0, 66, 0, 29),
         BackgroundColor3 = Color3.fromRGB(25,26,31),
         BackgroundTransparency = 0,
         BorderSizePixel = 0,
         Text = TabName,
         Font = Enum.Font.GothamMedium,
-        TextSize = 10,
-        TextColor3 = Color3.fromRGB(155,156,165),
+        TextSize = 9,
+        TextColor3 = Color3.fromRGB(175,176,184),
         AutoButtonColor = false,
         ZIndex = 53
     })
@@ -998,11 +1022,13 @@ function MakeTab(Configs)
         Position = UDim2.new(0,0,0,0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
-        ScrollBarThickness = 2,
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Color3.fromRGB(175,20,40),
         ScrollingDirection = Enum.ScrollingDirection.Y,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        CanvasSize = UDim2.new(),
+        CanvasSize = UDim2.new(0,0,0,0),
         Visible = UI.FirstTab,
+        ClipsDescendants = true,
         ZIndex = 52
     })
     Create("UIPadding", Page, {
@@ -1012,23 +1038,27 @@ function MakeTab(Configs)
         PaddingBottom = UDim.new(0,12)
     })
     Create("UIListLayout", Page, {
-        Padding = UDim.new(0,8)
+        Padding = UDim.new(0,8),
+        SortOrder = Enum.SortOrder.LayoutOrder
     })
 
     local function Select()
         for _, child in ipairs(UI.Content:GetChildren()) do
-            if child:IsA("ScrollingFrame") then child.Visible = false end
+            if child:IsA("ScrollingFrame") then
+                child.Visible = false
+            end
         end
 
         for _, child in ipairs(UI.Nav:GetChildren()) do
             if child:IsA("TextButton") then
                 child.BackgroundColor3 = Color3.fromRGB(25,26,31)
-                child.TextColor3 = Color3.fromRGB(155,156,165)
+                child.TextColor3 = Color3.fromRGB(175,176,184)
             end
         end
 
         Page.Visible = true
-        Chip.BackgroundColor3 = Color3.fromRGB(150,18,38)
+        Page.CanvasPosition = Vector2.new(0,0)
+        Chip.BackgroundColor3 = Color3.fromRGB(158,18,39)
         Chip.TextColor3 = Color3.fromRGB(255,255,255)
     end
 
@@ -1050,42 +1080,47 @@ function AddButton(parent, Configs)
     local Callback = Configs.Callback or function() end
 
     local Button = Create("TextButton", parent, {
-        Size = UDim2.new(1,0,0,40),
+        Size = UDim2.new(1,0,0,38),
         BackgroundColor3 = Color3.fromRGB(27,28,34),
         BackgroundTransparency = 0,
         BorderSizePixel = 0,
         Text = "",
         AutoButtonColor = false,
-        ZIndex = 55
+        ZIndex = 55,
+        LayoutOrder = Configs.LayoutOrder or 0
     })
     Corner(Button, {CornerRadius = UDim.new(0,9)})
     Stroke(Button)
 
-    Create("Frame", Button, {
+    local Accent = Create("Frame", Button, {
         Size = UDim2.new(0,4,0,22),
         Position = UDim2.new(0,10,0.5,-11),
-        BackgroundColor3 = Color3.fromRGB(190,20,40),
+        BackgroundColor3 = Color3.fromRGB(195,20,42),
         BorderSizePixel = 0,
         ZIndex = 56
     })
+    Corner(Accent, {CornerRadius = UDim.new(0,2)})
 
     Create("TextLabel", Button, {
-        Size = UDim2.new(1,-35,1,0),
+        Size = UDim2.new(1,-40,1,0),
         Position = UDim2.new(0,25,0,0),
         BackgroundTransparency = 1,
-        Text = ButtonName,
+        Text = ButtonName:gsub("^%s+",""),
         Font = Enum.Font.GothamMedium,
         TextSize = 12,
-        TextColor3 = Color3.fromRGB(238,238,242),
+        TextColor3 = Color3.fromRGB(242,242,245),
         TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
         ZIndex = 56
     })
 
     Button.MouseEnter:Connect(function()
-        CreateTween(Button, "BackgroundColor3", Color3.fromRGB(34,35,42), 0.1, false)
+        Button.BackgroundColor3 = Color3.fromRGB(35,36,43)
+        Accent.Size = UDim2.new(0,6,0,24)
     end)
     Button.MouseLeave:Connect(function()
-        CreateTween(Button, "BackgroundColor3", Color3.fromRGB(27,28,34), 0.1, false)
+        Button.BackgroundColor3 = Color3.fromRGB(27,28,34)
+        Accent.Size = UDim2.new(0,4,0,22)
     end)
     Button.MouseButton1Click:Connect(function()
         pcall(Callback)
@@ -1098,47 +1133,80 @@ end
 -- ADDTOGGLEBUTTON
 -- =============================================
 function AddToggleButton(parent, Configs)
-    local ButtonName = Configs.Name or "Toggle!!"
-    local OnText = Configs.OnText or (ButtonName .. ": تشغيل")
-    local OffText = Configs.OffText or (ButtonName .. ": إيقاف")
-    local StartState = Configs.StartState or false
+    local ButtonName = Configs.Name or "Toggle"
+    local OnText = Configs.OnText or (ButtonName .. " — تشغيل")
+    local OffText = Configs.OffText or (ButtonName .. " — إيقاف")
+    local State = Configs.StartState or false
     local OnEnable = Configs.OnEnable or function() end
     local OnDisable = Configs.OnDisable or function() end
-    
-    local State = StartState
-    
+
     local TextButton = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.5, Name = "Frame", Text = "", AutoButtonColor = false
+        Size = UDim2.new(1,0,0,38),
+        BackgroundColor3 = Color3.fromRGB(27,28,34),
+        BackgroundTransparency = 0,
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false,
+        ZIndex = 55
     })
-    Corner(TextButton); Stroke(TextButton)
+    Corner(TextButton, {CornerRadius = UDim.new(0,9)})
+    Stroke(TextButton)
+
+    local Dot = Create("Frame", TextButton, {
+        Size = UDim2.new(0,8,0,8),
+        Position = UDim2.new(0,12,0.5,-4),
+        BackgroundColor3 = State and Color3.fromRGB(75,220,125) or Color3.fromRGB(195,20,42),
+        BorderSizePixel = 0,
+        ZIndex = 56
+    })
+    Corner(Dot, {CornerRadius = UDim.new(1,0)})
+
     local TextLabel = Create("TextLabel", TextButton, {
-        TextSize = 14, TextColor3 = Configs_HUB.Cor_Text,
-        Text = State and OffText or OnText,
-        Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 35, 0, 0),
-        BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
-    })
-    local ImageLabel = Create("ImageLabel", TextButton, {
-        Image = "rbxassetid://99956220697276",
-        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
+        TextSize = 12,
+        TextColor3 = Color3.fromRGB(242,242,245),
+        Text = State and OnText or OffText,
+        Size = UDim2.new(1,-100,1,0),
+        Position = UDim2.new(0,28,0,0),
         BackgroundTransparency = 1,
-        ImageColor3 = State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.GothamMedium,
+        ZIndex = 56
     })
+
+    local Status = Create("TextLabel", TextButton, {
+        Size = UDim2.new(0,60,0,22),
+        Position = UDim2.new(1,-70,0.5,-11),
+        BackgroundColor3 = State and Color3.fromRGB(20,70,43) or Color3.fromRGB(65,20,29),
+        BorderSizePixel = 0,
+        Text = State and "ON" or "OFF",
+        Font = Enum.Font.GothamBold,
+        TextSize = 9,
+        TextColor3 = State and Color3.fromRGB(145,245,175) or Color3.fromRGB(255,150,160),
+        ZIndex = 56
+    })
+    Corner(Status, {CornerRadius = UDim.new(0,6)})
+
+    local function ApplyVisual()
+        Dot.BackgroundColor3 = State and Color3.fromRGB(75,220,125) or Color3.fromRGB(195,20,42)
+        Status.BackgroundColor3 = State and Color3.fromRGB(20,70,43) or Color3.fromRGB(65,20,29)
+        Status.TextColor3 = State and Color3.fromRGB(145,245,175) or Color3.fromRGB(255,150,160)
+        Status.Text = State and "ON" or "OFF"
+        TextLabel.Text = State and OnText or OffText
+    end
+
     TextButton.MouseButton1Click:Connect(function()
         State = not State
-        TextLabel.Text = State and OffText or OnText
-        CreateTween(ImageLabel, "ImageColor3", Color3.fromRGB(30, 140, 200), 0.2, true)
-        CreateTween(ImageLabel, "ImageColor3", State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke, 0.2, false)
+        ApplyVisual()
         if State then pcall(OnEnable) else pcall(OnDisable) end
     end)
-    TextSetColor(TextLabel)
+
     return {
-        Button = TextButton, TextLabel = TextLabel,
+        Button = TextButton,
+        TextLabel = TextLabel,
         GetState = function() return State end,
         SetState = function(newState)
-            State = newState
-            TextLabel.Text = State and OffText or OnText
-            ImageLabel.ImageColor3 = State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke
+            State = newState == true
+            ApplyVisual()
         end
     }
 end
@@ -1148,15 +1216,30 @@ end
 -- =============================================
 function AddTextLabel(parent, text)
     local Label = Create("TextLabel", parent, {
-        Size = UDim2.new(1, 0, 0, 100), BackgroundTransparency = 1,
-        Text = text or "Loading...", TextColor3 = Configs_HUB.Cor_Text,
-        TextSize = 13, Font = Configs_HUB.Text_Font,
+        Size = UDim2.new(1,0,0,34),
+        BackgroundColor3 = Color3.fromRGB(22,23,28),
+        BackgroundTransparency = 0,
+        BorderSizePixel = 0,
+        Text = text or "Loading...",
+        TextColor3 = Color3.fromRGB(175,176,184),
+        TextSize = 10,
+        Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        TextWrapped = true, TextScaled = false,
-        AutomaticSize = Enum.AutomaticSize.Y
+        TextYAlignment = Enum.TextYAlignment.Center,
+        TextWrapped = true,
+        TextScaled = false,
+        ZIndex = 55
     })
-    return { Update = function(self, newText) Label.Text = newText end, Label = Label }
+    Corner(Label, {CornerRadius = UDim.new(0,8)})
+    Stroke(Label)
+    Create("UIPadding", Label, {
+        PaddingLeft = UDim.new(0,12),
+        PaddingRight = UDim.new(0,12)
+    })
+    return {
+        Update = function(self, newText) Label.Text = newText end,
+        Label = Label
+    }
 end
 
 -- =============================================
@@ -1180,7 +1263,7 @@ function AddPlayerProfile(parent)
         Position = UDim2.new(0, 12, 0.5, -27.5),
         BackgroundTransparency = 1,
         BackgroundColor3 = Configs_HUB.Cor_Hub,
-        Image = "rbxthumb://type=AvatarHeadShot&id=" .. LP.UserId .. "&w=150&h=150",
+        Image = "",
         ZIndex = 5
     })
     Corner(AvatarImage, { CornerRadius = UDim.new(1, 0) })
@@ -1190,13 +1273,26 @@ function AddPlayerProfile(parent)
     avStroke.Transparency = 0.1
     avStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     avStroke.Parent = AvatarImage
+    task.spawn(function()
+        local ok, content = pcall(function()
+            local image = Players:GetUserThumbnailAsync(
+                LP.UserId,
+                Enum.ThumbnailType.AvatarHeadShot,
+                Enum.ThumbnailSize.Size150x150
+            )
+            return image
+        end)
+        if ok and content and AvatarImage.Parent then
+            AvatarImage.Image = content
+        end
+    end)
 
     -- الاسم
     local NameLabel = Create("TextLabel", ProfileFrame, {
         Size = UDim2.new(1, -80, 0, 22),
         Position = UDim2.new(0, 75, 0, 8),
         BackgroundTransparency = 1,
-        Text = "👤 " .. LP.Name,
+        Text = LP.Name,
         TextColor3 = Color3.fromRGB(255, 255, 255),
         Font = Configs_HUB.Text_Font,
         TextSize = 16,
@@ -1225,7 +1321,7 @@ function AddPlayerProfile(parent)
         Size = UDim2.new(1, -80, 0, 16),
         Position = UDim2.new(0, 75, 0, 48),
         BackgroundTransparency = 1,
-        Text = "🎮 " .. tostring(placeName),
+        Text = tostring(placeName),
         TextColor3 = Configs_HUB.Cor_DarkText,
         Font = Configs_HUB.Text_Font,
         TextSize = 12,
@@ -1274,160 +1370,187 @@ end
 -- ADDDROPDOWN
 -- =============================================
 function AddDropdown(parent, Configs)
-    local DropdownName = Configs.Name or "Dropdown!!"
-    local Options = Configs.Options or {"1", "2", "3"}
+    local DropdownName = Configs.Name or "Dropdown"
+    local Options = Configs.Options or {"1","2","3"}
     local Default = Configs.Default or Options[1]
     local Callback = Configs.Callback or function() end
-    local Searchable = Configs.Searchable or false
-    
+    local Searchable = Configs.Searchable == true
+
     local MainFrame = Create("Frame", parent, {
-        Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1, Name = "DropdownContainer"
+        Size = UDim2.new(1,0,0,38),
+        BackgroundTransparency = 1,
+        Name = "DropdownContainer",
+        ClipsDescendants = false,
+        ZIndex = 60
     })
-    
+
     local TextButton = Create("TextButton", MainFrame, {
-        Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = Configs_HUB.Cor_Options,
-        Name = "Header", Text = "", AutoButtonColor = false
-    }) 
-    
-    local dropdownStroke = Stroke(TextButton, { Color = Configs_HUB.Cor_Stroke, Thickness = 2 })
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Configs_HUB.Cor_Stroke),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 100, 255)),
-        ColorSequenceKeypoint.new(1, Configs_HUB.Cor_Stroke)
-    }
-    gradient.Rotation = 0
-    gradient.Parent = dropdownStroke
-    coroutine.wrap(function()
-        while dropdownStroke.Parent do
-            gradient.Rotation = (gradient.Rotation + 1) % 360
-            RunService.RenderStepped:Wait()
-        end
-    end)()
-    Corner(TextButton)
-    
+        Size = UDim2.new(1,0,0,38),
+        BackgroundColor3 = Color3.fromRGB(27,28,34),
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false,
+        ZIndex = 61
+    })
+    Corner(TextButton, {CornerRadius = UDim.new(0,9)})
+    Stroke(TextButton)
+
     local TextLabel = Create("TextLabel", TextButton, {
-        TextSize = 12, TextColor3 = Configs_HUB.Cor_Text, Text = DropdownName,
-        Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 10, 0, 0),
-        BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
+        Size = UDim2.new(1,-48,1,0),
+        Position = UDim2.new(0,12,0,0),
+        BackgroundTransparency = 1,
+        Text = DropdownName,
+        TextColor3 = Color3.fromRGB(240,240,244),
+        TextSize = 11,
+        Font = Enum.Font.GothamMedium,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        ZIndex = 62
     })
-    TextSetColor(TextLabel)
-    
-    local Arrow = Create("ImageLabel", TextButton, {
-        Image = "rbxassetid://6031090998",
-        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(1, -25, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5), BackgroundTransparency = 1,
-        ImageColor3 = Configs_HUB.Cor_Text
+
+    Create("TextLabel", TextButton, {
+        Size = UDim2.new(0,24,1,0),
+        Position = UDim2.new(1,-32,0,0),
+        BackgroundTransparency = 1,
+        Text = "⌄",
+        TextColor3 = Color3.fromRGB(180,181,188),
+        TextSize = 15,
+        Font = Enum.Font.GothamBold,
+        ZIndex = 62
     })
-    
+
     local DropdownFrame = Create("ScrollingFrame", MainFrame, {
-        Size = UDim2.new(1, 0, 0, 0), Position = UDim2.new(0, 0, 0, 30),
-        BackgroundColor3 = Configs_HUB.Cor_Options, BackgroundTransparency = 0.1,
-        ClipsDescendants = true, Visible = false, ScrollBarThickness = 3,
-        ScrollBarImageColor3 = Configs_HUB.Cor_Stroke, CanvasSize = UDim2.new(0, 0, 0, 0),
-        AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 20
+        Size = UDim2.new(1,0,0,0),
+        Position = UDim2.new(0,0,0,42),
+        BackgroundColor3 = Color3.fromRGB(18,19,23),
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        Visible = false,
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Color3.fromRGB(180,20,40),
+        CanvasSize = UDim2.new(0,0,0,0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ZIndex = 90
     })
-    Corner(DropdownFrame); Stroke(DropdownFrame)
-    
+    Corner(DropdownFrame, {CornerRadius = UDim.new(0,9)})
+    Stroke(DropdownFrame)
+
     Create("UIListLayout", DropdownFrame, {
-        Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder
+        Padding = UDim.new(0,4),
+        SortOrder = Enum.SortOrder.LayoutOrder
     })
     Create("UIPadding", DropdownFrame, {
-        PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4),
-        PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4)
+        PaddingLeft = UDim.new(0,6),
+        PaddingRight = UDim.new(0,6),
+        PaddingTop = UDim.new(0,6),
+        PaddingBottom = UDim.new(0,6)
     })
-    
+
     local SearchBox
     if Searchable then
         SearchBox = Create("TextBox", DropdownFrame, {
-            Size = UDim2.new(1, 0, 0, 25), BackgroundColor3 = Configs_HUB.Cor_Hub,
-            TextColor3 = Configs_HUB.Cor_Text, PlaceholderText = "ابحث...",
-            Font = Configs_HUB.Text_Font, TextSize = 12,
+            Size = UDim2.new(1,0,0,28),
+            BackgroundColor3 = Color3.fromRGB(28,29,35),
+            BorderSizePixel = 0,
+            Text = "",
+            PlaceholderText = "بحث...",
+            PlaceholderColor3 = Color3.fromRGB(120,121,130),
+            TextColor3 = Color3.fromRGB(240,240,244),
+            Font = Enum.Font.Gotham,
+            TextSize = 11,
             TextXAlignment = Enum.TextXAlignment.Left,
-            ClearTextOnFocus = false, ZIndex = 25
+            ClearTextOnFocus = false,
+            ZIndex = 91
         })
-        Corner(SearchBox); Stroke(SearchBox)
+        Corner(SearchBox, {CornerRadius = UDim.new(0,7)})
         SearchBox.LayoutOrder = -1
     end
-    
+
     local Selected = Default
     local expanded = false
     local currentSearchText = ""
-    
+
     local function GetTargetHeight()
-        local count = #Options
-        local totalH = count * 22 + 8
-        if Searchable then totalH = totalH + 30 end
-        return math.min(totalH, 150)
+        local count = math.max(1,#Options)
+        local totalH = count * 30 + 18
+        if Searchable then totalH = totalH + 34 end
+        return math.min(totalH, 180)
     end
-    
+
     local function UpdateButtons()
         for _, child in ipairs(DropdownFrame:GetChildren()) do
             if child:IsA("TextButton") then child:Destroy() end
         end
-        local filteredOptions = {}
-        if currentSearchText ~= "" then
-            for _, option in ipairs(Options) do
-                if string.find(string.lower(option), string.lower(currentSearchText), 1, true) then
-                    table.insert(filteredOptions, option)
-                end
+
+        local filtered = {}
+        for _, option in ipairs(Options) do
+            option = tostring(option)
+            if currentSearchText == "" or string.find(option:lower(), currentSearchText:lower(),1,true) then
+                table.insert(filtered, option)
             end
-        else
-            filteredOptions = Options
         end
-        
-        for _, option in ipairs(filteredOptions) do
+
+        for _, option in ipairs(filtered) do
             local btn = Create("TextButton", DropdownFrame, {
-                Size = UDim2.new(1, 0, 0, 20), BackgroundColor3 = Configs_HUB.Cor_Hub,
-                Text = option, TextColor3 = Configs_HUB.Cor_Text, TextSize = 12,
-                Font = Configs_HUB.Text_Font, AutoButtonColor = false, ZIndex = 21
+                Size = UDim2.new(1,0,0,28),
+                BackgroundColor3 = Color3.fromRGB(27,28,34),
+                BorderSizePixel = 0,
+                Text = option,
+                TextColor3 = Color3.fromRGB(235,235,240),
+                TextSize = 11,
+                Font = Enum.Font.Gotham,
+                AutoButtonColor = false,
+                ZIndex = 92
             })
-            Corner(btn)
+            Corner(btn, {CornerRadius = UDim.new(0,7)})
             btn.MouseButton1Click:Connect(function()
                 Selected = option
                 TextLabel.Text = DropdownName .. ": " .. option
-                Callback(option)
+                pcall(Callback, option)
                 expanded = false
                 currentSearchText = ""
                 if SearchBox then SearchBox.Text = "" end
-                CreateTween(DropdownFrame, "Size", UDim2.new(1, 0, 0, 0), 0.2, true)
                 DropdownFrame.Visible = false
-                CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 28), 0.2, false)
+                MainFrame.Size = UDim2.new(1,0,0,38)
             end)
         end
-        
+
         if expanded then
-            local targetH = GetTargetHeight()
-            DropdownFrame.Size = UDim2.new(1, 0, 0, targetH)
-            MainFrame.Size = UDim2.new(1, 0, 0, 30 + targetH)
+            local h = GetTargetHeight()
+            DropdownFrame.Size = UDim2.new(1,0,0,h)
+            MainFrame.Size = UDim2.new(1,0,0,42+h)
         end
     end
-    
+
     UpdateButtons()
-    
+
     if SearchBox then
         SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
             currentSearchText = SearchBox.Text
             UpdateButtons()
         end)
     end
-    
+
     TextButton.MouseButton1Click:Connect(function()
         expanded = not expanded
         if expanded then
+            UpdateButtons()
             DropdownFrame.Visible = true
-            local targetH = GetTargetHeight()
-            CreateTween(DropdownFrame, "Size", UDim2.new(1, 0, 0, targetH), 0.2, false)
-            CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 30 + targetH), 0.2, false)
+            local h = GetTargetHeight()
+            DropdownFrame.Size = UDim2.new(1,0,0,h)
+            MainFrame.Size = UDim2.new(1,0,0,42+h)
         else
-            CreateTween(DropdownFrame, "Size", UDim2.new(1, 0, 0, 0), 0.2, true)
             DropdownFrame.Visible = false
-            CreateTween(MainFrame, "Size", UDim2.new(1, 0, 0, 28), 0.2, false)
+            DropdownFrame.Size = UDim2.new(1,0,0,0)
+            MainFrame.Size = UDim2.new(1,0,0,38)
         end
     end)
-    
+
     return {
-        Update = function(self, newOptions) Options = newOptions UpdateButtons() end,
+        Update = function(self,newOptions)
+            Options = newOptions or {}
+            UpdateButtons()
+        end,
         GetSelected = function(self) return Selected end
     }
 end
