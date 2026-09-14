@@ -15,10 +15,12 @@ local __MonetorProblemBody
 local __MonetorProblemCount = 0
 
 local function __MonetorGetGuiParent()
-    local ok, core = pcall(function() return game:GetService("CoreGui") end)
-    if ok and core then return core end
-    local ok2, players = pcall(function() return game:GetService("Players") end)
-    if ok2 and players and players.LocalPlayer then
+    local ok, hui = pcall(function() return gethui and gethui() end)
+    if ok and hui then return hui end
+    local ok2, core = pcall(function() return game:GetService("CoreGui") end)
+    if ok2 and core then return core end
+    local ok3, players = pcall(function() return game:GetService("Players") end)
+    if ok3 and players and players.LocalPlayer then
         return players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
     end
 end
@@ -193,7 +195,11 @@ pcall(function()
     end)
 end)
 
-local function __MonetorMain()
+
+-- =========================================================
+-- ROBUST LOADER
+-- =========================================================
+local __MonetorSource = [==[
 -- =============================================
 -- MONETOR X (FULL EDITION + AVATAR + USAGE + CREDITS)
 -- Developed by @monetor_
@@ -3559,20 +3565,25 @@ MakeNotifi({
 })
 
 print("✅ Monetor X Loaded Successfully! by @monetor_")
-end
+]==]
 
-local __ok, __err = xpcall(__MonetorMain, function(err)
-    local trace = tostring(err)
-    pcall(function()
-        if debug and debug.traceback then
-            trace = debug.traceback(trace, 2)
-        end
-    end)
-    return trace
-end)
-
-if not __ok then
-    __MonetorReportError(__err)
+local __load = loadstring
+if type(__load) ~= "function" then
+    __MonetorReportError("loadstring غير متوفر في بيئة التشغيل الحالية.")
 else
-    print("[Monetor X] Loaded successfully.")
+    local __chunk, __compileErr = __load(__MonetorSource, "Monetor X")
+    if not __chunk then
+        __MonetorReportError("Syntax/Compile Error:\n" .. tostring(__compileErr))
+    else
+        local __ok, __runtimeErr = xpcall(__chunk, function(err)
+            local trace = tostring(err)
+            pcall(function() if debug and debug.traceback then trace = debug.traceback(trace, 2) end end)
+            return trace
+        end)
+        if not __ok then
+            __MonetorReportError(__runtimeErr)
+        else
+            print("[Monetor X] Loaded successfully.")
+        end
+    end
 end
