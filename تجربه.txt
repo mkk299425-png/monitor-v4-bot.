@@ -1,208 +1,6 @@
--- =========================================================
--- MONETOR X - DEBUG RUNNER
--- إذا السكربت فشل، راح يطبع الخطأ + Stack Trace
--- وإذا setclipboard متوفر، ينسخ الخطأ تلقائياً للحافظة.
--- =========================================================
-local __MonetorDebugSource = "Monetor X"
-
--- =========================================================
--- MONETOR X - PROBLEM PANEL
--- يعرض أخطاء التشغيل داخل الواجهة مع نسخ/مسح.
--- لا يغيّر وظائف السكربت الأصلية.
--- =========================================================
-local __MonetorProblemGui
-local __MonetorProblemBody
-local __MonetorProblemCount = 0
-
-local function __MonetorGetGuiParent()
-    local ok, hui = pcall(function() return gethui and gethui() end)
-    if ok and hui then return hui end
-    local ok2, core = pcall(function() return game:GetService("CoreGui") end)
-    if ok2 and core then return core end
-    local ok3, players = pcall(function() return game:GetService("Players") end)
-    if ok3 and players and players.LocalPlayer then
-        return players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
-    end
-end
-
-local function __MonetorMakeProblemPanel()
-    if __MonetorProblemGui then return __MonetorProblemGui end
-    local parent = __MonetorGetGuiParent()
-    if not parent then return nil end
-
-    local ok, gui = pcall(function()
-        local old = parent:FindFirstChild("MonetorX_ProblemPanel")
-        if old then old:Destroy() end
-        local g = Instance.new("ScreenGui")
-        g.Name = "MonetorX_ProblemPanel"
-        g.ResetOnSpawn = false
-        g.IgnoreGuiInset = true
-        g.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        g.Parent = parent
-
-        local frame = Instance.new("Frame")
-        frame.Name = "Panel"
-        frame.Size = UDim2.new(0, 430, 0, 260)
-        frame.Position = UDim2.new(0.5, -215, 0.5, -130)
-        frame.BackgroundColor3 = Color3.fromRGB(12, 15, 24)
-        frame.BorderSizePixel = 0
-        frame.Parent = g
-
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 12)
-        corner.Parent = frame
-        local stroke = Instance.new("UIStroke")
-        stroke.Color = Color3.fromRGB(255, 80, 80)
-        stroke.Thickness = 1.5
-        stroke.Parent = frame
-
-        local title = Instance.new("TextLabel")
-        title.Name = "Title"
-        title.Size = UDim2.new(1, -24, 0, 36)
-        title.Position = UDim2.new(0, 12, 0, 8)
-        title.BackgroundTransparency = 1
-        title.Text = "Monetor X  |  لوحة المشاكل"
-        title.TextColor3 = Color3.fromRGB(255, 110, 110)
-        title.TextSize = 18
-        title.Font = Enum.Font.GothamBold
-        title.TextXAlignment = Enum.TextXAlignment.Left
-        title.Parent = frame
-
-        local count = Instance.new("TextLabel")
-        count.Name = "Count"
-        count.Size = UDim2.new(0, 80, 0, 24)
-        count.Position = UDim2.new(1, -92, 0, 14)
-        count.BackgroundTransparency = 1
-        count.Text = "0 أخطاء"
-        count.TextColor3 = Color3.fromRGB(170, 180, 200)
-        count.TextSize = 12
-        count.Font = Enum.Font.Gotham
-        count.Parent = frame
-
-        local body = Instance.new("TextBox")
-        body.Name = "Errors"
-        body.Size = UDim2.new(1, -24, 1, -104)
-        body.Position = UDim2.new(0, 12, 0, 50)
-        body.BackgroundColor3 = Color3.fromRGB(20, 24, 36)
-        body.BorderSizePixel = 0
-        body.ClearTextOnFocus = false
-        body.MultiLine = true
-        body.TextEditable = false
-        body.Text = "لا توجد مشاكل حتى الآن."
-        body.TextColor3 = Color3.fromRGB(235, 240, 248)
-        body.TextSize = 13
-        body.Font = Enum.Font.Code
-        body.TextXAlignment = Enum.TextXAlignment.Left
-        body.TextYAlignment = Enum.TextYAlignment.Top
-        body.TextWrapped = false
-        body.Parent = frame
-        local bc = Instance.new("UICorner")
-        bc.CornerRadius = UDim.new(0, 8)
-        bc.Parent = body
-
-        local copy = Instance.new("TextButton")
-        copy.Name = "Copy"
-        copy.Size = UDim2.new(0, 120, 0, 34)
-        copy.Position = UDim2.new(0, 12, 1, -46)
-        copy.BackgroundColor3 = Color3.fromRGB(36, 44, 64)
-        copy.BorderSizePixel = 0
-        copy.Text = "نسخ الخطأ"
-        copy.TextColor3 = Color3.fromRGB(240, 245, 255)
-        copy.TextSize = 13
-        copy.Font = Enum.Font.GothamSemibold
-        copy.Parent = frame
-        local cc = Instance.new("UICorner")
-        cc.CornerRadius = UDim.new(0, 8)
-        cc.Parent = copy
-
-        local clear = Instance.new("TextButton")
-        clear.Name = "Clear"
-        clear.Size = UDim2.new(0, 120, 0, 34)
-        clear.Position = UDim2.new(0, 140, 1, -46)
-        clear.BackgroundColor3 = Color3.fromRGB(36, 44, 64)
-        clear.BorderSizePixel = 0
-        clear.Text = "مسح"
-        clear.TextColor3 = Color3.fromRGB(240, 245, 255)
-        clear.TextSize = 13
-        clear.Font = Enum.Font.GothamSemibold
-        clear.Parent = frame
-        local clc = Instance.new("UICorner")
-        clc.CornerRadius = UDim.new(0, 8)
-        clc.Parent = clear
-
-        copy.MouseButton1Click:Connect(function()
-            pcall(function()
-                if setclipboard then setclipboard(body.Text) end
-            end)
-        end)
-        clear.MouseButton1Click:Connect(function()
-            __MonetorProblemCount = 0
-            body.Text = "تم مسح المشاكل."
-            count.Text = "0 أخطاء"
-        end)
-
-        __MonetorProblemBody = body
-        return g
-    end)
-    if ok then __MonetorProblemGui = gui end
-    return __MonetorProblemGui
-end
-
-local function __MonetorAddProblem(message)
-    local panel = __MonetorMakeProblemPanel()
-    if not panel or not __MonetorProblemBody then return end
-    __MonetorProblemCount += 1
-    local text = tostring(message)
-    if __MonetorProblemCount == 1 then
-        __MonetorProblemBody.Text = "[1] " .. text
-    else
-        __MonetorProblemBody.Text = __MonetorProblemBody.Text .. "\n\n[" .. __MonetorProblemCount .. "] " .. text
-    end
-    local count = panel:FindFirstChild("Panel") and panel.Panel:FindFirstChild("Count")
-    if count then count.Text = tostring(__MonetorProblemCount) .. " أخطاء" end
-end
-
--- أنشئ اللوحة مبكراً حتى تظهر حتى لو فشل السكربت أثناء البداية.
-pcall(__MonetorMakeProblemPanel)
-
-local function __MonetorReportError(err)
-    local trace = tostring(err)
-    pcall(function()
-        if debug and debug.traceback then
-            trace = debug.traceback(trace, 2)
-        end
-    end)
-
-    warn("========== MONETOR X ERROR ==========")
-    warn(trace)
-    warn("========== END MONETOR X ERROR ======")
-    __MonetorAddProblem(trace)
-
-    pcall(function()
-        if setclipboard then
-            setclipboard(trace)
-            warn("[Monetor X] تم نسخ الخطأ للحافظة.")
-        end
-    end)
-end
-
--- التقاط أخطاء Runtime التي تحدث خارج xpcall أيضاً.
-pcall(function()
-    game:GetService("LogService").MessageOut:Connect(function(message, messageType)
-        if messageType == Enum.MessageType.MessageError then
-            __MonetorAddProblem(message)
-        end
-    end)
-end)
-
-
--- =========================================================
--- ROBUST LOADER
--- =========================================================
-local __MonetorSource = [==[
 -- =============================================
 -- MONETOR X (FULL EDITION + AVATAR + USAGE + CREDITS)
--- Developed by @monetor_
+-- Developed by @sjbcjjs0
 -- =============================================
 
 local Players = game:GetService("Players")
@@ -217,16 +15,13 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local HttpService = game:GetService("HttpService")
 
 local Configs_HUB = {
-    Cor_Hub = Color3.fromRGB(8, 11, 20),
-    Cor_Options = Color3.fromRGB(16, 22, 36),
-    Cor_Stroke = Color3.fromRGB(74, 211, 255),
-    Cor_Text = Color3.fromRGB(242, 248, 255),
-    Cor_DarkText = Color3.fromRGB(151, 166, 190),
-    Cor_Accent = Color3.fromRGB(74, 211, 255),
-    Cor_Accent2 = Color3.fromRGB(124, 92, 255),
-    Cor_Success = Color3.fromRGB(83, 231, 157),
-    Corner_Radius = UDim.new(0, 12),
-    Text_Font = Enum.Font.GothamSemibold
+    Cor_Hub = Color3.fromRGB(15, 15, 15),
+    Cor_Options = Color3.fromRGB(30, 30, 30),
+    Cor_Stroke = Color3.fromRGB(255, 255, 255),
+    Cor_Text = Color3.fromRGB(255, 255, 255),
+    Cor_DarkText = Color3.fromRGB(180, 180, 180),
+    Corner_Radius = UDim.new(0, 15),
+    Text_Font = Enum.Font.FredokaOne
 }
 
 -- =============================================
@@ -259,21 +54,23 @@ local function Stroke(parent, props)
     local new = Create("UIStroke", parent)
     new.Color = Configs_HUB.Cor_Stroke
     new.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    new.Thickness = 1.2
+    new.Thickness = 2
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Configs_HUB.Cor_Accent),
-        ColorSequenceKeypoint.new(0.5, Configs_HUB.Cor_Accent2),
-        ColorSequenceKeypoint.new(1, Configs_HUB.Cor_Accent)
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(180, 180, 180)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 15, 15)),
+        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(90, 90, 90)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
     }
     gradient.Rotation = 0
     gradient.Parent = new
-    task.spawn(function()
+    coroutine.wrap(function()
         while new.Parent do
-            gradient.Rotation = (gradient.Rotation + 1.5) % 360
+            gradient.Rotation = (gradient.Rotation + 2) % 360
             RunService.RenderStepped:Wait()
         end
-    end)
+    end)()
     if props then SetProps(new, props) end
     return new
 end
@@ -299,6 +96,154 @@ end
 -- SCREEN GUI
 -- =============================================
 local ScreenGui = Create("ScreenGui", CoreGui, { Name = "Monetor_Hub" })
+-- =============================================
+-- CREDITS PANEL (DEFINED EARLY TO AVOID LOCAL REGISTER LIMIT)
+-- =============================================
+local CreditsPanel = nil
+
+
+local function CreateCreditsPanel()
+    if CreditsPanel and CreditsPanel.Parent then
+        CreditsPanel.Visible = not CreditsPanel.Visible
+        return
+    end
+
+    CreditsPanel = Create("Frame", ScreenGui, {
+        Name = "Monetor_CreditsPanel",
+        Size = UDim2.new(0, 320, 0, 380),
+        Position = UDim2.new(0.5, -160, 0.5, -190),
+        BackgroundColor3 = Configs_HUB.Cor_Hub,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0, Active = true, Draggable = true, ZIndex = 200
+    })
+    Corner(CreditsPanel); Stroke(CreditsPanel)
+
+    local CloseBtn = Create("TextButton", CreditsPanel, {
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -35, 0, 5),
+        BackgroundTransparency = 1,
+        Text = "×",
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 24,
+        AutoButtonColor = false, ZIndex = 205
+    })
+    CloseBtn.Activated:Connect(function() CreditsPanel.Visible = false end)
+
+    -- عنوان
+    Create("TextLabel", CreditsPanel, {
+        Size = UDim2.new(1, 0, 0, 30),
+        Position = UDim2.new(0, 0, 0, 12),
+        BackgroundTransparency = 1,
+        Text = "️ حقوق Monetor X",
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 22,
+        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
+    })
+
+    -- الأفتار الدائري للمطور
+    local devAvatar = Create("ImageLabel", CreditsPanel, {
+        Size = UDim2.new(0, 80, 0, 80),
+        Position = UDim2.new(0.5, -40, 0, 50),
+        BackgroundTransparency = 1,
+        BackgroundColor3 = Configs_HUB.Cor_Options,
+        Image = "rbxassetid://0", ZIndex = 202
+    })
+    Corner(devAvatar, { CornerRadius = UDim.new(1, 0) })
+    local devStroke = Instance.new("UIStroke")
+    devStroke.Thickness = 2
+    devStroke.Color = Color3.fromRGB(255, 255, 255)
+    devStroke.Transparency = 0.1
+    devStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    devStroke.Parent = devAvatar
+
+    -- جلب أفتار المطور
+    task.spawn(function()
+        local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync("sjbcjjs0") end)
+        if ok and userId and type(userId) == "number" then
+            pcall(function()
+                devAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(userId) .. "&w=150&h=150"
+            end)
+        end
+    end)
+
+    -- اسم المطور
+    Create("TextLabel", CreditsPanel, {
+        Size = UDim2.new(1, 0, 0, 25),
+        Position = UDim2.new(0, 0, 0, 138),
+        BackgroundTransparency = 1,
+        Text = "@sjbcjjs0",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Configs_HUB.Text_Font,
+        TextSize = 18,
+        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
+    })
+
+    Create("TextLabel", CreditsPanel, {
+        Size = UDim2.new(1, 0, 0, 18),
+        Position = UDim2.new(0, 0, 0, 163),
+        BackgroundTransparency = 1,
+        Text = "المطور الرئيسي",
+        TextColor3 = Configs_HUB.Cor_DarkText,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
+    })
+
+    -- معلومات السكربت
+    local infoBox = Create("Frame", CreditsPanel, {
+        Size = UDim2.new(1, -30, 0, 130),
+        Position = UDim2.new(0, 15, 0, 190),
+        BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.4,
+        BorderSizePixel = 0, ZIndex = 202
+    })
+    Corner(infoBox); Stroke(infoBox)
+
+    local infoText = [[
+ Script: MONETOR X
+ Version: 2.0 Full Edition
+ Platform: Roblox
+ Type: Universal Multi-Feature
+
+ Features:
+ • Flight System
+ • Advanced ESP
+ • Combat Tools
+ • Target Stick
+ • Auto Refresh
+ • Troll System
+ • Bypass Protection
+]]
+
+    Create("TextLabel", infoBox, {
+        Size = UDim2.new(1, -20, 1, -20),
+        Position = UDim2.new(0, 10, 0, 10),
+        BackgroundTransparency = 1,
+        Text = infoText,
+        TextColor3 = Configs_HUB.Cor_Text,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        TextWrapped = true, ZIndex = 203
+    })
+
+    -- حقوق النشر
+    Create("TextLabel", CreditsPanel, {
+        Size = UDim2.new(1, 0, 0, 18),
+        Position = UDim2.new(0, 0, 1, -25),
+        BackgroundTransparency = 1,
+        Text = "© 2025 Monetor X — All Rights Reserved",
+        TextColor3 = Configs_HUB.Cor_DarkText,
+        Font = Configs_HUB.Text_Font,
+        TextSize = 10,
+        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
+    })
+end
+
+
 
 local ClickSound = Instance.new("Sound", ScreenGui)
 ClickSound.SoundId = "rbxassetid://88442833509532"
@@ -324,14 +269,7 @@ end)
 local ScreenFind = CoreGui:FindFirstChild(ScreenGui.Name)
 if ScreenFind and ScreenFind ~= ScreenGui then ScreenFind:Destroy() end
 
-local CleanupScript = function() end
-
-function DestroyScript()
-    pcall(CleanupScript)
-    pcall(function()
-        if ScreenGui then ScreenGui:Destroy() end
-    end)
-end
+function DestroyScript() pcall(function() ScreenGui:Destroy() end) end
 
 -- =============================================
 -- NOTIFICATION SYSTEM
@@ -778,101 +716,47 @@ Corner(Menu); Stroke(Menu)
 local BackgroundFX = Create("Frame", Menu, {
     Name = "Monetor_BackgroundFX",
     Size = UDim2.new(1, 0, 1, 0),
-    BackgroundColor3 = Color3.fromRGB(6, 9, 17),
-    BackgroundTransparency = 0,
-    BorderSizePixel = 0,
-    ClipsDescendants = true,
-    ZIndex = 0
+    BackgroundColor3 = Color3.fromRGB(5, 5, 5),
+    BackgroundTransparency = 0, BorderSizePixel = 0,
+    ClipsDescendants = true, ZIndex = 0
 })
 Corner(BackgroundFX)
 
-local BackgroundGradient = Instance.new("UIGradient")
-BackgroundGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(5, 10, 20)),
-    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(10, 8, 25)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 14, 22))
-}
-BackgroundGradient.Rotation = 20
-BackgroundGradient.Parent = BackgroundFX
-
-task.spawn(function()
-    while BackgroundFX.Parent do
-        BackgroundGradient.Rotation = (BackgroundGradient.Rotation + 0.35) % 360
-        RunService.RenderStepped:Wait()
-    end
-end)
-
-local SportGlowData = {
-    {Size = 170, X = -0.08, Y = -0.05, DX = 0.22, DY = 0.16, Color = Color3.fromRGB(0, 190, 255), Duration = 10},
-    {Size = 135, X = 0.18, Y = 0.58, DX = 0.18, DY = -0.14, Color = Color3.fromRGB(124, 92, 255), Duration = 13},
-    {Size = 155, X = 0.64, Y = -0.10, DX = -0.18, DY = 0.20, Color = Color3.fromRGB(45, 220, 255), Duration = 12},
-    {Size = 115, X = 0.78, Y = 0.55, DX = -0.20, DY = -0.12, Color = Color3.fromRGB(150, 80, 255), Duration = 11},
-    {Size = 100, X = 0.42, Y = 0.70, DX = 0.15, DY = -0.16, Color = Color3.fromRGB(0, 155, 255), Duration = 14}
+local RedGlowData = {
+    {Size = 170, X = -0.05, Y = 0.05, DX = 0.22, DY = 0.10, Duration = 13},
+    {Size = 125, X = 0.20, Y = 0.58, DX = -0.18, DY = 0.13, Duration = 16},
+    {Size = 150, X = 0.58, Y = -0.10, DX = 0.16, DY = 0.18, Duration = 15},
+    {Size = 105, X = 0.78, Y = 0.48, DX = -0.20, DY = -0.12, Duration = 14},
+    {Size = 135, X = 0.38, Y = 0.72, DX = 0.18, DY = -0.16, Duration = 17},
+    {Size = 90, X = 0.05, Y = 0.30, DX = 0.15, DY = -0.10, Duration = 12}
 }
 
-for index, data in ipairs(SportGlowData) do
+for index, data in ipairs(RedGlowData) do
     local glow = Create("Frame", BackgroundFX, {
-        Name = "SportGlow_" .. index,
+        Name = "RedGlow_" .. index,
         Size = UDim2.new(0, data.Size, 0, data.Size),
         Position = UDim2.new(data.X, 0, data.Y, 0),
-        BackgroundColor3 = data.Color,
-        BackgroundTransparency = 0.88,
-        BorderSizePixel = 0,
-        ZIndex = 0
+        BackgroundColor3 = Color3.fromRGB(170, 0, 0),
+        BackgroundTransparency = 0.82, BorderSizePixel = 0, ZIndex = 0
     })
     Corner(glow, {CornerRadius = UDim.new(1, 0)})
-
-    local glowGradient = Instance.new("UIGradient")
-    glowGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, data.Color),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
-    }
-    glowGradient.Transparency = NumberSequence.new{
-        NumberSequenceKeypoint.new(0, 0.15),
-        NumberSequenceKeypoint.new(1, 1)
-    }
-    glowGradient.Parent = glow
-
     task.spawn(function()
         local baseX, baseY = data.X, data.Y
         while glow.Parent do
-            local targetX = math.clamp(baseX + data.DX, -0.15, 0.90)
-            local targetY = math.clamp(baseY + data.DY, -0.15, 0.85)
-            local t1 = TweenService:Create(glow,
+            local targetX = math.clamp(baseX + data.DX, -0.12, 0.90)
+            local targetY = math.clamp(baseY + data.DY, -0.12, 0.82)
+            local tweenOut = TweenService:Create(glow,
                 TweenInfo.new(data.Duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                {Position = UDim2.new(targetX, 0, targetY, 0), BackgroundTransparency = 0.78})
-            t1:Play()
-            t1.Completed:Wait()
+                {Position = UDim2.new(targetX, 0, targetY, 0), BackgroundTransparency = 0.74})
+            tweenOut:Play(); tweenOut.Completed:Wait()
             if not glow.Parent then break end
-            local t2 = TweenService:Create(glow,
+            local tweenBack = TweenService:Create(glow,
                 TweenInfo.new(data.Duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                {Position = UDim2.new(baseX, 0, baseY, 0), BackgroundTransparency = 0.90})
-            t2:Play()
-            t2.Completed:Wait()
+                {Position = UDim2.new(baseX, 0, baseY, 0), BackgroundTransparency = 0.84})
+            tweenBack:Play(); tweenBack.Completed:Wait()
         end
     end)
 end
-
-local AccentLine = Create("Frame", BackgroundFX, {
-    Size = UDim2.new(0, 190, 0, 2),
-    Position = UDim2.new(-0.35, 0, 0.92, 0),
-    BackgroundColor3 = Configs_HUB.Cor_Accent,
-    BorderSizePixel = 0,
-    ZIndex = 1
-})
-Corner(AccentLine, {CornerRadius = UDim.new(1, 0)})
-
-task.spawn(function()
-    while AccentLine.Parent do
-        local tween = TweenService:Create(AccentLine,
-            TweenInfo.new(4.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-            {Position = UDim2.new(1.05, 0, 0.92, 0)})
-        tween:Play()
-        tween.Completed:Wait()
-        if not AccentLine.Parent then break end
-        AccentLine.Position = UDim2.new(-0.35, 0, 0.92, 0)
-    end
-end)
 
 local IntroSound = Instance.new("Sound")
 IntroSound.SoundId = "rbxassetid://8426701399"
@@ -923,12 +807,12 @@ Create("ImageLabel", TopBar, {
     Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(0, 8, 0.5, 0),
     AnchorPoint = Vector2.new(0, 0.5), BackgroundTransparency = 1,
     Image = "rbxassetid://89949755377207",
-    ImageColor3 = Configs_HUB.Cor_Accent, ZIndex = 20
+    ImageColor3 = Color3.fromRGB(255, 255, 255), ZIndex = 20
 })
 local NameFrame = Create("Frame", TopBar, {
     Size = UDim2.new(0, 0, 0, 25), AutomaticSize = Enum.AutomaticSize.X,
     Position = UDim2.new(0, 38, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5),
-    BackgroundColor3 = Color3.fromRGB(12, 18, 31), BackgroundTransparency = 0.05, ZIndex = 11
+    BackgroundColor3 = Configs_HUB.Cor_Options, BackgroundTransparency = 0.15, ZIndex = 11
 })
 Corner(NameFrame); Stroke(NameFrame)
 local Title = Create("TextLabel", NameFrame, {
@@ -940,10 +824,10 @@ local Title = Create("TextLabel", NameFrame, {
 })
 local Padding = Instance.new("UIPadding"); Padding.PaddingLeft = UDim.new(0, 10); Padding.PaddingRight = UDim.new(0, 10); Padding.Parent = NameFrame
 local TextGradient = Instance.new("UIGradient"); TextGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(242, 248, 255)),
-    ColorSequenceKeypoint.new(0.35, Configs_HUB.Cor_Accent),
-    ColorSequenceKeypoint.new(0.7, Configs_HUB.Cor_Accent2),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(242, 248, 255))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(180, 180, 180)),
+    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(90, 90, 90)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
 }
 TextGradient.Parent = Title
 task.spawn(function()
@@ -990,7 +874,7 @@ local function CreateClose()
     Corner(CloseGui)
     local CloseMenu = Create("Frame", CloseGui, {
         Size = UDim2.new(), AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1,
+        Position = UDim2.new(0.5, 0, 0.5, 0), Transparency = 1,
         BackgroundColor3 = Configs_HUB.Cor_Hub
     })
     Corner(CloseMenu); Stroke(CloseMenu)
@@ -1004,14 +888,14 @@ local function CreateClose()
     local Confirm = Create("TextButton", CloseMenu, {
         Size = UDim2.new(0.35, 0, 0.3, 0), Position = UDim2.new(0.1, 0, 0.5, 0),
         BackgroundColor3 = Configs_HUB.Cor_Hub, Text = "نعم",
-        Font = Configs_HUB.Text_Font, TextColor3 = Configs_HUB.Cor_Accent, TextSize = 20
+        Font = Configs_HUB.Text_Font, TextColor3 = Color3.fromRGB(240, 0, 0), TextSize = 20
     })
     Corner(Confirm); Stroke(Confirm)
     local Cancel = Create("TextButton", CloseMenu, {
         Size = UDim2.new(0.35, 0, 0.3, 0), Position = UDim2.new(0.9, 0, 0.5, 0),
         AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = Configs_HUB.Cor_Hub,
         Text = "لا", Font = Configs_HUB.Text_Font,
-        TextColor3 = Configs_HUB.Cor_Success, TextSize = 20
+        TextColor3 = Color3.fromRGB(0, 240, 0), TextSize = 20
     })
     Corner(Cancel); Stroke(Cancel)
     local function SetVisible()
@@ -1019,10 +903,10 @@ local function CreateClose()
     end
     SetVisible()
     Menu:GetPropertyChangedSignal("Size"):Connect(SetVisible)
-    CreateTween(CloseMenu, "BackgroundTransparency", 0, 0.2, false)
+    CreateTween(CloseMenu, "Transparency", 0, 0.2, false)
     CreateTween(CloseMenu, "Size", UDim2.new(0.7, 0, 0.7, 0), 0.2, false)
     Cancel.MouseButton1Click:Connect(function()
-        CreateTween(CloseMenu, "BackgroundTransparency", 1, 0.3, false)
+        CreateTween(CloseMenu, "Transparency", 1, 0.3, false)
         CreateTween(CloseMenu, "Size", UDim2.new(), 0.2, true)
         CloseGui:Destroy()
     end)
@@ -1032,7 +916,7 @@ local function CreateClose()
         DestroyScript()
     end)
     CloseGui.MouseButton1Click:Connect(function()
-        CreateTween(CloseMenu, "BackgroundTransparency", 1, 0.3, false)
+        CreateTween(CloseMenu, "Transparency", 1, 0.3, false)
         CreateTween(CloseMenu, "Size", UDim2.new(), 0.2, true)
         CloseGui:Destroy()
     end)
@@ -1071,54 +955,20 @@ CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, true)
 Menu.Draggable = true
 
 local ScrollBar = Create("ScrollingFrame", Menu, {
-    Name = "Sidebar",
-    Size = UDim2.new(0, 150, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
+    Size = UDim2.new(0, 140, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
     Position = UDim2.new(0, 0, 1, 0), AnchorPoint = Vector2.new(0, 1),
     CanvasSize = UDim2.new(), ScrollingDirection = "Y",
-    AutomaticCanvasSize = "Y", BackgroundTransparency = 0.12,
-    BackgroundColor3 = Color3.fromRGB(9, 13, 24), BorderSizePixel = 0,
-    ScrollBarThickness = 2, ScrollBarImageTransparency = 0.35
+    AutomaticCanvasSize = "Y", BackgroundTransparency = 1, ScrollBarThickness = 2
 })
-Corner(ScrollBar); Stroke(ScrollBar, {Thickness = 1})
-Create("UIPadding", ScrollBar, {
-    PaddingLeft = UDim.new(0, 9), PaddingRight = UDim.new(0, 9),
-    PaddingTop = UDim.new(0, 9), PaddingBottom = UDim.new(0, 9)
-})
-Create("UIListLayout", ScrollBar, {
-    Padding = UDim.new(0, 7), SortOrder = Enum.SortOrder.LayoutOrder
-})
+Create("UIPadding", ScrollBar, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
+Create("UIListLayout", ScrollBar, { Padding = UDim.new(0, 14) })
 
 local Containers = Create("Frame", Menu, {
-    Name = "ContentArea",
-    Size = UDim2.new(1, -152, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
+    Size = UDim2.new(1, -tonumber(ScrollBar.Size.X.Offset + 2), 1, -tonumber(TopBar.Size.Y.Offset + 2)),
     AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 0.02, BackgroundColor3 = Color3.fromRGB(10, 15, 27),
-    BorderSizePixel = 0
+    BackgroundTransparency = 1
 })
-Corner(Containers); Stroke(Containers, {Thickness = 1})
-
-local ContentAccent = Create("Frame", Containers, {
-    Name = "Monetor_ContentAccent",
-    Size = UDim2.new(0, 70, 0, 2),
-    Position = UDim2.new(0, 12, 0, 0),
-    BackgroundColor3 = Configs_HUB.Cor_Accent,
-    BorderSizePixel = 0,
-    ZIndex = 5
-})
-Corner(ContentAccent, {CornerRadius = UDim.new(1, 0)})
-task.spawn(function()
-    while ContentAccent.Parent do
-        local a = TweenService:Create(ContentAccent,
-            TweenInfo.new(2.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-            {Size = UDim2.new(0, 145, 0, 2)})
-        a:Play(); a.Completed:Wait()
-        if not ContentAccent.Parent then break end
-        local b = TweenService:Create(ContentAccent,
-            TweenInfo.new(2.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-            {Size = UDim2.new(0, 70, 0, 2)})
-        b:Play(); b.Completed:Wait()
-    end
-end)
+Corner(Containers); Stroke(Containers)
 
 local firstVisible = true
 local textsize = 15
@@ -1140,7 +990,7 @@ function MakeTab(Configs)
     local TabImage = Configs.Image or nil
     local AvatarUsername = Configs.AvatarUsername or nil
 
-    local Frame = Create("Frame", ScrollBar, { Size = UDim2.new(1, 0, 0, 34), BackgroundTransparency = 0.08, BackgroundColor3 = Color3.fromRGB(12, 18, 31) })
+    local Frame = Create("Frame", ScrollBar, { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1 })
     Corner(Frame); Stroke(Frame)
     local TextButton = Create("TextButton", Frame, { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "" })
 
@@ -1149,7 +999,7 @@ function MakeTab(Configs)
     if AvatarUsername then
         hasIcon = true
         local avatar = Create("ImageLabel", Frame, {
-            Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
+            Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
             BackgroundTransparency = 1, BackgroundColor3 = Configs_HUB.Cor_Options,
             Image = "", Name = "TabAvatar", ZIndex = 5
         })
@@ -1173,14 +1023,14 @@ function MakeTab(Configs)
     elseif TabImage then
         hasIcon = true
         Create("ImageLabel", Frame, {
-            Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
+            Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
             BackgroundTransparency = 1, Image = TabImage, Name = "TabIcon"
         })
     end
 
-    local textOffset = hasIcon and 35 or 10
+    local textOffset = hasIcon and 30 or 5
     local TextLabel = Create("TextLabel", Frame, {
-        Size = UDim2.new(1, -textOffset - 5, 1, 0), Position = UDim2.new(0, textOffset, 0, 0),
+        Size = UDim2.new(1, -textOffset, 1, 0), Position = UDim2.new(0, textOffset, 0, 0),
         BackgroundTransparency = 1, Font = Configs_HUB.Text_Font,
         TextColor3 = textcolor, TextSize = textsize,
         Text = TabName, TextXAlignment = Enum.TextXAlignment.Left
@@ -1190,16 +1040,11 @@ function MakeTab(Configs)
         Size = UDim2.new(1, 0, 1, 0), ScrollingDirection = "Y",
         AutomaticCanvasSize = "Y", CanvasSize = UDim2.new(),
         BackgroundTransparency = 1, ScrollBarThickness = 2,
-        ScrollBarImageTransparency = 0.35, Visible = firstVisible
+        Visible = firstVisible
     })
     Corner(Container); Stroke(Container)
-    Create("UIPadding", Container, {
-        PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12),
-        PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12)
-    })
-    Create("UIListLayout", Container, {
-        Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder
-    })
+    Create("UIPadding", Container, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
+    Create("UIListLayout", Container, { Padding = UDim.new(0, 5) })
 
     TextButton.MouseButton1Click:Connect(function()
         for _, container in pairs(Containers:GetChildren()) do
@@ -1230,31 +1075,24 @@ function AddButton(parent, Configs)
     local Callback = Configs.Callback or function() end
     
     local TextButton = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.22, Name = "MonetorButton", Text = "", AutoButtonColor = false
+        Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.5, Name = "Frame", Text = "", AutoButtonColor = false
     })
     Corner(TextButton); Stroke(TextButton)
     local TextLabel = Create("TextLabel", TextButton, {
         TextSize = 14, TextColor3 = Configs_HUB.Cor_Text, Text = ButtonName,
-        Size = UDim2.new(1, -48, 1, 0), Position = UDim2.new(0, 38, 0, 0),
+        Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 35, 0, 0),
         BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
     })
     local ImageLabel = Create("ImageLabel", TextButton, {
         Image = "rbxassetid://99956220697276",
-        Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
+        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
         BackgroundTransparency = 1, ImageColor3 = Configs_HUB.Cor_Stroke
     })
     TextButton.MouseButton1Click:Connect(function()
         pcall(Callback)
-        CreateTween(ImageLabel, "ImageColor3", Configs_HUB.Cor_Accent, 0.2, true)
+        CreateTween(ImageLabel, "ImageColor3", Color3.fromRGB(30, 140, 200), 0.2, true)
         CreateTween(ImageLabel, "ImageColor3", Configs_HUB.Cor_Stroke, 0.2, false)
-    end)
-    TextButton.MouseEnter:Connect(function()
-        CreateTween(TextButton, "BackgroundTransparency", 0.04, 0.18, false)
-        CreateTween(ImageLabel, "ImageTransparency", 0, 0.18, false)
-    end)
-    TextButton.MouseLeave:Connect(function()
-        CreateTween(TextButton, "BackgroundTransparency", 0.22, 0.18, false)
     end)
     TextSetColor(TextLabel)
     return TextButton
@@ -1274,34 +1112,28 @@ function AddToggleButton(parent, Configs)
     local State = StartState
     
     local TextButton = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.22, Name = "MonetorToggle", Text = "", AutoButtonColor = false
+        Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.5, Name = "Frame", Text = "", AutoButtonColor = false
     })
     Corner(TextButton); Stroke(TextButton)
     local TextLabel = Create("TextLabel", TextButton, {
         TextSize = 14, TextColor3 = Configs_HUB.Cor_Text,
         Text = State and OffText or OnText,
-        Size = UDim2.new(1, -48, 1, 0), Position = UDim2.new(0, 38, 0, 0),
+        Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 35, 0, 0),
         BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
     })
     local ImageLabel = Create("ImageLabel", TextButton, {
         Image = "rbxassetid://99956220697276",
-        Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
+        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
         BackgroundTransparency = 1,
-        ImageColor3 = State and Configs_HUB.Cor_Success or Configs_HUB.Cor_Stroke
+        ImageColor3 = State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke
     })
     TextButton.MouseButton1Click:Connect(function()
         State = not State
         TextLabel.Text = State and OffText or OnText
-        CreateTween(ImageLabel, "ImageColor3", Configs_HUB.Cor_Accent, 0.2, true)
-        CreateTween(ImageLabel, "ImageColor3", State and Configs_HUB.Cor_Success or Configs_HUB.Cor_Stroke, 0.2, false)
+        CreateTween(ImageLabel, "ImageColor3", Color3.fromRGB(30, 140, 200), 0.2, true)
+        CreateTween(ImageLabel, "ImageColor3", State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke, 0.2, false)
         if State then pcall(OnEnable) else pcall(OnDisable) end
-    end)
-    TextButton.MouseEnter:Connect(function()
-        CreateTween(TextButton, "BackgroundTransparency", 0.04, 0.18, false)
-    end)
-    TextButton.MouseLeave:Connect(function()
-        CreateTween(TextButton, "BackgroundTransparency", 0.22, 0.18, false)
     end)
     TextSetColor(TextLabel)
     return {
@@ -1310,7 +1142,7 @@ function AddToggleButton(parent, Configs)
         SetState = function(newState)
             State = newState
             TextLabel.Text = State and OffText or OnText
-            ImageLabel.ImageColor3 = State and Configs_HUB.Cor_Success or Configs_HUB.Cor_Stroke
+            ImageLabel.ImageColor3 = State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke
         end
     }
 end
@@ -1608,12 +1440,11 @@ end
 -- TABS
 -- =============================================
 local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
-local LocalPlayerTab = MakeTab({Name = "شخصيتي", TabTitle = true})
-local ESPTab = MakeTab({Name = "الرادار", TabTitle = true})
-local TeleportTab = MakeTab({Name = "الانتقال", TabTitle = true})
-local CombatTab = MakeTab({Name = "القتال", TabTitle = true})
+local LocalPlayerTab = MakeTab({Name = "شخصيتي ‍️", TabTitle = true})
+local ESPTab = MakeTab({Name = "رادار ️", TabTitle = true})
+local TeleportTab = MakeTab({Name = "الانتقال ", TabTitle = true})
 local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
-local RightsTab = MakeTab({Name = "الحقوق", TabTitle = true, AvatarUsername = "monetor"})
+local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, AvatarUsername = "sjbcjjs0"})
 
 -- =============================================
 -- COMMAND PANEL
@@ -2346,6 +2177,7 @@ end)
 -- =============================================
 -- COMBAT TAB
 -- =============================================
+local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
 
 local GodMode = false
 local ShieldMode = false
@@ -3304,155 +3136,11 @@ AddButton(RightsTab, {
     end
 })
 
--- زر: حقوق المطور
-local CreditsPanel = nil
-
-local function CreateCreditsPanel()
-    if CreditsPanel and CreditsPanel.Parent then
-        CreditsPanel.Visible = not CreditsPanel.Visible
-        return
-    end
-
-    CreditsPanel = Create("Frame", ScreenGui, {
-        Name = "Monetor_CreditsPanel",
-        Size = UDim2.new(0, 320, 0, 380),
-        Position = UDim2.new(0.5, -160, 0.5, -190),
-        BackgroundColor3 = Configs_HUB.Cor_Hub,
-        BackgroundTransparency = 0.05,
-        BorderSizePixel = 0, Active = true, Draggable = true, ZIndex = 200
-    })
-    Corner(CreditsPanel); Stroke(CreditsPanel)
-
-    local CloseBtn = Create("TextButton", CreditsPanel, {
-        Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -35, 0, 5),
-        BackgroundTransparency = 1,
-        Text = "×",
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 24,
-        AutoButtonColor = false, ZIndex = 205
-    })
-    CloseBtn.Activated:Connect(function() CreditsPanel.Visible = false end)
-
-    -- عنوان
-    Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 30),
-        Position = UDim2.new(0, 0, 0, 12),
-        BackgroundTransparency = 1,
-        Text = "️ حقوق Monetor X",
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 22,
-        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
-    })
-
-    -- الأفتار الدائري للمطور
-    local devAvatar = Create("ImageLabel", CreditsPanel, {
-        Size = UDim2.new(0, 80, 0, 80),
-        Position = UDim2.new(0.5, -40, 0, 50),
-        BackgroundTransparency = 1,
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        Image = "rbxassetid://0", ZIndex = 202
-    })
-    Corner(devAvatar, { CornerRadius = UDim.new(1, 0) })
-    local devStroke = Instance.new("UIStroke")
-    devStroke.Thickness = 2
-    devStroke.Color = Color3.fromRGB(255, 255, 255)
-    devStroke.Transparency = 0.1
-    devStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    devStroke.Parent = devAvatar
-
-    -- جلب أفتار المطور
-    task.spawn(function()
-        local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync("sjbcjjs0") end)
-        if ok and userId and type(userId) == "number" then
-            pcall(function()
-                devAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(userId) .. "&w=150&h=150"
-            end)
-        end
-    end)
-
-    -- اسم المطور
-    Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 25),
-        Position = UDim2.new(0, 0, 0, 138),
-        BackgroundTransparency = 1,
-        Text = "@monetor_",
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        Font = Configs_HUB.Text_Font,
-        TextSize = 18,
-        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
-    })
-
-    Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 18),
-        Position = UDim2.new(0, 0, 0, 163),
-        BackgroundTransparency = 1,
-        Text = "المطور الرئيسي",
-        TextColor3 = Configs_HUB.Cor_DarkText,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
-    })
-
-    -- معلومات السكربت
-    local infoBox = Create("Frame", CreditsPanel, {
-        Size = UDim2.new(1, -30, 0, 130),
-        Position = UDim2.new(0, 15, 0, 190),
-        BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.4,
-        BorderSizePixel = 0, ZIndex = 202
-    })
-    Corner(infoBox); Stroke(infoBox)
-
-    local infoText = [[
- Script: MONETOR X
- Version: 2.0 Full Edition
- Platform: Roblox
- Type: Universal Multi-Feature
-
- Features:
- • Flight System
- • Advanced ESP
- • Combat Tools
- • Target Stick
- • Auto Refresh
- • Troll System
- • Bypass Protection
-]]
-
-    Create("TextLabel", infoBox, {
-        Size = UDim2.new(1, -20, 1, -20),
-        Position = UDim2.new(0, 10, 0, 10),
-        BackgroundTransparency = 1,
-        Text = infoText,
-        TextColor3 = Configs_HUB.Cor_Text,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        TextWrapped = true, ZIndex = 203
-    })
-
-    -- حقوق النشر
-    Create("TextLabel", CreditsPanel, {
-        Size = UDim2.new(1, 0, 0, 18),
-        Position = UDim2.new(0, 0, 1, -25),
-        BackgroundTransparency = 1,
-        Text = "© 2025 Monetor X — All Rights Reserved",
-        TextColor3 = Configs_HUB.Cor_DarkText,
-        Font = Configs_HUB.Text_Font,
-        TextSize = 10,
-        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 202
-    })
-end
-
 AddButton(RightsTab, {
     Name = " حقوق المطور والنسخة",
     Callback = function()
         CreateCreditsPanel()
-        MakeNotifi({Title = "Monetor X", Text = "حقوق @monetor_", Time = 3})
+        MakeNotifi({Title = "Monetor X", Text = "حقوق @sjbcjjs0", Time = 3})
     end
 })
 
@@ -3492,64 +3180,13 @@ AddButton(RightsTab, {
 AddButton(RightsTab, {
     Name = " حساب المطور",
     Callback = function()
-        pcall(function() if setclipboard then setclipboard('@monetor_') end end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ: @monetor_", Time = 2})
+        pcall(function() if setclipboard then setclipboard('@sjbcjjs0') end end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ: @sjbcjjs0", Time = 2})
     end
 })
 
 -- نص ختامي
-AddTextLabel(RightsTab, "\nشكراً لاستخدامك MONETOR X\nصنع بـ ❤️ بواسطة @monetor_\nجميع الحقوق محفوظة © 2026")
-
--- =============================================
--- GLOBAL CLEANUP
--- =============================================
-CleanupScript = function()
-    -- Stop active feature loops/connections created by Monetor X.
-    pcall(function() if flightConnection then flightConnection:Disconnect(); flightConnection = nil end end)
-    pcall(function() if godConnection then godConnection:Disconnect(); godConnection = nil end end)
-    pcall(function() if AutoRefreshConnection then AutoRefreshConnection:Disconnect(); AutoRefreshConnection = nil end end)
-    pcall(function() if AutoRefreshCharacterConnection then AutoRefreshCharacterConnection:Disconnect(); AutoRefreshCharacterConnection = nil end end)
-    pcall(function() if AutoRefreshHealthConnection then AutoRefreshHealthConnection:Disconnect(); AutoRefreshHealthConnection = nil end end)
-    pcall(function() if AutoRefreshOnDeathConnection then AutoRefreshOnDeathConnection:Disconnect(); AutoRefreshOnDeathConnection = nil end end)
-    pcall(function() if AutoRefreshOnDeathCharConnection then AutoRefreshOnDeathCharConnection:Disconnect(); AutoRefreshOnDeathCharConnection = nil end end)
-    pcall(function() if invisConnection then invisConnection:Disconnect(); invisConnection = nil end end)
-    pcall(function() if followConnection then followConnection:Disconnect(); followConnection = nil end end)
-    pcall(function() if targetDeathConnection then targetDeathConnection:Disconnect(); targetDeathConnection = nil end end)
-
-    -- Restore local movement state.
-    pcall(function()
-        local char = LP.Character
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.PlatformStand = false
-            humanoid.WalkSpeed = 16
-            humanoid.JumpPower = 50
-        end
-    end)
-
-    pcall(function()
-        if bodyVelocity then bodyVelocity:Destroy(); bodyVelocity = nil end
-        if bodyGyro then bodyGyro:Destroy(); bodyGyro = nil end
-    end)
-
-    -- Remove Monetor-owned visual objects.
-    pcall(function()
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player.Character then
-                local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
-                if folder then folder:Destroy() end
-                local shield = player.Character:FindFirstChild("Monetor_Shield")
-                if shield then shield:Destroy() end
-            end
-        end
-    end)
-
-    -- Close secondary panels before the main GUI is destroyed.
-    pcall(function() if FlyPanel then FlyPanel:Destroy() end end)
-    pcall(function() if Monetor_CommandPanel then Monetor_CommandPanel:Destroy() end end)
-    pcall(function() if CreditsPanel then CreditsPanel:Destroy() end end)
-    pcall(function() if UsagePanel then UsagePanel:Destroy() end end)
-end
+AddTextLabel(RightsTab, "\nشكراً لاستخدامك MONETOR X\nصنع بـ ❤️ بواسطة @sjbcjjs0\nجميع الحقوق محفوظة © 2026")
 
 -- =============================================
 -- FINAL INIT
@@ -3564,26 +3201,4 @@ MakeNotifi({
     Time = 3
 })
 
-print("✅ Monetor X Loaded Successfully! by @monetor_")
-]==]
-
-local __load = loadstring
-if type(__load) ~= "function" then
-    __MonetorReportError("loadstring غير متوفر في بيئة التشغيل الحالية.")
-else
-    local __chunk, __compileErr = __load(__MonetorSource, "Monetor X")
-    if not __chunk then
-        __MonetorReportError("Syntax/Compile Error:\n" .. tostring(__compileErr))
-    else
-        local __ok, __runtimeErr = xpcall(__chunk, function(err)
-            local trace = tostring(err)
-            pcall(function() if debug and debug.traceback then trace = debug.traceback(trace, 2) end end)
-            return trace
-        end)
-        if not __ok then
-            __MonetorReportError(__runtimeErr)
-        else
-            print("[Monetor X] Loaded successfully.")
-        end
-    end
-end
+print("✅ Monetor X Loaded Successfully! by @sjbcjjs0")
