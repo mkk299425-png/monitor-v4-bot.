@@ -65,19 +65,20 @@ local function Stroke(parent, props)
     }
     gradient.Rotation = 0
     gradient.Parent = new
-    coroutine.wrap(function()
-        while new.Parent do
-            gradient.Rotation = (gradient.Rotation + 2) % 360
-            RunService.RenderStepped:Wait()
-        end
-    end)()
+    pcall(function()
+        TweenService:Create(
+            gradient,
+            TweenInfo.new(5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, false, 0),
+            {Rotation = 360}
+        ):Play()
+    end)
     if props then SetProps(new, props) end
     return new
 end
 
 local function CreateTween(instance, prop, value, time, tweenWait)
     local tween = TweenService:Create(instance,
-    TweenInfo.new(time, Enum.EasingStyle.Linear),
+    TweenInfo.new(time, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
     {[prop] = value})
     tween:Play()
     if tweenWait then tween.Completed:Wait() end
@@ -90,6 +91,70 @@ local function TextSetColor(instance)
     instance.MouseLeave:Connect(function()
         CreateTween(instance, "TextColor3", Configs_HUB.Cor_Text, 0.4, false)
     end)
+end
+
+-- Robust Roblox avatar loader:
+-- 1) player already in server
+-- 2) Roblox Players API
+-- 3) executor request API fallback (if available)
+function Monetor_LoadAvatarByUsername(username, imageLabel)
+    if not username or username == "" or not imageLabel then return false end
+
+    local userId = nil
+
+    pcall(function()
+        local player = Players:FindFirstChild(username)
+        if player then userId = player.UserId end
+    end)
+
+    if not userId then
+        pcall(function()
+            userId = Players:GetUserIdFromNameAsync(username)
+        end)
+    end
+
+    if not userId then
+        local requestFunction = (syn and syn.request)
+            or (http and http.request)
+            or request
+            or http_request
+
+        if requestFunction then
+            pcall(function()
+                local body = HttpService:JSONEncode({usernames = {username}, excludeBannedUsers = false})
+                local response = requestFunction({
+                    Url = "https://users.roblox.com/v1/usernames/users",
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = body
+                })
+                if response and response.Body then
+                    local decoded = HttpService:JSONDecode(response.Body)
+                    if decoded and decoded.data and decoded.data[1] then
+                        userId = decoded.data[1].id
+                    end
+                end
+            end)
+        end
+    end
+
+    if type(userId) ~= "number" then return false end
+
+    local success, image = pcall(function()
+        local content = Players:GetUserThumbnailAsync(
+            userId,
+            Enum.ThumbnailType.AvatarBust,
+            Enum.ThumbnailSize.Size150x150
+        )
+        return content
+    end)
+
+    if success and image and image ~= "" and imageLabel.Parent then
+        imageLabel.Image = image
+        return true
+    end
+
+    return false
 end
 
 -- =============================================
@@ -233,30 +298,13 @@ local function CreateCreditsPanel()
         ZIndex = 202
     })
 
-    -- Resolve the requested account and load its current Roblox headshot.
+    -- Load the real Roblox avatar for the admin account.
+    -- No letter/icon fallback: if the service is temporarily unavailable, retry silently.
     task.spawn(function()
-        local adminUserId
-        pcall(function()
-            local p = Players:FindFirstChild("sjbcjjs0")
-            if p then adminUserId = p.UserId end
-        end)
-        if not adminUserId then
-            pcall(function()
-                adminUserId = Players:GetUserIdFromNameAsync("sjbcjjs0")
-            end)
-        end
-
-        if type(adminUserId) == "number" and devAvatar.Parent then
-            pcall(function()
-                local image, ready = Players:GetUserThumbnailAsync(
-                    adminUserId,
-                    Enum.ThumbnailType.AvatarHeadShot,
-                    Enum.ThumbnailSize.Size150x150
-                )
-                if image and image ~= "" and devAvatar.Parent then
-                    devAvatar.Image = image
-                end
-            end)
+        local loaded = Monetor_LoadAvatarByUsername("sjbcjjs0", devAvatar)
+        if not loaded then
+            task.wait(2)
+            Monetor_LoadAvatarByUsername("sjbcjjs0", devAvatar)
         end
     end)
 
@@ -356,72 +404,121 @@ Create("UIPadding", Menu_Notifi, { PaddingLeft = UDim.new(0, 25), PaddingTop = U
 Create("UIListLayout", Menu_Notifi, { Padding = UDim.new(0, 15), VerticalAlignment = "Bottom" })
 
 function MakeNotifi(Configs)
-    local Title = Configs.Title or "Monetor X"
-    local text = Configs.Text or "تم التنفيذ"
-    local timewait = Configs.Time or 5
-    
+    local Title = tostring(Configs.Title or "Monetor X")
+    local text = tostring(Configs.Text or "تم التنفيذ")
+    local timewait = tonumber(Configs.Time) or 5
+
+    -- Text-only notifications: remove decorative icons/emojis from titles/messages.
+    local iconList = {"🦘","⚡","📖","❌","❤️","♥","✅","🔴","🟢","🔵","🟣","💀","🔥","⭐","✨","🚀","🎯"}
+    for _, icon in ipairs(iconList) do
+        Title = Title:gsub(icon, "")
+        text = text:gsub(icon, "")
+    end
+    Title = Title:gsub("^%s+", ""):gsub("%s+$", "")
+    text = text:gsub("^%s+", ""):gsub("%s+$", "")
+
+    -- Notifications are text-only and capped at 3 visible items.
+    local visible = {}
+    for _, child in ipairs(Menu_Notifi:GetChildren()) do
+        if child:IsA("Frame") and child.Name == "Title" then
+            table.insert(visible, child)
+        end
+    end
+
+    while #visible >= 3 do
+        local oldest = table.remove(visible, 1)
+        if oldest and oldest.Parent then
+            oldest:Destroy()
+        end
+    end
+
     local Frame1 = Create("Frame", Menu_Notifi, {
         Size = UDim2.new(2, 0, 0, 0),
         BackgroundTransparency = 1,
         AutomaticSize = "Y",
-        Name = "Title"
+        Name = "Title",
+        LayoutOrder = os.clock() * 1000
     })
+
     local Frame2 = Create("Frame", Frame1, {
         Size = UDim2.new(0, Menu_Notifi.Size.X.Offset - 50, 0, 0),
-        BackgroundColor3 = Configs_HUB.Cor_Hub,
-        Position = UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(12, 13, 17),
+        BackgroundTransparency = 0.02,
+        Position = UDim2.new(0, Menu_Notifi.Size.X.Offset + 40, 0, 0),
         AutomaticSize = "Y"
-    }) 
-    Corner(Frame2); Stroke(Frame2)
-    
-    Create("TextLabel", Frame2, {
-        Size = UDim2.new(1, 0, 0, 25),
-        Font = Configs_HUB.Text_Font, BackgroundTransparency = 1,
-        Text = Title, TextSize = 20,
-        Position = UDim2.new(0, 20, 0, 5),
-        TextXAlignment = "Left", TextColor3 = Configs_HUB.Cor_Text
     })
-    
+    Corner(Frame2, {CornerRadius = UDim.new(0, 10)})
+    Stroke(Frame2)
+
+    Create("TextLabel", Frame2, {
+        Size = UDim2.new(1, -55, 0, 25),
+        Font = Enum.Font.GothamBold,
+        BackgroundTransparency = 1,
+        Text = Title,
+        TextSize = 13,
+        Position = UDim2.new(0, 14, 0, 6),
+        TextXAlignment = "Left",
+        TextColor3 = Color3.fromRGB(248, 248, 250)
+    })
+
     local CloseNotifi = Create("TextButton", Frame2, {
-        Text = "X", Font = Configs_HUB.Text_Font, TextSize = 20,
-        BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(200, 200, 200),
-        Position = UDim2.new(1, -5, 0, 5),
-        AnchorPoint = Vector2.new(1, 0), Size = UDim2.new(0, 25, 0, 25)
+        Text = "×",
+        Font = Enum.Font.GothamBold,
+        TextSize = 18,
+        BackgroundTransparency = 1,
+        TextColor3 = Color3.fromRGB(180, 181, 188),
+        Position = UDim2.new(1, -8, 0, 5),
+        AnchorPoint = Vector2.new(1, 0),
+        Size = UDim2.new(0, 25, 0, 25),
+        AutoButtonColor = false
     })
-    
+
     Create("TextLabel", Frame2, {
-        Size = UDim2.new(1, -30, 0, 0),
-        Position = UDim2.new(0, 20, 0, CloseNotifi.Size.Y.Offset + 10),
-        TextSize = 15, TextColor3 = Configs_HUB.Cor_DarkText,
-        TextXAlignment = "Left", TextYAlignment = "Top",
-        AutomaticSize = "Y", Text = text,
-        Font = Configs_HUB.Text_Font, BackgroundTransparency = 1, TextWrapped = true
+        Size = UDim2.new(1, -28, 0, 0),
+        Position = UDim2.new(0, 14, 0, CloseNotifi.Size.Y.Offset + 9),
+        TextSize = 11,
+        TextColor3 = Configs_HUB.Cor_DarkText,
+        TextXAlignment = "Left",
+        TextYAlignment = "Top",
+        AutomaticSize = "Y",
+        Text = text,
+        Font = Enum.Font.Gotham,
+        BackgroundTransparency = 1,
+        TextWrapped = true
     })
-    
+
     local FrameSize = Create("Frame", Frame2, {
-        Size = UDim2.new(1, 0, 0, 2), BackgroundColor3 = Configs_HUB.Cor_Stroke,
-        Position = UDim2.new(0, 2, 0, 30), BorderSizePixel = 0
-    }) 
+        Size = UDim2.new(1, 0, 0, 2),
+        BackgroundColor3 = Configs_HUB.Cor_Stroke,
+        Position = UDim2.new(0, 0, 1, 0),
+        BorderSizePixel = 0
+    })
     Corner(FrameSize)
-    Create("Frame", Frame2, { Size = UDim2.new(0, 0, 0, 5), Position = UDim2.new(0, 0, 1, 5), BackgroundTransparency = 1 })
-    
-    task.spawn(function() CreateTween(FrameSize, "Size", UDim2.new(0, 0, 0, 2), timewait, true) end)
-    
-    CloseNotifi.MouseButton1Click:Connect(function()
-        CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.1, true)
-        CreateTween(Frame2, "Position", UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0), 0.5, true)
-        Frame1:Destroy()
-    end)
-    
+
+    Create("Frame", Frame2, {
+        Size = UDim2.new(0, 0, 0, 5),
+        Position = UDim2.new(0, 0, 1, 3),
+        BackgroundTransparency = 1
+    })
+
     task.spawn(function()
-        CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.5, true)
-        CreateTween(Frame2, "Position", UDim2.new(), 0.1, true)
-        task.wait(timewait)
-        if Frame2 then
-            CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.1, true)
-            CreateTween(Frame2, "Position", UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0), 0.5, true)
-            Frame1:Destroy()
-        end
+        CreateTween(FrameSize, "Size", UDim2.new(0, 0, 0, 2), timewait, true)
+    end)
+
+    local function CloseNotification()
+        if not Frame1.Parent then return end
+        CreateTween(Frame2, "Position", UDim2.new(0, Menu_Notifi.Size.X.Offset + 45, 0, 0), 0.22, false)
+        task.delay(0.24, function()
+            if Frame1 and Frame1.Parent then Frame1:Destroy() end
+        end)
+    end
+
+    CloseNotifi.Activated:Connect(CloseNotification)
+
+    task.spawn(function()
+        CreateTween(Frame2, "Position", UDim2.new(0, 0, 0, 0), 0.38, false)
+        task.wait(math.max(0.2, timewait))
+        CloseNotification()
     end)
 end
 
@@ -950,17 +1047,32 @@ Stroke(UI.Content)
 
 UI.FirstTab = true
 
+-- دخول ناعم وقوي للواجهة الرئيسية.
+pcall(function()
+    UI.MenuScale = Create("UIScale", UI.Menu, {Scale = 0.92})
+    UI.Menu.Size = UDim2.new(0, 500, 0, 295)
+    UI.Menu.Position = UDim2.new(0.5, -250, 0.5, -147)
+    task.defer(function()
+        CreateTween(UI.MenuScale, "Scale", 1, 0.45, false)
+        CreateTween(UI.Menu, "Size", UDim2.new(0,530,0,320), 0.45, false)
+        CreateTween(UI.Menu, "Position", UDim2.new(0.5,-265,0.5,-160), 0.45, false)
+    end)
+end)
+
 -- تصغير/تكبير
 UI.Minimized = false
-UI.Minimize.MouseButton1Click:Connect(function()
+UI.Minimize.Activated:Connect(function()
     UI.Minimized = not UI.Minimized
     UI.Minimize.Text = UI.Minimized and "+" or "−"
+    if UI.MenuScale then
+        CreateTween(UI.MenuScale, "Scale", UI.Minimized and 0.98 or 1, 0.22, false)
+    end
     CreateTween(
         UI.Menu,
         "Size",
         UI.Minimized and UDim2.new(0,530,0,66) or UDim2.new(0,530,0,320),
-        0.18,
-        true
+        0.30,
+        false
     )
 end)
 
@@ -1106,11 +1218,31 @@ function MakeTab(Configs)
 
         Page.Visible = true
         Page.CanvasPosition = Vector2.new(0,0)
+        Page.Position = UDim2.new(0, 18, 0, 6)
         Chip.BackgroundColor3 = Color3.fromRGB(158,18,39)
         Chip.TextColor3 = Color3.fromRGB(255,255,255)
+        CreateTween(Page, "Position", UDim2.new(0, 0, 0, 0), 0.24, false)
     end
 
-    Chip.MouseButton1Click:Connect(Select)
+    Chip.MouseEnter:Connect(function()
+        if Page.Visible then return end
+        CreateTween(Chip, "BackgroundColor3", Color3.fromRGB(42,43,50), 0.16, false)
+        CreateTween(Chip, "TextColor3", Color3.fromRGB(235,235,240), 0.16, false)
+    end)
+    Chip.MouseLeave:Connect(function()
+        if Page.Visible then return end
+        CreateTween(Chip, "BackgroundColor3", Color3.fromRGB(25,26,31), 0.18, false)
+        CreateTween(Chip, "TextColor3", Color3.fromRGB(175,176,184), 0.18, false)
+    end)
+    Chip.Activated:Connect(function()
+        CreateTween(Chip, "Size", UDim2.new(0,64,0,27), 0.08, false)
+        task.delay(0.09, function()
+            if Chip and Chip.Parent then
+                CreateTween(Chip, "Size", UDim2.new(0,66,0,29), 0.18, false)
+            end
+        end)
+        Select()
+    end)
 
     if UI.FirstTab then
         task.defer(Select)
@@ -1163,14 +1295,22 @@ function AddButton(parent, Configs)
     })
 
     Button.MouseEnter:Connect(function()
-        Button.BackgroundColor3 = Color3.fromRGB(35,36,43)
-        Accent.Size = UDim2.new(0,6,0,24)
+        CreateTween(Button, "BackgroundColor3", Color3.fromRGB(38,39,47), 0.14, false)
+        CreateTween(Accent, "Size", UDim2.new(0,6,0,26), 0.14, false)
+        CreateTween(Accent, "Position", UDim2.new(0,8,0.5,-13), 0.14, false)
     end)
     Button.MouseLeave:Connect(function()
-        Button.BackgroundColor3 = Color3.fromRGB(27,28,34)
-        Accent.Size = UDim2.new(0,4,0,22)
+        CreateTween(Button, "BackgroundColor3", Color3.fromRGB(27,28,34), 0.18, false)
+        CreateTween(Accent, "Size", UDim2.new(0,4,0,22), 0.18, false)
+        CreateTween(Accent, "Position", UDim2.new(0,10,0.5,-11), 0.18, false)
     end)
-    Button.MouseButton1Click:Connect(function()
+    Button.Activated:Connect(function()
+        CreateTween(Button, "Size", UDim2.new(1,-4,0,36), 0.07, false)
+        task.delay(0.08, function()
+            if Button and Button.Parent then
+                CreateTween(Button, "Size", UDim2.new(1,0,0,38), 0.18, false)
+            end
+        end)
         pcall(Callback)
     end)
 
@@ -1242,9 +1382,22 @@ function AddToggleButton(parent, Configs)
         TextLabel.Text = State and OnText or OffText
     end
 
-    TextButton.MouseButton1Click:Connect(function()
+    TextButton.MouseEnter:Connect(function()
+        CreateTween(TextButton, "BackgroundColor3", Color3.fromRGB(38,39,47), 0.14, false)
+    end)
+    TextButton.MouseLeave:Connect(function()
+        CreateTween(TextButton, "BackgroundColor3", Color3.fromRGB(27,28,34), 0.18, false)
+    end)
+
+    TextButton.Activated:Connect(function()
         State = not State
         ApplyVisual()
+        CreateTween(TextButton, "Size", UDim2.new(1,-4,0,36), 0.07, false)
+        task.delay(0.08, function()
+            if TextButton and TextButton.Parent then
+                CreateTween(TextButton, "Size", UDim2.new(1,0,0,38), 0.18, false)
+            end
+        end)
         if State then pcall(OnEnable) else pcall(OnDisable) end
     end)
 
