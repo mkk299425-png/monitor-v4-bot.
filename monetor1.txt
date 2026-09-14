@@ -1,6 +1,6 @@
 -- =============================================
 -- MONETOR X (FULL EDITION + AVATAR + USAGE + CREDITS)
--- Developed by @sjbcjjs0
+-- Developed by @monetor_
 -- =============================================
 
 local Players = game:GetService("Players")
@@ -121,7 +121,14 @@ end)
 local ScreenFind = CoreGui:FindFirstChild(ScreenGui.Name)
 if ScreenFind and ScreenFind ~= ScreenGui then ScreenFind:Destroy() end
 
-function DestroyScript() pcall(function() ScreenGui:Destroy() end) end
+local CleanupScript = function() end
+
+function DestroyScript()
+    pcall(CleanupScript)
+    pcall(function()
+        if ScreenGui then ScreenGui:Destroy() end
+    end)
+end
 
 -- =============================================
 -- NOTIFICATION SYSTEM
@@ -726,7 +733,7 @@ local function CreateClose()
     Corner(CloseGui)
     local CloseMenu = Create("Frame", CloseGui, {
         Size = UDim2.new(), AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0), Transparency = 1,
+        Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1,
         BackgroundColor3 = Configs_HUB.Cor_Hub
     })
     Corner(CloseMenu); Stroke(CloseMenu)
@@ -755,10 +762,10 @@ local function CreateClose()
     end
     SetVisible()
     Menu:GetPropertyChangedSignal("Size"):Connect(SetVisible)
-    CreateTween(CloseMenu, "Transparency", 0, 0.2, false)
+    CreateTween(CloseMenu, "BackgroundTransparency", 0, 0.2, false)
     CreateTween(CloseMenu, "Size", UDim2.new(0.7, 0, 0.7, 0), 0.2, false)
     Cancel.MouseButton1Click:Connect(function()
-        CreateTween(CloseMenu, "Transparency", 1, 0.3, false)
+        CreateTween(CloseMenu, "BackgroundTransparency", 1, 0.3, false)
         CreateTween(CloseMenu, "Size", UDim2.new(), 0.2, true)
         CloseGui:Destroy()
     end)
@@ -768,7 +775,7 @@ local function CreateClose()
         DestroyScript()
     end)
     CloseGui.MouseButton1Click:Connect(function()
-        CreateTween(CloseMenu, "Transparency", 1, 0.3, false)
+        CreateTween(CloseMenu, "BackgroundTransparency", 1, 0.3, false)
         CreateTween(CloseMenu, "Size", UDim2.new(), 0.2, true)
         CloseGui:Destroy()
     end)
@@ -807,20 +814,31 @@ CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, true)
 Menu.Draggable = true
 
 local ScrollBar = Create("ScrollingFrame", Menu, {
-    Size = UDim2.new(0, 140, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
+    Name = "Sidebar",
+    Size = UDim2.new(0, 150, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
     Position = UDim2.new(0, 0, 1, 0), AnchorPoint = Vector2.new(0, 1),
     CanvasSize = UDim2.new(), ScrollingDirection = "Y",
-    AutomaticCanvasSize = "Y", BackgroundTransparency = 1, ScrollBarThickness = 2
+    AutomaticCanvasSize = "Y", BackgroundTransparency = 0.12,
+    BackgroundColor3 = Color3.fromRGB(8, 8, 8), BorderSizePixel = 0,
+    ScrollBarThickness = 2, ScrollBarImageTransparency = 0.35
 })
-Create("UIPadding", ScrollBar, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
-Create("UIListLayout", ScrollBar, { Padding = UDim.new(0, 14) })
+Corner(ScrollBar); Stroke(ScrollBar, {Thickness = 1})
+Create("UIPadding", ScrollBar, {
+    PaddingLeft = UDim.new(0, 9), PaddingRight = UDim.new(0, 9),
+    PaddingTop = UDim.new(0, 9), PaddingBottom = UDim.new(0, 9)
+})
+Create("UIListLayout", ScrollBar, {
+    Padding = UDim.new(0, 7), SortOrder = Enum.SortOrder.LayoutOrder
+})
 
 local Containers = Create("Frame", Menu, {
-    Size = UDim2.new(1, -tonumber(ScrollBar.Size.X.Offset + 2), 1, -tonumber(TopBar.Size.Y.Offset + 2)),
+    Name = "ContentArea",
+    Size = UDim2.new(1, -152, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
     AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 1
+    BackgroundTransparency = 0.08, BackgroundColor3 = Color3.fromRGB(10, 10, 10),
+    BorderSizePixel = 0
 })
-Corner(Containers); Stroke(Containers)
+Corner(Containers); Stroke(Containers, {Thickness = 1})
 
 local firstVisible = true
 local textsize = 15
@@ -851,7 +869,7 @@ function MakeTab(Configs)
     if AvatarUsername then
         hasIcon = true
         local avatar = Create("ImageLabel", Frame, {
-            Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
+            Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
             BackgroundTransparency = 1, BackgroundColor3 = Configs_HUB.Cor_Options,
             Image = "", Name = "TabAvatar", ZIndex = 5
         })
@@ -875,14 +893,14 @@ function MakeTab(Configs)
     elseif TabImage then
         hasIcon = true
         Create("ImageLabel", Frame, {
-            Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
+            Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
             BackgroundTransparency = 1, Image = TabImage, Name = "TabIcon"
         })
     end
 
-    local textOffset = hasIcon and 30 or 5
+    local textOffset = hasIcon and 35 or 10
     local TextLabel = Create("TextLabel", Frame, {
-        Size = UDim2.new(1, -textOffset, 1, 0), Position = UDim2.new(0, textOffset, 0, 0),
+        Size = UDim2.new(1, -textOffset - 5, 1, 0), Position = UDim2.new(0, textOffset, 0, 0),
         BackgroundTransparency = 1, Font = Configs_HUB.Text_Font,
         TextColor3 = textcolor, TextSize = textsize,
         Text = TabName, TextXAlignment = Enum.TextXAlignment.Left
@@ -892,11 +910,16 @@ function MakeTab(Configs)
         Size = UDim2.new(1, 0, 1, 0), ScrollingDirection = "Y",
         AutomaticCanvasSize = "Y", CanvasSize = UDim2.new(),
         BackgroundTransparency = 1, ScrollBarThickness = 2,
-        Visible = firstVisible
+        ScrollBarImageTransparency = 0.35, Visible = firstVisible
     })
     Corner(Container); Stroke(Container)
-    Create("UIPadding", Container, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
-    Create("UIListLayout", Container, { Padding = UDim.new(0, 5) })
+    Create("UIPadding", Container, {
+        PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12),
+        PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12)
+    })
+    Create("UIListLayout", Container, {
+        Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder
+    })
 
     TextButton.MouseButton1Click:Connect(function()
         for _, container in pairs(Containers:GetChildren()) do
@@ -927,18 +950,18 @@ function AddButton(parent, Configs)
     local Callback = Configs.Callback or function() end
     
     local TextButton = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.5, Name = "Frame", Text = "", AutoButtonColor = false
+        Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.22, Name = "MonetorButton", Text = "", AutoButtonColor = false
     })
     Corner(TextButton); Stroke(TextButton)
     local TextLabel = Create("TextLabel", TextButton, {
         TextSize = 14, TextColor3 = Configs_HUB.Cor_Text, Text = ButtonName,
-        Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 35, 0, 0),
+        Size = UDim2.new(1, -48, 1, 0), Position = UDim2.new(0, 38, 0, 0),
         BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
     })
     local ImageLabel = Create("ImageLabel", TextButton, {
         Image = "rbxassetid://99956220697276",
-        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
+        Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
         BackgroundTransparency = 1, ImageColor3 = Configs_HUB.Cor_Stroke
     })
     TextButton.MouseButton1Click:Connect(function()
@@ -964,19 +987,19 @@ function AddToggleButton(parent, Configs)
     local State = StartState
     
     local TextButton = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.5, Name = "Frame", Text = "", AutoButtonColor = false
+        Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = Configs_HUB.Cor_Options,
+        BackgroundTransparency = 0.22, Name = "MonetorToggle", Text = "", AutoButtonColor = false
     })
     Corner(TextButton); Stroke(TextButton)
     local TextLabel = Create("TextLabel", TextButton, {
         TextSize = 14, TextColor3 = Configs_HUB.Cor_Text,
         Text = State and OffText or OnText,
-        Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 35, 0, 0),
+        Size = UDim2.new(1, -48, 1, 0), Position = UDim2.new(0, 38, 0, 0),
         BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
     })
     local ImageLabel = Create("ImageLabel", TextButton, {
         Image = "rbxassetid://99956220697276",
-        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
+        Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
         BackgroundTransparency = 1,
         ImageColor3 = State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke
     })
@@ -1292,11 +1315,12 @@ end
 -- TABS
 -- =============================================
 local MainTab = MakeTab({Name = "الرئيسية", TabTitle = true})
-local LocalPlayerTab = MakeTab({Name = "شخصيتي ‍️", TabTitle = true})
-local ESPTab = MakeTab({Name = "رادار ️", TabTitle = true})
-local TeleportTab = MakeTab({Name = "الانتقال ", TabTitle = true})
+local LocalPlayerTab = MakeTab({Name = "شخصيتي", TabTitle = true})
+local ESPTab = MakeTab({Name = "الرادار", TabTitle = true})
+local TeleportTab = MakeTab({Name = "الانتقال", TabTitle = true})
+local CombatTab = MakeTab({Name = "القتال", TabTitle = true})
 local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
-local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, AvatarUsername = "sjbcjjs0"})
+local RightsTab = MakeTab({Name = "الحقوق", TabTitle = true, AvatarUsername = "monetor"})
 
 -- =============================================
 -- COMMAND PANEL
@@ -2029,7 +2053,6 @@ end)
 -- =============================================
 -- COMBAT TAB
 -- =============================================
-local CombatTab = MakeTab({Name = "قتال ️", TabTitle = true})
 
 local GodMode = false
 local ShieldMode = false
@@ -3062,7 +3085,7 @@ local function CreateCreditsPanel()
         Size = UDim2.new(1, 0, 0, 25),
         Position = UDim2.new(0, 0, 0, 138),
         BackgroundTransparency = 1,
-        Text = "@sjbcjjs0",
+        Text = "@monetor_",
         TextColor3 = Color3.fromRGB(255, 255, 255),
         Font = Configs_HUB.Text_Font,
         TextSize = 18,
@@ -3136,7 +3159,7 @@ AddButton(RightsTab, {
     Name = " حقوق المطور والنسخة",
     Callback = function()
         CreateCreditsPanel()
-        MakeNotifi({Title = "Monetor X", Text = "حقوق @sjbcjjs0", Time = 3})
+        MakeNotifi({Title = "Monetor X", Text = "حقوق @monetor_", Time = 3})
     end
 })
 
@@ -3176,13 +3199,64 @@ AddButton(RightsTab, {
 AddButton(RightsTab, {
     Name = " حساب المطور",
     Callback = function()
-        pcall(function() if setclipboard then setclipboard('@sjbcjjs0') end end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ: @sjbcjjs0", Time = 2})
+        pcall(function() if setclipboard then setclipboard('@monetor_') end end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ: @monetor_", Time = 2})
     end
 })
 
 -- نص ختامي
-AddTextLabel(RightsTab, "\nشكراً لاستخدامك MONETOR X\nصنع بـ ❤️ بواسطة @sjbcjjs0\nجميع الحقوق محفوظة © 2026")
+AddTextLabel(RightsTab, "\nشكراً لاستخدامك MONETOR X\nصنع بـ ❤️ بواسطة @monetor_\nجميع الحقوق محفوظة © 2026")
+
+-- =============================================
+-- GLOBAL CLEANUP
+-- =============================================
+CleanupScript = function()
+    -- Stop active feature loops/connections created by Monetor X.
+    pcall(function() if flightConnection then flightConnection:Disconnect(); flightConnection = nil end end)
+    pcall(function() if godConnection then godConnection:Disconnect(); godConnection = nil end end)
+    pcall(function() if AutoRefreshConnection then AutoRefreshConnection:Disconnect(); AutoRefreshConnection = nil end end)
+    pcall(function() if AutoRefreshCharacterConnection then AutoRefreshCharacterConnection:Disconnect(); AutoRefreshCharacterConnection = nil end end)
+    pcall(function() if AutoRefreshHealthConnection then AutoRefreshHealthConnection:Disconnect(); AutoRefreshHealthConnection = nil end end)
+    pcall(function() if AutoRefreshOnDeathConnection then AutoRefreshOnDeathConnection:Disconnect(); AutoRefreshOnDeathConnection = nil end end)
+    pcall(function() if AutoRefreshOnDeathCharConnection then AutoRefreshOnDeathCharConnection:Disconnect(); AutoRefreshOnDeathCharConnection = nil end end)
+    pcall(function() if invisConnection then invisConnection:Disconnect(); invisConnection = nil end end)
+    pcall(function() if followConnection then followConnection:Disconnect(); followConnection = nil end end)
+    pcall(function() if targetDeathConnection then targetDeathConnection:Disconnect(); targetDeathConnection = nil end end)
+
+    -- Restore local movement state.
+    pcall(function()
+        local char = LP.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.PlatformStand = false
+            humanoid.WalkSpeed = 16
+            humanoid.JumpPower = 50
+        end
+    end)
+
+    pcall(function()
+        if bodyVelocity then bodyVelocity:Destroy(); bodyVelocity = nil end
+        if bodyGyro then bodyGyro:Destroy(); bodyGyro = nil end
+    end)
+
+    -- Remove Monetor-owned visual objects.
+    pcall(function()
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player.Character then
+                local folder = player.Character:FindFirstChild(ESP_FOLDER_NAME)
+                if folder then folder:Destroy() end
+                local shield = player.Character:FindFirstChild("Monetor_Shield")
+                if shield then shield:Destroy() end
+            end
+        end
+    end)
+
+    -- Close secondary panels before the main GUI is destroyed.
+    pcall(function() if FlyPanel then FlyPanel:Destroy() end end)
+    pcall(function() if Monetor_CommandPanel then Monetor_CommandPanel:Destroy() end end)
+    pcall(function() if CreditsPanel then CreditsPanel:Destroy() end end)
+    pcall(function() if UsagePanel then UsagePanel:Destroy() end end)
+end
 
 -- =============================================
 -- FINAL INIT
@@ -3197,4 +3271,4 @@ MakeNotifi({
     Time = 3
 })
 
-print("✅ Monetor X Loaded Successfully! by @sjbcjjs0")
+print("✅ Monetor X Loaded Successfully! by @monetor_")
