@@ -1,6 +1,6 @@
 -- =============================================
 -- MONETOR X (FULL EDITION + AVATAR + USAGE + CREDITS)
--- Developed by @sjbcjjs0
+-- Developed by Monetor
 -- =============================================
 
 local Players = game:GetService("Players")
@@ -15,12 +15,12 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local HttpService = game:GetService("HttpService")
 
 local Configs_HUB = {
-    Cor_Hub = Color3.fromRGB(15, 15, 15),
-    Cor_Options = Color3.fromRGB(30, 30, 30),
-    Cor_Stroke = Color3.fromRGB(255, 255, 255),
-    Cor_Text = Color3.fromRGB(255, 255, 255),
-    Cor_DarkText = Color3.fromRGB(180, 180, 180),
-    Corner_Radius = UDim.new(0, 15),
+    Cor_Hub = Color3.fromRGB(10, 10, 12),
+    Cor_Options = Color3.fromRGB(19, 19, 23),
+    Cor_Stroke = Color3.fromRGB(235, 35, 55),
+    Cor_Text = Color3.fromRGB(245, 245, 248),
+    Cor_DarkText = Color3.fromRGB(135, 135, 145),
+    Corner_Radius = UDim.new(0, 11),
     Text_Font = Enum.Font.FredokaOne
 }
 
@@ -160,7 +160,7 @@ local function CreateCreditsPanel()
 
     -- جلب أفتار المطور
     task.spawn(function()
-        local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync("sjbcjjs0") end)
+        local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync("Monetor") end)
         if ok and userId and type(userId) == "number" then
             pcall(function()
                 devAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(userId) .. "&w=150&h=150"
@@ -173,7 +173,7 @@ local function CreateCreditsPanel()
         Size = UDim2.new(1, 0, 0, 25),
         Position = UDim2.new(0, 0, 0, 138),
         BackgroundTransparency = 1,
-        Text = "@sjbcjjs0",
+        Text = "Monetor",
         TextColor3 = Color3.fromRGB(255, 255, 255),
         Font = Configs_HUB.Text_Font,
         TextSize = 18,
@@ -701,368 +701,363 @@ for _, child in ipairs(PlayerGui:GetChildren()) do
 end
 
 -- =============================================
--- MAIN UI
+-- =============================================
+-- MAIN UI - MONETOR X CUSTOM REDESIGN
 -- =============================================
 local Menu = Create("Frame", ScreenGui, {
     Size = UDim2.new(0, 530, 0, 320),
     Position = UDim2.new(0.5, -265, 0.5, -160),
     BackgroundColor3 = Configs_HUB.Cor_Hub,
-    BackgroundTransparency = 0.05,
+    BackgroundTransparency = 0,
     Active = true, Draggable = true, BorderSizePixel = 0,
     ClipsDescendants = true, ZIndex = 1
 })
-Corner(Menu); Stroke(Menu)
+Corner(Menu, {CornerRadius = UDim.new(0, 14)})
 
+-- خلفية بسيطة بحركة خفيفة
 local BackgroundFX = Create("Frame", Menu, {
     Name = "Monetor_BackgroundFX",
     Size = UDim2.new(1, 0, 1, 0),
-    BackgroundColor3 = Color3.fromRGB(5, 5, 5),
-    BackgroundTransparency = 0, BorderSizePixel = 0,
-    ClipsDescendants = true, ZIndex = 0
+    BackgroundColor3 = Color3.fromRGB(7, 7, 9),
+    BorderSizePixel = 0, ClipsDescendants = true, ZIndex = 0
 })
-Corner(BackgroundFX)
+Corner(BackgroundFX, {CornerRadius = UDim.new(0, 14)})
 
-local RedGlowData = {
-    {Size = 170, X = -0.05, Y = 0.05, DX = 0.22, DY = 0.10, Duration = 13},
-    {Size = 125, X = 0.20, Y = 0.58, DX = -0.18, DY = 0.13, Duration = 16},
-    {Size = 150, X = 0.58, Y = -0.10, DX = 0.16, DY = 0.18, Duration = 15},
-    {Size = 105, X = 0.78, Y = 0.48, DX = -0.20, DY = -0.12, Duration = 14},
-    {Size = 135, X = 0.38, Y = 0.72, DX = 0.18, DY = -0.16, Duration = 17},
-    {Size = 90, X = 0.05, Y = 0.30, DX = 0.15, DY = -0.10, Duration = 12}
-}
-
-for index, data in ipairs(RedGlowData) do
+for i, data in ipairs({
+    {Size = 180, X = -0.16, Y = -0.30, T = 0.90, D = 15},
+    {Size = 130, X = 0.72, Y = 0.65, T = 0.94, D = 18},
+    {Size = 90, X = 0.42, Y = -0.20, T = 0.96, D = 13}
+}) do
     local glow = Create("Frame", BackgroundFX, {
-        Name = "RedGlow_" .. index,
+        Name = "Glow_" .. i,
         Size = UDim2.new(0, data.Size, 0, data.Size),
         Position = UDim2.new(data.X, 0, data.Y, 0),
-        BackgroundColor3 = Color3.fromRGB(170, 0, 0),
-        BackgroundTransparency = 0.82, BorderSizePixel = 0, ZIndex = 0
+        BackgroundColor3 = Color3.fromRGB(190, 15, 35),
+        BackgroundTransparency = data.T,
+        BorderSizePixel = 0, ZIndex = 0
     })
     Corner(glow, {CornerRadius = UDim.new(1, 0)})
     task.spawn(function()
-        local baseX, baseY = data.X, data.Y
         while glow.Parent do
-            local targetX = math.clamp(baseX + data.DX, -0.12, 0.90)
-            local targetY = math.clamp(baseY + data.DY, -0.12, 0.82)
-            local tweenOut = TweenService:Create(glow,
-                TweenInfo.new(data.Duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                {Position = UDim2.new(targetX, 0, targetY, 0), BackgroundTransparency = 0.74})
-            tweenOut:Play(); tweenOut.Completed:Wait()
+            local a = TweenService:Create(glow,
+                TweenInfo.new(data.D, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                {Position = UDim2.new(data.X + 0.08, 0, data.Y + 0.06, 0), BackgroundTransparency = math.max(0.82, data.T - 0.04)})
+            a:Play(); a.Completed:Wait()
             if not glow.Parent then break end
-            local tweenBack = TweenService:Create(glow,
-                TweenInfo.new(data.Duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                {Position = UDim2.new(baseX, 0, baseY, 0), BackgroundTransparency = 0.84})
-            tweenBack:Play(); tweenBack.Completed:Wait()
+            local b = TweenService:Create(glow,
+                TweenInfo.new(data.D, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                {Position = UDim2.new(data.X, 0, data.Y, 0), BackgroundTransparency = data.T})
+            b:Play(); b.Completed:Wait()
         end
     end)
 end
 
-local IntroSound = Instance.new("Sound")
-IntroSound.SoundId = "rbxassetid://8426701399"
-IntroSound.Volume = 2
-IntroSound.Parent = ScreenGui
-pcall(function() IntroSound:Play() end)
+-- رأس مخصص
+local Header = Create("Frame", Menu, {
+    Size = UDim2.new(1, 0, 0, 46),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0, ZIndex = 10
+})
 
-local Effect = Create("Frame", ScreenGui, {
-    Size = UDim2.new(0, 10, 0, 10),
-    Position = UDim2.new(0.5, 0, 0.5, 0),
-    AnchorPoint = Vector2.new(0.5, 0.5),
-    BackgroundColor3 = Configs_HUB.Cor_Stroke,
-    BackgroundTransparency = 0, BorderSizePixel = 0,
-    ClipsDescendants = true, ZIndex = 100
+local BrandMark = Create("Frame", Header, {
+    Size = UDim2.new(0, 30, 0, 30),
+    Position = UDim2.new(0, 12, 0.5, -15),
+    BackgroundColor3 = Color3.fromRGB(190, 15, 35),
+    BorderSizePixel = 0, ZIndex = 11
 })
-local EffectCorner = Instance.new("UICorner"); EffectCorner.CornerRadius = UDim.new(0, 18); EffectCorner.Parent = Effect
-local EffectStroke = Instance.new("UIStroke"); EffectStroke.Color = Configs_HUB.Cor_Stroke; EffectStroke.Thickness = 2; EffectStroke.Transparency = 0; EffectStroke.Parent = Effect
+Corner(BrandMark, {CornerRadius = UDim.new(0, 9)})
+Create("TextLabel", BrandMark, {
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundTransparency = 1,
+    Text = "M", Font = Configs_HUB.Text_Font,
+    TextSize = 17, TextColor3 = Color3.fromRGB(255,255,255),
+    ZIndex = 12
+})
 
-local EffectGrow = TweenService:Create(Effect, TweenInfo.new(0.55, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-    Size = UDim2.new(0, 560, 0, 350), BackgroundTransparency = 0.75
+Create("TextLabel", Header, {
+    Size = UDim2.new(0, 170, 0, 22),
+    Position = UDim2.new(0, 50, 0, 7),
+    BackgroundTransparency = 1,
+    Text = "MONETOR X", Font = Configs_HUB.Text_Font,
+    TextSize = 18, TextColor3 = Configs_HUB.Cor_Text,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 11
 })
-EffectGrow:Play()
 
-task.wait(0.12)
-local MenuAppear = TweenService:Create(Menu, TweenInfo.new(0.7, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0.3})
-MenuAppear:Play()
+Create("TextLabel", Header, {
+    Size = UDim2.new(0, 170, 0, 15),
+    Position = UDim2.new(0, 50, 0, 27),
+    BackgroundTransparency = 1,
+    Text = "CUSTOM EDITION", Font = Enum.Font.GothamMedium,
+    TextSize = 9, TextColor3 = Configs_HUB.Cor_DarkText,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 11
+})
 
-task.wait(0.35)
-local EffectOut = TweenService:Create(Effect, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-    Size = UDim2.new(0, 590, 0, 350), BackgroundTransparency = 1
+local HeaderLine = Create("Frame", Header, {
+    Size = UDim2.new(1, -110, 0, 1),
+    Position = UDim2.new(0, 12, 1, -1),
+    BackgroundColor3 = Color3.fromRGB(55, 55, 62),
+    BackgroundTransparency = 0.25,
+    BorderSizePixel = 0, ZIndex = 11
 })
-EffectOut:Play()
-local StrokeOut = TweenService:Create(EffectStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
-StrokeOut:Play()
-EffectOut.Completed:Wait()
-Effect:Destroy()
-IntroSound.Ended:Connect(function() IntroSound:Destroy() end)
 
-local TopBar = Create("Frame", Menu, {
-    BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 30),
-    Visible = false, BorderSizePixel = 0, ZIndex = 10
+local HeaderButtons = Create("Frame", Header, {
+    Size = UDim2.new(0, 66, 0, 30),
+    Position = UDim2.new(1, -12, 0.5, -15),
+    BackgroundTransparency = 1, ZIndex = 20
 })
-local ButtonsFrame = Create("Frame", TopBar, {
-    Size = UDim2.new(0, 40, 1, -5), Position = UDim2.new(1, -10, 0, 2.5),
-    AnchorPoint = Vector2.new(1, 0), BackgroundTransparency = 1, ZIndex = 15
-})
-Create("ImageLabel", TopBar, {
-    Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(0, 8, 0.5, 0),
-    AnchorPoint = Vector2.new(0, 0.5), BackgroundTransparency = 1,
-    Image = "rbxassetid://89949755377207",
-    ImageColor3 = Color3.fromRGB(255, 255, 255), ZIndex = 20
-})
-local NameFrame = Create("Frame", TopBar, {
-    Size = UDim2.new(0, 0, 0, 25), AutomaticSize = Enum.AutomaticSize.X,
-    Position = UDim2.new(0, 38, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5),
-    BackgroundColor3 = Configs_HUB.Cor_Options, BackgroundTransparency = 0.15, ZIndex = 11
-})
-Corner(NameFrame); Stroke(NameFrame)
-local Title = Create("TextLabel", NameFrame, {
-    Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X,
-    Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1,
-    TextColor3 = Color3.fromRGB(255, 255, 255), Font = Configs_HUB.Text_Font,
-    TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center,
-    Text = "Monetor X", TextSize = 20, ZIndex = 12
-})
-local Padding = Instance.new("UIPadding"); Padding.PaddingLeft = UDim.new(0, 10); Padding.PaddingRight = UDim.new(0, 10); Padding.Parent = NameFrame
-local TextGradient = Instance.new("UIGradient"); TextGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(180, 180, 180)),
-    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(90, 90, 90)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
-}
-TextGradient.Parent = Title
-task.spawn(function()
-    local speed = 0.008; local offset = 0
-    while Title and Title.Parent do
-        offset = offset + speed
-        if offset >= 1 then offset = 0 end
-        TextGradient.Offset = Vector2.new(-offset, 0)
-        RunService.RenderStepped:Wait()
-    end
-end)
 
-local Minimize_BTN = Create("TextButton", ButtonsFrame, {
-    Text = "-", TextColor3 = Configs_HUB.Cor_Text,
-    Size = UDim2.new(0.5, 0, 1, 0), BackgroundTransparency = 1,
-    Font = Configs_HUB.Text_Font, TextYAlignment = "Bottom", TextSize = 25
+local Minimize_BTN = Create("TextButton", HeaderButtons, {
+    Size = UDim2.new(0, 30, 0, 30),
+    Position = UDim2.new(0, 0, 0, 0),
+    BackgroundColor3 = Color3.fromRGB(22,22,26),
+    BackgroundTransparency = 0.1,
+    Text = "−", TextColor3 = Configs_HUB.Cor_DarkText,
+    Font = Enum.Font.GothamBold, TextSize = 18,
+    AutoButtonColor = false, ZIndex = 21
 })
+Corner(Minimize_BTN, {CornerRadius = UDim.new(0, 8)})
+
+local Close_Button = Create("TextButton", HeaderButtons, {
+    Size = UDim2.new(0, 30, 0, 30),
+    Position = UDim2.new(1, -30, 0, 0),
+    BackgroundColor3 = Color3.fromRGB(65, 14, 22),
+    BackgroundTransparency = 0.05,
+    Text = "×", TextColor3 = Color3.fromRGB(255, 120, 130),
+    Font = Enum.Font.GothamBold, TextSize = 18,
+    AutoButtonColor = false, ZIndex = 21
+})
+Corner(Close_Button, {CornerRadius = UDim.new(0, 8)})
+
 local IsMinimized = false
 Minimize_BTN.MouseButton1Click:Connect(function()
-    Minimize_BTN.Text = not IsMinimized and "+" or "-"
-    if IsMinimized then
-        IsMinimized = false
-        CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.15, false)
-    else
-        IsMinimized = true
-        CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 25), 0.15, true)
-    end
+    IsMinimized = not IsMinimized
+    Minimize_BTN.Text = IsMinimized and "+" or "−"
+    CreateTween(Menu, "Size",
+        IsMinimized and UDim2.new(0, 530, 0, 46) or UDim2.new(0, 530, 0, 320),
+        0.18, true)
 end)
 
-local Close_Button = Create("TextButton", ButtonsFrame, {
-    Text = "×", TextYAlignment = "Bottom", TextColor3 = Configs_HUB.Cor_Text,
-    Size = UDim2.new(0.5, 0, 1, 0), AnchorPoint = Vector2.new(1, 0),
-    Position = UDim2.new(1, 0, 0, 0), BackgroundTransparency = 1,
-    Font = Configs_HUB.Text_Font, TextSize = 25
-})
 local function CreateClose()
     IsMinimized = false
-    CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, false)
+    CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.2, false)
+
     local CloseGui = Create("TextButton", Menu, {
-        BackgroundTransparency = 0.5, BackgroundColor3 = Configs_HUB.Cor_Hub,
-        Size = UDim2.new(1, 0, 1, 0), AutoButtonColor = false,
-        Text = "", Visible = false
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(0,0,0),
+        BackgroundTransparency = 0.28,
+        Text = "", AutoButtonColor = false, ZIndex = 80
     })
-    Corner(CloseGui)
-    local CloseMenu = Create("Frame", CloseGui, {
-        Size = UDim2.new(), AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0), Transparency = 1,
-        BackgroundColor3 = Configs_HUB.Cor_Hub
+    Corner(CloseGui, {CornerRadius = UDim.new(0, 14)})
+
+    local Box = Create("Frame", CloseGui, {
+        Size = UDim2.new(0, 280, 0, 145),
+        Position = UDim2.new(0.5, -140, 0.5, -72),
+        BackgroundColor3 = Color3.fromRGB(15,15,18),
+        BorderSizePixel = 0, ZIndex = 81
     })
-    Corner(CloseMenu); Stroke(CloseMenu)
-    Create("TextLabel", CloseMenu, {
-        Size = UDim2.new(0.8, 0, 0.25, 0),
-        Text = "هل تريد اغلاق السكربت؟",
-        Position = UDim2.new(0.1, 0, 0.2),
-        TextColor3 = Configs_HUB.Cor_Text, Font = Configs_HUB.Text_Font,
-        TextScaled = true, BackgroundTransparency = 1
+    Corner(Box, {CornerRadius = UDim.new(0, 12)}); Stroke(Box)
+
+    Create("TextLabel", Box, {
+        Size = UDim2.new(1, -30, 0, 30),
+        Position = UDim2.new(0, 15, 0, 16),
+        BackgroundTransparency = 1,
+        Text = "إغلاق Monetor X؟",
+        Font = Configs_HUB.Text_Font, TextSize = 18,
+        TextColor3 = Configs_HUB.Cor_Text,
+        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 82
     })
-    local Confirm = Create("TextButton", CloseMenu, {
-        Size = UDim2.new(0.35, 0, 0.3, 0), Position = UDim2.new(0.1, 0, 0.5, 0),
-        BackgroundColor3 = Configs_HUB.Cor_Hub, Text = "نعم",
-        Font = Configs_HUB.Text_Font, TextColor3 = Color3.fromRGB(240, 0, 0), TextSize = 20
+
+    Create("TextLabel", Box, {
+        Size = UDim2.new(1, -30, 0, 22),
+        Position = UDim2.new(0, 15, 0, 48),
+        BackgroundTransparency = 1,
+        Text = "سيتم إيقاف واجهة السكربت.",
+        Font = Enum.Font.Gotham, TextSize = 11,
+        TextColor3 = Configs_HUB.Cor_DarkText,
+        TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 82
     })
-    Corner(Confirm); Stroke(Confirm)
-    local Cancel = Create("TextButton", CloseMenu, {
-        Size = UDim2.new(0.35, 0, 0.3, 0), Position = UDim2.new(0.9, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = Configs_HUB.Cor_Hub,
-        Text = "لا", Font = Configs_HUB.Text_Font,
-        TextColor3 = Color3.fromRGB(0, 240, 0), TextSize = 20
+
+    local Confirm = Create("TextButton", Box, {
+        Size = UDim2.new(0.42, 0, 0, 34),
+        Position = UDim2.new(0.05, 0, 1, -46),
+        BackgroundColor3 = Color3.fromRGB(155, 18, 35),
+        Text = "إغلاق", Font = Enum.Font.GothamBold,
+        TextColor3 = Color3.fromRGB(255,255,255), TextSize = 12,
+        AutoButtonColor = false, ZIndex = 82
     })
-    Corner(Cancel); Stroke(Cancel)
-    local function SetVisible()
-        CloseGui.Visible = Menu.Size.Y.Offset > 100
-    end
-    SetVisible()
-    Menu:GetPropertyChangedSignal("Size"):Connect(SetVisible)
-    CreateTween(CloseMenu, "Transparency", 0, 0.2, false)
-    CreateTween(CloseMenu, "Size", UDim2.new(0.7, 0, 0.7, 0), 0.2, false)
-    Cancel.MouseButton1Click:Connect(function()
-        CreateTween(CloseMenu, "Transparency", 1, 0.3, false)
-        CreateTween(CloseMenu, "Size", UDim2.new(), 0.2, true)
-        CloseGui:Destroy()
+    Corner(Confirm, {CornerRadius = UDim.new(0, 8)})
+
+    local Cancel = Create("TextButton", Box, {
+        Size = UDim2.new(0.42, 0, 0, 34),
+        Position = UDim2.new(0.53, 0, 1, -46),
+        BackgroundColor3 = Color3.fromRGB(28,28,33),
+        Text = "إلغاء", Font = Enum.Font.GothamBold,
+        TextColor3 = Configs_HUB.Cor_Text, TextSize = 12,
+        AutoButtonColor = false, ZIndex = 82
+    })
+    Corner(Cancel, {CornerRadius = UDim.new(0, 8)})
+
+    Cancel.MouseButton1Click:Connect(function() CloseGui:Destroy() end)
+    CloseGui.MouseButton1Click:Connect(function()
+        if CloseGui then CloseGui:Destroy() end
     end)
     Confirm.MouseButton1Click:Connect(function()
         CloseGui:Destroy()
-        CreateTween(Menu, "Size", UDim2.new(), 0.3, true)
+        CreateTween(Menu, "Size", UDim2.new(), 0.25, true)
         DestroyScript()
-    end)
-    CloseGui.MouseButton1Click:Connect(function()
-        CreateTween(CloseMenu, "Transparency", 1, 0.3, false)
-        CreateTween(CloseMenu, "Size", UDim2.new(), 0.2, true)
-        CloseGui:Destroy()
     end)
 end
 Close_Button.MouseButton1Click:Connect(CreateClose)
 
-local AnimMenu = Create("Frame", ScreenGui, {
-    Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
-    Size = UDim2.new(0, 0, 0, 100), BackgroundColor3 = Configs_HUB.Cor_Hub
+local Content = Create("Frame", Menu, {
+    Size = UDim2.new(1, -24, 1, -58),
+    Position = UDim2.new(0, 12, 0, 52),
+    BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 5
 })
-Corner(AnimMenu, {CornerRadius = UDim.new(0, 6)}); Stroke(AnimMenu)
-local PlayerHead = Create("ImageLabel", AnimMenu, {
-    BackgroundTransparency = 1, Size = UDim2.new(0, 55, 0, 55),
-    Position = UDim2.new(0.5, -27.5, 0, 8),
-    Image = "rbxthumb://type=AvatarHeadShot&id=" .. LP.UserId .. "&w=150&h=150"
-})
-Corner(PlayerHead, {CornerRadius = UDim.new(1, 0)}); Stroke(PlayerHead)
-local Anim_Credits = Create("TextLabel", AnimMenu, {
-    Text = "مرحبا بك في MONETOR X " .. LP.Name,
-    BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 25),
-    Position = UDim2.new(0, 0, 0, 68), Visible = false,
-    Font = Configs_HUB.Text_Font, TextTransparency = 1,
-    TextColor3 = Configs_HUB.Cor_Text, TextXAlignment = Enum.TextXAlignment.Center,
-    TextYAlignment = Enum.TextYAlignment.Center, TextSize = 15
-})
-CreateTween(AnimMenu, "Size", UDim2.new(0, 180, 0, 100), 0.5, true)
-Anim_Credits.Visible = true
-for i = 1, 0, -0.1 do task.wait() Anim_Credits.TextTransparency = i end
-task.wait(1)
-for i = 0, 1, 0.1 do task.wait() Anim_Credits.TextTransparency = i end
-Anim_Credits:Destroy(); PlayerHead:Destroy(); AnimMenu:Destroy()
 
-CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 35), 0.5, true)
-TopBar.Visible = true
-CreateTween(Menu, "Size", UDim2.new(0, 530, 0, 320), 0.3, true)
-Menu.Draggable = true
-
-local ScrollBar = Create("ScrollingFrame", Menu, {
-    Size = UDim2.new(0, 140, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
-    Position = UDim2.new(0, 0, 1, 0), AnchorPoint = Vector2.new(0, 1),
-    CanvasSize = UDim2.new(), ScrollingDirection = "Y",
-    AutomaticCanvasSize = "Y", BackgroundTransparency = 1, ScrollBarThickness = 2
+-- شريط تنقل صغير ومختلف
+local ScrollBar = Create("ScrollingFrame", Content, {
+    Size = UDim2.new(0, 88, 1, 0),
+    Position = UDim2.new(0, 0, 0, 0),
+    CanvasSize = UDim2.new(),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ScrollingDirection = Enum.ScrollingDirection.Y,
+    BackgroundColor3 = Color3.fromRGB(12,12,15),
+    BackgroundTransparency = 0.12,
+    BorderSizePixel = 0,
+    ScrollBarThickness = 0, ZIndex = 6
 })
-Create("UIPadding", ScrollBar, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
-Create("UIListLayout", ScrollBar, { Padding = UDim.new(0, 14) })
-
-local Containers = Create("Frame", Menu, {
-    Size = UDim2.new(1, -tonumber(ScrollBar.Size.X.Offset + 2), 1, -tonumber(TopBar.Size.Y.Offset + 2)),
-    AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 1
+Corner(ScrollBar, {CornerRadius = UDim.new(0, 11)})
+Create("UIPadding", ScrollBar, {
+    PaddingLeft = UDim.new(0, 7), PaddingRight = UDim.new(0, 7),
+    PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8)
 })
-Corner(Containers); Stroke(Containers)
+Create("UIListLayout", ScrollBar, {
+    Padding = UDim.new(0, 6),
+    HorizontalAlignment = Enum.HorizontalAlignment.Center
+})
+
+local Containers = Create("Frame", Content, {
+    Size = UDim2.new(1, -98, 1, 0),
+    Position = UDim2.new(0, 98, 0, 0),
+    BackgroundColor3 = Color3.fromRGB(11,11,14),
+    BackgroundTransparency = 0.08,
+    BorderSizePixel = 0, ZIndex = 6
+})
+Corner(Containers, {CornerRadius = UDim.new(0, 11)})
 
 local firstVisible = true
-local textsize = 15
-local textcolor = Configs_HUB.Cor_Text
-Menu:GetPropertyChangedSignal("Size"):Connect(function()
-    if Menu.Size.Y.Offset > 70 then
-        ScrollBar.Visible = true; Containers.Visible = true
-    else
-        ScrollBar.Visible = false; Containers.Visible = false
-    end
-end)
+local textsize = 12
+local textcolor = Configs_HUB.Cor_DarkText
+
+-- حركة ظهور بسيطة
+Menu.BackgroundTransparency = 1
+CreateTween(Menu, "BackgroundTransparency", 0, 0.35, false)
 
 -- =============================================
--- MAKETAB (with Avatar support)
+-- =============================================
+-- MAKETAB - COMPACT CUSTOM NAV
 -- =============================================
 function MakeTab(Configs)
     local TabName = Configs.Name or "Tab"
-    local TabTitle = Configs.TabTitle or false
     local TabImage = Configs.Image or nil
-    local AvatarUsername = Configs.AvatarUsername or nil
 
-    local Frame = Create("Frame", ScrollBar, { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1 })
-    Corner(Frame); Stroke(Frame)
-    local TextButton = Create("TextButton", Frame, { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "" })
+    local Frame = Create("Frame", ScrollBar, {
+        Size = UDim2.new(1, 0, 0, 34),
+        BackgroundColor3 = Color3.fromRGB(20,20,24),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0, ZIndex = 7
+    })
+    Corner(Frame, {CornerRadius = UDim.new(0, 8)})
 
-    local hasIcon = false
+    local TextButton = Create("TextButton", Frame, {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = "", AutoButtonColor = false, ZIndex = 8
+    })
 
-    if AvatarUsername then
-        hasIcon = true
-        local avatar = Create("ImageLabel", Frame, {
-            Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
-            BackgroundTransparency = 1, BackgroundColor3 = Configs_HUB.Cor_Options,
-            Image = "", Name = "TabAvatar", ZIndex = 5
-        })
-        Corner(avatar, { CornerRadius = UDim.new(1, 0) })
-        local avatarStroke = Instance.new("UIStroke")
-        avatarStroke.Thickness = 1.5
-        avatarStroke.Color = Color3.fromRGB(255, 255, 255)
-        avatarStroke.Transparency = 0.15
-        avatarStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        avatarStroke.Parent = avatar
-        task.spawn(function()
-            local ok, userId = pcall(function() return Players:GetUserIdFromNameAsync(AvatarUsername) end)
-            if ok and userId and type(userId) == "number" then
-                pcall(function()
-                    avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(userId) .. "&w=150&h=150"
-                end)
-            else
-                pcall(function() avatar.Image = "rbxassetid://6031075931" end)
-            end
-        end)
-    elseif TabImage then
-        hasIcon = true
-        Create("ImageLabel", Frame, {
-            Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
-            BackgroundTransparency = 1, Image = TabImage, Name = "TabIcon"
-        })
-    end
+    local Dot = Create("Frame", Frame, {
+        Size = UDim2.new(0, 4, 0, 16),
+        Position = UDim2.new(0, 5, 0.5, -8),
+        BackgroundColor3 = Color3.fromRGB(190,15,35),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0, ZIndex = 9
+    })
+    Corner(Dot, {CornerRadius = UDim.new(0, 3)})
 
-    local textOffset = hasIcon and 30 or 5
+    local Icon = Create("TextLabel", Frame, {
+        Size = UDim2.new(0, 20, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1,
+        Text = TabImage and "◆" or "•",
+        Font = Enum.Font.GothamBold,
+        TextSize = 10,
+        TextColor3 = Configs_HUB.Cor_DarkText,
+        ZIndex = 9
+    })
+
     local TextLabel = Create("TextLabel", Frame, {
-        Size = UDim2.new(1, -textOffset, 1, 0), Position = UDim2.new(0, textOffset, 0, 0),
-        BackgroundTransparency = 1, Font = Configs_HUB.Text_Font,
-        TextColor3 = textcolor, TextSize = textsize,
-        Text = TabName, TextXAlignment = Enum.TextXAlignment.Left
+        Size = UDim2.new(1, -34, 1, 0),
+        Position = UDim2.new(0, 30, 0, 0),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamMedium,
+        TextColor3 = textcolor,
+        TextSize = textsize,
+        Text = TabName,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 9
     })
 
     local Container = Create("ScrollingFrame", Containers, {
-        Size = UDim2.new(1, 0, 1, 0), ScrollingDirection = "Y",
-        AutomaticCanvasSize = "Y", CanvasSize = UDim2.new(),
-        BackgroundTransparency = 1, ScrollBarThickness = 2,
-        Visible = firstVisible
+        Size = UDim2.new(1, 0, 1, 0),
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        CanvasSize = UDim2.new(),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 2,
+        Visible = firstVisible,
+        ZIndex = 7
     })
-    Corner(Container); Stroke(Container)
-    Create("UIPadding", Container, { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) })
-    Create("UIListLayout", Container, { Padding = UDim.new(0, 5) })
+    Create("UIPadding", Container, {
+        PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12),
+        PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12)
+    })
+    Create("UIListLayout", Container, {Padding = UDim.new(0, 7)})
 
-    TextButton.MouseButton1Click:Connect(function()
+    local function Select()
         for _, container in pairs(Containers:GetChildren()) do
-            if container:IsA("ScrollingFrame") then container.Visible = false end
+            if container:IsA("ScrollingFrame") then
+                container.Visible = false
+            end
         end
         for _, frame in pairs(ScrollBar:GetChildren()) do
-            if frame:IsA("Frame") and frame:FindFirstChild("TextLabel") and frame.TextLabel ~= TextLabel then
-                CreateTween(frame.TextLabel, "TextColor3", Configs_HUB.Cor_DarkText, 0.3, false)
-                frame.TextLabel.TextSize = 14
+            if frame:IsA("Frame") then
+                local lbl = frame:FindFirstChild("TextLabel")
+                local dot = frame:FindFirstChildOfClass("Frame")
+                if lbl then
+                    lbl.TextColor3 = Configs_HUB.Cor_DarkText
+                    lbl.TextSize = 12
+                end
+                if dot and dot ~= Dot then dot.BackgroundTransparency = 1 end
+                frame.BackgroundTransparency = 1
             end
         end
         Container.Visible = true
-        CreateTween(TextLabel, "TextColor3", Configs_HUB.Cor_Text, 0.3, false)
-        TextLabel.TextSize = 15
-    end)
+        TextLabel.TextColor3 = Configs_HUB.Cor_Text
+        TextLabel.TextSize = 13
+        Dot.BackgroundTransparency = 0
+        Frame.BackgroundTransparency = 0
+    end
+
+    TextButton.MouseButton1Click:Connect(Select)
+
+    if firstVisible then
+        task.defer(Select)
+    end
 
     firstVisible = false
-    textsize = 14
+    textsize = 12
     textcolor = Configs_HUB.Cor_DarkText
     return Container
 end
@@ -1071,30 +1066,53 @@ end
 -- ADDBUTTON
 -- =============================================
 function AddButton(parent, Configs)
-    local ButtonName = Configs.Name or "Button!!"
+    local ButtonName = Configs.Name or "Button"
     local Callback = Configs.Callback or function() end
-    
+
     local TextButton = Create("TextButton", parent, {
-        Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = Configs_HUB.Cor_Options,
-        BackgroundTransparency = 0.5, Name = "Frame", Text = "", AutoButtonColor = false
+        Size = UDim2.new(1, 0, 0, 32),
+        BackgroundColor3 = Color3.fromRGB(20,20,24),
+        BackgroundTransparency = 0.08,
+        BorderSizePixel = 0,
+        Name = "MonetorButton",
+        Text = "",
+        AutoButtonColor = false
     })
-    Corner(TextButton); Stroke(TextButton)
+    Corner(TextButton, {CornerRadius = UDim.new(0, 8)})
+
+    local Accent = Create("Frame", TextButton, {
+        Size = UDim2.new(0, 3, 0, 14),
+        Position = UDim2.new(0, 8, 0.5, -7),
+        BackgroundColor3 = Color3.fromRGB(190,15,35),
+        BorderSizePixel = 0
+    })
+    Corner(Accent, {CornerRadius = UDim.new(0, 2)})
+
     local TextLabel = Create("TextLabel", TextButton, {
-        TextSize = 14, TextColor3 = Configs_HUB.Cor_Text, Text = ButtonName,
-        Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 35, 0, 0),
-        BackgroundTransparency = 1, TextXAlignment = "Left", Font = Configs_HUB.Text_Font
+        TextSize = 12,
+        TextColor3 = Configs_HUB.Cor_Text,
+        Text = ButtonName,
+        Size = UDim2.new(1, -30, 1, 0),
+        Position = UDim2.new(0, 20, 0, 0),
+        BackgroundTransparency = 1,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.GothamMedium
     })
-    local ImageLabel = Create("ImageLabel", TextButton, {
-        Image = "rbxassetid://99956220697276",
-        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 5, 0.5, -10),
-        BackgroundTransparency = 1, ImageColor3 = Configs_HUB.Cor_Stroke
-    })
+
+    TextButton.MouseEnter:Connect(function()
+        CreateTween(TextButton, "BackgroundTransparency", 0, 0.12, false)
+        CreateTween(Accent, "Size", UDim2.new(0, 5, 0, 18), 0.12, false)
+    end)
+    TextButton.MouseLeave:Connect(function()
+        CreateTween(TextButton, "BackgroundTransparency", 0.08, 0.12, false)
+        CreateTween(Accent, "Size", UDim2.new(0, 3, 0, 14), 0.12, false)
+    end)
     TextButton.MouseButton1Click:Connect(function()
         pcall(Callback)
-        CreateTween(ImageLabel, "ImageColor3", Color3.fromRGB(30, 140, 200), 0.2, true)
-        CreateTween(ImageLabel, "ImageColor3", Configs_HUB.Cor_Stroke, 0.2, false)
+        CreateTween(Accent, "Size", UDim2.new(0, 8, 0, 22), 0.08, true)
+        CreateTween(Accent, "Size", UDim2.new(0, 3, 0, 14), 0.14, false)
     end)
-    TextSetColor(TextLabel)
+
     return TextButton
 end
 
@@ -1444,7 +1462,7 @@ local LocalPlayerTab = MakeTab({Name = "شخصيتي ‍️", TabTitle = true})
 local ESPTab = MakeTab({Name = "رادار ️", TabTitle = true})
 local TeleportTab = MakeTab({Name = "الانتقال ", TabTitle = true})
 local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
-local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, AvatarUsername = "sjbcjjs0"})
+local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, AvatarUsername = "Monetor"})
 
 -- =============================================
 -- COMMAND PANEL
@@ -3140,7 +3158,7 @@ AddButton(RightsTab, {
     Name = " حقوق المطور والنسخة",
     Callback = function()
         CreateCreditsPanel()
-        MakeNotifi({Title = "Monetor X", Text = "حقوق @sjbcjjs0", Time = 3})
+        MakeNotifi({Title = "Monetor X", Text = "حقوق Monetor", Time = 3})
     end
 })
 
@@ -3180,13 +3198,13 @@ AddButton(RightsTab, {
 AddButton(RightsTab, {
     Name = " حساب المطور",
     Callback = function()
-        pcall(function() if setclipboard then setclipboard('@sjbcjjs0') end end)
-        MakeNotifi({Title = "Monetor X", Text = "تم نسخ: @sjbcjjs0", Time = 2})
+        pcall(function() if setclipboard then setclipboard('Monetor') end end)
+        MakeNotifi({Title = "Monetor X", Text = "تم نسخ: Monetor", Time = 2})
     end
 })
 
 -- نص ختامي
-AddTextLabel(RightsTab, "\nشكراً لاستخدامك MONETOR X\nصنع بـ ❤️ بواسطة @sjbcjjs0\nجميع الحقوق محفوظة © 2026")
+AddTextLabel(RightsTab, "\nشكراً لاستخدامك MONETOR X\nصنع بـ ❤️ بواسطة Monetor\nجميع الحقوق محفوظة © 2026")
 
 -- =============================================
 -- FINAL INIT
@@ -3201,4 +3219,4 @@ MakeNotifi({
     Time = 3
 })
 
-print("✅ Monetor X Loaded Successfully! by @sjbcjjs0")
+print("✅ Monetor X Loaded Successfully! by Monetor")
