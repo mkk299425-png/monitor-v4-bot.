@@ -15,13 +15,16 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local HttpService = game:GetService("HttpService")
 
 local Configs_HUB = {
-    Cor_Hub = Color3.fromRGB(15, 15, 15),
-    Cor_Options = Color3.fromRGB(30, 30, 30),
-    Cor_Stroke = Color3.fromRGB(255, 255, 255),
-    Cor_Text = Color3.fromRGB(255, 255, 255),
-    Cor_DarkText = Color3.fromRGB(180, 180, 180),
-    Corner_Radius = UDim.new(0, 15),
-    Text_Font = Enum.Font.FredokaOne
+    Cor_Hub = Color3.fromRGB(8, 11, 20),
+    Cor_Options = Color3.fromRGB(16, 22, 36),
+    Cor_Stroke = Color3.fromRGB(74, 211, 255),
+    Cor_Text = Color3.fromRGB(242, 248, 255),
+    Cor_DarkText = Color3.fromRGB(151, 166, 190),
+    Cor_Accent = Color3.fromRGB(74, 211, 255),
+    Cor_Accent2 = Color3.fromRGB(124, 92, 255),
+    Cor_Success = Color3.fromRGB(83, 231, 157),
+    Corner_Radius = UDim.new(0, 12),
+    Text_Font = Enum.Font.GothamSemibold
 }
 
 -- =============================================
@@ -54,23 +57,21 @@ local function Stroke(parent, props)
     local new = Create("UIStroke", parent)
     new.Color = Configs_HUB.Cor_Stroke
     new.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    new.Thickness = 2
+    new.Thickness = 1.2
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(180, 180, 180)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 15, 15)),
-        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(90, 90, 90)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+        ColorSequenceKeypoint.new(0, Configs_HUB.Cor_Accent),
+        ColorSequenceKeypoint.new(0.5, Configs_HUB.Cor_Accent2),
+        ColorSequenceKeypoint.new(1, Configs_HUB.Cor_Accent)
     }
     gradient.Rotation = 0
     gradient.Parent = new
-    coroutine.wrap(function()
+    task.spawn(function()
         while new.Parent do
-            gradient.Rotation = (gradient.Rotation + 2) % 360
+            gradient.Rotation = (gradient.Rotation + 1.5) % 360
             RunService.RenderStepped:Wait()
         end
-    end)()
+    end)
     if props then SetProps(new, props) end
     return new
 end
@@ -575,47 +576,101 @@ Corner(Menu); Stroke(Menu)
 local BackgroundFX = Create("Frame", Menu, {
     Name = "Monetor_BackgroundFX",
     Size = UDim2.new(1, 0, 1, 0),
-    BackgroundColor3 = Color3.fromRGB(5, 5, 5),
-    BackgroundTransparency = 0, BorderSizePixel = 0,
-    ClipsDescendants = true, ZIndex = 0
+    BackgroundColor3 = Color3.fromRGB(6, 9, 17),
+    BackgroundTransparency = 0,
+    BorderSizePixel = 0,
+    ClipsDescendants = true,
+    ZIndex = 0
 })
 Corner(BackgroundFX)
 
-local RedGlowData = {
-    {Size = 170, X = -0.05, Y = 0.05, DX = 0.22, DY = 0.10, Duration = 13},
-    {Size = 125, X = 0.20, Y = 0.58, DX = -0.18, DY = 0.13, Duration = 16},
-    {Size = 150, X = 0.58, Y = -0.10, DX = 0.16, DY = 0.18, Duration = 15},
-    {Size = 105, X = 0.78, Y = 0.48, DX = -0.20, DY = -0.12, Duration = 14},
-    {Size = 135, X = 0.38, Y = 0.72, DX = 0.18, DY = -0.16, Duration = 17},
-    {Size = 90, X = 0.05, Y = 0.30, DX = 0.15, DY = -0.10, Duration = 12}
+local BackgroundGradient = Instance.new("UIGradient")
+BackgroundGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(5, 10, 20)),
+    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(10, 8, 25)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 14, 22))
+}
+BackgroundGradient.Rotation = 20
+BackgroundGradient.Parent = BackgroundFX
+
+task.spawn(function()
+    while BackgroundFX.Parent do
+        BackgroundGradient.Rotation = (BackgroundGradient.Rotation + 0.35) % 360
+        RunService.RenderStepped:Wait()
+    end
+end)
+
+local SportGlowData = {
+    {Size = 170, X = -0.08, Y = -0.05, DX = 0.22, DY = 0.16, Color = Color3.fromRGB(0, 190, 255), Duration = 10},
+    {Size = 135, X = 0.18, Y = 0.58, DX = 0.18, DY = -0.14, Color = Color3.fromRGB(124, 92, 255), Duration = 13},
+    {Size = 155, X = 0.64, Y = -0.10, DX = -0.18, DY = 0.20, Color = Color3.fromRGB(45, 220, 255), Duration = 12},
+    {Size = 115, X = 0.78, Y = 0.55, DX = -0.20, DY = -0.12, Color = Color3.fromRGB(150, 80, 255), Duration = 11},
+    {Size = 100, X = 0.42, Y = 0.70, DX = 0.15, DY = -0.16, Color = Color3.fromRGB(0, 155, 255), Duration = 14}
 }
 
-for index, data in ipairs(RedGlowData) do
+for index, data in ipairs(SportGlowData) do
     local glow = Create("Frame", BackgroundFX, {
-        Name = "RedGlow_" .. index,
+        Name = "SportGlow_" .. index,
         Size = UDim2.new(0, data.Size, 0, data.Size),
         Position = UDim2.new(data.X, 0, data.Y, 0),
-        BackgroundColor3 = Color3.fromRGB(170, 0, 0),
-        BackgroundTransparency = 0.82, BorderSizePixel = 0, ZIndex = 0
+        BackgroundColor3 = data.Color,
+        BackgroundTransparency = 0.88,
+        BorderSizePixel = 0,
+        ZIndex = 0
     })
     Corner(glow, {CornerRadius = UDim.new(1, 0)})
+
+    local glowGradient = Instance.new("UIGradient")
+    glowGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, data.Color),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+    glowGradient.Transparency = NumberSequence.new{
+        NumberSequenceKeypoint.new(0, 0.15),
+        NumberSequenceKeypoint.new(1, 1)
+    }
+    glowGradient.Parent = glow
+
     task.spawn(function()
         local baseX, baseY = data.X, data.Y
         while glow.Parent do
-            local targetX = math.clamp(baseX + data.DX, -0.12, 0.90)
-            local targetY = math.clamp(baseY + data.DY, -0.12, 0.82)
-            local tweenOut = TweenService:Create(glow,
+            local targetX = math.clamp(baseX + data.DX, -0.15, 0.90)
+            local targetY = math.clamp(baseY + data.DY, -0.15, 0.85)
+            local t1 = TweenService:Create(glow,
                 TweenInfo.new(data.Duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                {Position = UDim2.new(targetX, 0, targetY, 0), BackgroundTransparency = 0.74})
-            tweenOut:Play(); tweenOut.Completed:Wait()
+                {Position = UDim2.new(targetX, 0, targetY, 0), BackgroundTransparency = 0.78})
+            t1:Play()
+            t1.Completed:Wait()
             if not glow.Parent then break end
-            local tweenBack = TweenService:Create(glow,
+            local t2 = TweenService:Create(glow,
                 TweenInfo.new(data.Duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                {Position = UDim2.new(baseX, 0, baseY, 0), BackgroundTransparency = 0.84})
-            tweenBack:Play(); tweenBack.Completed:Wait()
+                {Position = UDim2.new(baseX, 0, baseY, 0), BackgroundTransparency = 0.90})
+            t2:Play()
+            t2.Completed:Wait()
         end
     end)
 end
+
+local AccentLine = Create("Frame", BackgroundFX, {
+    Size = UDim2.new(0, 190, 0, 2),
+    Position = UDim2.new(-0.35, 0, 0.92, 0),
+    BackgroundColor3 = Configs_HUB.Cor_Accent,
+    BorderSizePixel = 0,
+    ZIndex = 1
+})
+Corner(AccentLine, {CornerRadius = UDim.new(1, 0)})
+
+task.spawn(function()
+    while AccentLine.Parent do
+        local tween = TweenService:Create(AccentLine,
+            TweenInfo.new(4.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+            {Position = UDim2.new(1.05, 0, 0.92, 0)})
+        tween:Play()
+        tween.Completed:Wait()
+        if not AccentLine.Parent then break end
+        AccentLine.Position = UDim2.new(-0.35, 0, 0.92, 0)
+    end
+end)
 
 local IntroSound = Instance.new("Sound")
 IntroSound.SoundId = "rbxassetid://8426701399"
@@ -666,12 +721,12 @@ Create("ImageLabel", TopBar, {
     Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(0, 8, 0.5, 0),
     AnchorPoint = Vector2.new(0, 0.5), BackgroundTransparency = 1,
     Image = "rbxassetid://89949755377207",
-    ImageColor3 = Color3.fromRGB(255, 255, 255), ZIndex = 20
+    ImageColor3 = Configs_HUB.Cor_Accent, ZIndex = 20
 })
 local NameFrame = Create("Frame", TopBar, {
     Size = UDim2.new(0, 0, 0, 25), AutomaticSize = Enum.AutomaticSize.X,
     Position = UDim2.new(0, 38, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5),
-    BackgroundColor3 = Configs_HUB.Cor_Options, BackgroundTransparency = 0.15, ZIndex = 11
+    BackgroundColor3 = Color3.fromRGB(12, 18, 31), BackgroundTransparency = 0.05, ZIndex = 11
 })
 Corner(NameFrame); Stroke(NameFrame)
 local Title = Create("TextLabel", NameFrame, {
@@ -683,10 +738,10 @@ local Title = Create("TextLabel", NameFrame, {
 })
 local Padding = Instance.new("UIPadding"); Padding.PaddingLeft = UDim.new(0, 10); Padding.PaddingRight = UDim.new(0, 10); Padding.Parent = NameFrame
 local TextGradient = Instance.new("UIGradient"); TextGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(180, 180, 180)),
-    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(90, 90, 90)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(242, 248, 255)),
+    ColorSequenceKeypoint.new(0.35, Configs_HUB.Cor_Accent),
+    ColorSequenceKeypoint.new(0.7, Configs_HUB.Cor_Accent2),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(242, 248, 255))
 }
 TextGradient.Parent = Title
 task.spawn(function()
@@ -747,14 +802,14 @@ local function CreateClose()
     local Confirm = Create("TextButton", CloseMenu, {
         Size = UDim2.new(0.35, 0, 0.3, 0), Position = UDim2.new(0.1, 0, 0.5, 0),
         BackgroundColor3 = Configs_HUB.Cor_Hub, Text = "نعم",
-        Font = Configs_HUB.Text_Font, TextColor3 = Color3.fromRGB(240, 0, 0), TextSize = 20
+        Font = Configs_HUB.Text_Font, TextColor3 = Configs_HUB.Cor_Accent, TextSize = 20
     })
     Corner(Confirm); Stroke(Confirm)
     local Cancel = Create("TextButton", CloseMenu, {
         Size = UDim2.new(0.35, 0, 0.3, 0), Position = UDim2.new(0.9, 0, 0.5, 0),
         AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = Configs_HUB.Cor_Hub,
         Text = "لا", Font = Configs_HUB.Text_Font,
-        TextColor3 = Color3.fromRGB(0, 240, 0), TextSize = 20
+        TextColor3 = Configs_HUB.Cor_Success, TextSize = 20
     })
     Corner(Cancel); Stroke(Cancel)
     local function SetVisible()
@@ -819,7 +874,7 @@ local ScrollBar = Create("ScrollingFrame", Menu, {
     Position = UDim2.new(0, 0, 1, 0), AnchorPoint = Vector2.new(0, 1),
     CanvasSize = UDim2.new(), ScrollingDirection = "Y",
     AutomaticCanvasSize = "Y", BackgroundTransparency = 0.12,
-    BackgroundColor3 = Color3.fromRGB(8, 8, 8), BorderSizePixel = 0,
+    BackgroundColor3 = Color3.fromRGB(9, 13, 24), BorderSizePixel = 0,
     ScrollBarThickness = 2, ScrollBarImageTransparency = 0.35
 })
 Corner(ScrollBar); Stroke(ScrollBar, {Thickness = 1})
@@ -835,10 +890,33 @@ local Containers = Create("Frame", Menu, {
     Name = "ContentArea",
     Size = UDim2.new(1, -152, 1, -tonumber(TopBar.Size.Y.Offset + 2)),
     AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 0.08, BackgroundColor3 = Color3.fromRGB(10, 10, 10),
+    BackgroundTransparency = 0.02, BackgroundColor3 = Color3.fromRGB(10, 15, 27),
     BorderSizePixel = 0
 })
 Corner(Containers); Stroke(Containers, {Thickness = 1})
+
+local ContentAccent = Create("Frame", Containers, {
+    Name = "Monetor_ContentAccent",
+    Size = UDim2.new(0, 70, 0, 2),
+    Position = UDim2.new(0, 12, 0, 0),
+    BackgroundColor3 = Configs_HUB.Cor_Accent,
+    BorderSizePixel = 0,
+    ZIndex = 5
+})
+Corner(ContentAccent, {CornerRadius = UDim.new(1, 0)})
+task.spawn(function()
+    while ContentAccent.Parent do
+        local a = TweenService:Create(ContentAccent,
+            TweenInfo.new(2.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+            {Size = UDim2.new(0, 145, 0, 2)})
+        a:Play(); a.Completed:Wait()
+        if not ContentAccent.Parent then break end
+        local b = TweenService:Create(ContentAccent,
+            TweenInfo.new(2.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+            {Size = UDim2.new(0, 70, 0, 2)})
+        b:Play(); b.Completed:Wait()
+    end
+end)
 
 local firstVisible = true
 local textsize = 15
@@ -860,7 +938,7 @@ function MakeTab(Configs)
     local TabImage = Configs.Image or nil
     local AvatarUsername = Configs.AvatarUsername or nil
 
-    local Frame = Create("Frame", ScrollBar, { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1 })
+    local Frame = Create("Frame", ScrollBar, { Size = UDim2.new(1, 0, 0, 34), BackgroundTransparency = 0.08, BackgroundColor3 = Color3.fromRGB(12, 18, 31) })
     Corner(Frame); Stroke(Frame)
     local TextButton = Create("TextButton", Frame, { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "" })
 
@@ -966,8 +1044,15 @@ function AddButton(parent, Configs)
     })
     TextButton.MouseButton1Click:Connect(function()
         pcall(Callback)
-        CreateTween(ImageLabel, "ImageColor3", Color3.fromRGB(30, 140, 200), 0.2, true)
+        CreateTween(ImageLabel, "ImageColor3", Configs_HUB.Cor_Accent, 0.2, true)
         CreateTween(ImageLabel, "ImageColor3", Configs_HUB.Cor_Stroke, 0.2, false)
+    end)
+    TextButton.MouseEnter:Connect(function()
+        CreateTween(TextButton, "BackgroundTransparency", 0.04, 0.18, false)
+        CreateTween(ImageLabel, "ImageTransparency", 0, 0.18, false)
+    end)
+    TextButton.MouseLeave:Connect(function()
+        CreateTween(TextButton, "BackgroundTransparency", 0.22, 0.18, false)
     end)
     TextSetColor(TextLabel)
     return TextButton
@@ -1001,14 +1086,20 @@ function AddToggleButton(parent, Configs)
         Image = "rbxassetid://99956220697276",
         Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
         BackgroundTransparency = 1,
-        ImageColor3 = State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke
+        ImageColor3 = State and Configs_HUB.Cor_Success or Configs_HUB.Cor_Stroke
     })
     TextButton.MouseButton1Click:Connect(function()
         State = not State
         TextLabel.Text = State and OffText or OnText
-        CreateTween(ImageLabel, "ImageColor3", Color3.fromRGB(30, 140, 200), 0.2, true)
-        CreateTween(ImageLabel, "ImageColor3", State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke, 0.2, false)
+        CreateTween(ImageLabel, "ImageColor3", Configs_HUB.Cor_Accent, 0.2, true)
+        CreateTween(ImageLabel, "ImageColor3", State and Configs_HUB.Cor_Success or Configs_HUB.Cor_Stroke, 0.2, false)
         if State then pcall(OnEnable) else pcall(OnDisable) end
+    end)
+    TextButton.MouseEnter:Connect(function()
+        CreateTween(TextButton, "BackgroundTransparency", 0.04, 0.18, false)
+    end)
+    TextButton.MouseLeave:Connect(function()
+        CreateTween(TextButton, "BackgroundTransparency", 0.22, 0.18, false)
     end)
     TextSetColor(TextLabel)
     return {
@@ -1017,7 +1108,7 @@ function AddToggleButton(parent, Configs)
         SetState = function(newState)
             State = newState
             TextLabel.Text = State and OffText or OnText
-            ImageLabel.ImageColor3 = State and Color3.fromRGB(80, 220, 120) or Configs_HUB.Cor_Stroke
+            ImageLabel.ImageColor3 = State and Configs_HUB.Cor_Success or Configs_HUB.Cor_Stroke
         end
     }
 end
