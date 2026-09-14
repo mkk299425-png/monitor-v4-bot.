@@ -1,3 +1,199 @@
+-- =========================================================
+-- MONETOR X - DEBUG RUNNER
+-- إذا السكربت فشل، راح يطبع الخطأ + Stack Trace
+-- وإذا setclipboard متوفر، ينسخ الخطأ تلقائياً للحافظة.
+-- =========================================================
+local __MonetorDebugSource = "Monetor X"
+
+-- =========================================================
+-- MONETOR X - PROBLEM PANEL
+-- يعرض أخطاء التشغيل داخل الواجهة مع نسخ/مسح.
+-- لا يغيّر وظائف السكربت الأصلية.
+-- =========================================================
+local __MonetorProblemGui
+local __MonetorProblemBody
+local __MonetorProblemCount = 0
+
+local function __MonetorGetGuiParent()
+    local ok, core = pcall(function() return game:GetService("CoreGui") end)
+    if ok and core then return core end
+    local ok2, players = pcall(function() return game:GetService("Players") end)
+    if ok2 and players and players.LocalPlayer then
+        return players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+    end
+end
+
+local function __MonetorMakeProblemPanel()
+    if __MonetorProblemGui then return __MonetorProblemGui end
+    local parent = __MonetorGetGuiParent()
+    if not parent then return nil end
+
+    local ok, gui = pcall(function()
+        local old = parent:FindFirstChild("MonetorX_ProblemPanel")
+        if old then old:Destroy() end
+        local g = Instance.new("ScreenGui")
+        g.Name = "MonetorX_ProblemPanel"
+        g.ResetOnSpawn = false
+        g.IgnoreGuiInset = true
+        g.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        g.Parent = parent
+
+        local frame = Instance.new("Frame")
+        frame.Name = "Panel"
+        frame.Size = UDim2.new(0, 430, 0, 260)
+        frame.Position = UDim2.new(0.5, -215, 0.5, -130)
+        frame.BackgroundColor3 = Color3.fromRGB(12, 15, 24)
+        frame.BorderSizePixel = 0
+        frame.Parent = g
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 12)
+        corner.Parent = frame
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = Color3.fromRGB(255, 80, 80)
+        stroke.Thickness = 1.5
+        stroke.Parent = frame
+
+        local title = Instance.new("TextLabel")
+        title.Name = "Title"
+        title.Size = UDim2.new(1, -24, 0, 36)
+        title.Position = UDim2.new(0, 12, 0, 8)
+        title.BackgroundTransparency = 1
+        title.Text = "Monetor X  |  لوحة المشاكل"
+        title.TextColor3 = Color3.fromRGB(255, 110, 110)
+        title.TextSize = 18
+        title.Font = Enum.Font.GothamBold
+        title.TextXAlignment = Enum.TextXAlignment.Left
+        title.Parent = frame
+
+        local count = Instance.new("TextLabel")
+        count.Name = "Count"
+        count.Size = UDim2.new(0, 80, 0, 24)
+        count.Position = UDim2.new(1, -92, 0, 14)
+        count.BackgroundTransparency = 1
+        count.Text = "0 أخطاء"
+        count.TextColor3 = Color3.fromRGB(170, 180, 200)
+        count.TextSize = 12
+        count.Font = Enum.Font.Gotham
+        count.Parent = frame
+
+        local body = Instance.new("TextBox")
+        body.Name = "Errors"
+        body.Size = UDim2.new(1, -24, 1, -104)
+        body.Position = UDim2.new(0, 12, 0, 50)
+        body.BackgroundColor3 = Color3.fromRGB(20, 24, 36)
+        body.BorderSizePixel = 0
+        body.ClearTextOnFocus = false
+        body.MultiLine = true
+        body.TextEditable = false
+        body.Text = "لا توجد مشاكل حتى الآن."
+        body.TextColor3 = Color3.fromRGB(235, 240, 248)
+        body.TextSize = 13
+        body.Font = Enum.Font.Code
+        body.TextXAlignment = Enum.TextXAlignment.Left
+        body.TextYAlignment = Enum.TextYAlignment.Top
+        body.TextWrapped = false
+        body.Parent = frame
+        local bc = Instance.new("UICorner")
+        bc.CornerRadius = UDim.new(0, 8)
+        bc.Parent = body
+
+        local copy = Instance.new("TextButton")
+        copy.Name = "Copy"
+        copy.Size = UDim2.new(0, 120, 0, 34)
+        copy.Position = UDim2.new(0, 12, 1, -46)
+        copy.BackgroundColor3 = Color3.fromRGB(36, 44, 64)
+        copy.BorderSizePixel = 0
+        copy.Text = "نسخ الخطأ"
+        copy.TextColor3 = Color3.fromRGB(240, 245, 255)
+        copy.TextSize = 13
+        copy.Font = Enum.Font.GothamSemibold
+        copy.Parent = frame
+        local cc = Instance.new("UICorner")
+        cc.CornerRadius = UDim.new(0, 8)
+        cc.Parent = copy
+
+        local clear = Instance.new("TextButton")
+        clear.Name = "Clear"
+        clear.Size = UDim2.new(0, 120, 0, 34)
+        clear.Position = UDim2.new(0, 140, 1, -46)
+        clear.BackgroundColor3 = Color3.fromRGB(36, 44, 64)
+        clear.BorderSizePixel = 0
+        clear.Text = "مسح"
+        clear.TextColor3 = Color3.fromRGB(240, 245, 255)
+        clear.TextSize = 13
+        clear.Font = Enum.Font.GothamSemibold
+        clear.Parent = frame
+        local clc = Instance.new("UICorner")
+        clc.CornerRadius = UDim.new(0, 8)
+        clc.Parent = clear
+
+        copy.MouseButton1Click:Connect(function()
+            pcall(function()
+                if setclipboard then setclipboard(body.Text) end
+            end)
+        end)
+        clear.MouseButton1Click:Connect(function()
+            __MonetorProblemCount = 0
+            body.Text = "تم مسح المشاكل."
+            count.Text = "0 أخطاء"
+        end)
+
+        __MonetorProblemBody = body
+        return g
+    end)
+    if ok then __MonetorProblemGui = gui end
+    return __MonetorProblemGui
+end
+
+local function __MonetorAddProblem(message)
+    local panel = __MonetorMakeProblemPanel()
+    if not panel or not __MonetorProblemBody then return end
+    __MonetorProblemCount += 1
+    local text = tostring(message)
+    if __MonetorProblemCount == 1 then
+        __MonetorProblemBody.Text = "[1] " .. text
+    else
+        __MonetorProblemBody.Text = __MonetorProblemBody.Text .. "\n\n[" .. __MonetorProblemCount .. "] " .. text
+    end
+    local count = panel:FindFirstChild("Panel") and panel.Panel:FindFirstChild("Count")
+    if count then count.Text = tostring(__MonetorProblemCount) .. " أخطاء" end
+end
+
+-- أنشئ اللوحة مبكراً حتى تظهر حتى لو فشل السكربت أثناء البداية.
+pcall(__MonetorMakeProblemPanel)
+
+local function __MonetorReportError(err)
+    local trace = tostring(err)
+    pcall(function()
+        if debug and debug.traceback then
+            trace = debug.traceback(trace, 2)
+        end
+    end)
+
+    warn("========== MONETOR X ERROR ==========")
+    warn(trace)
+    warn("========== END MONETOR X ERROR ======")
+    __MonetorAddProblem(trace)
+
+    pcall(function()
+        if setclipboard then
+            setclipboard(trace)
+            warn("[Monetor X] تم نسخ الخطأ للحافظة.")
+        end
+    end)
+end
+
+-- التقاط أخطاء Runtime التي تحدث خارج xpcall أيضاً.
+pcall(function()
+    game:GetService("LogService").MessageOut:Connect(function(message, messageType)
+        if messageType == Enum.MessageType.MessageError then
+            __MonetorAddProblem(message)
+        end
+    end)
+end)
+
+local function __MonetorMain()
 -- =============================================
 -- MONETOR X (FULL EDITION + AVATAR + USAGE + CREDITS)
 -- Developed by @monetor_
@@ -3363,3 +3559,20 @@ MakeNotifi({
 })
 
 print("✅ Monetor X Loaded Successfully! by @monetor_")
+end
+
+local __ok, __err = xpcall(__MonetorMain, function(err)
+    local trace = tostring(err)
+    pcall(function()
+        if debug and debug.traceback then
+            trace = debug.traceback(trace, 2)
+        end
+    end)
+    return trace
+end)
+
+if not __ok then
+    __MonetorReportError(__err)
+else
+    print("[Monetor X] Loaded successfully.")
+end
