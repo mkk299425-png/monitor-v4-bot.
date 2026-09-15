@@ -9,6 +9,7 @@ local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
 local RepStorage = game:GetService("ReplicatedStorage")
 local LogService = game:GetService("LogService")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -1726,6 +1727,242 @@ local ESPTab = MakeTab({Name = "رادار ️", TabTitle = true})
 local TeleportTab = MakeTab({Name = "الانتقال ", TabTitle = true})
 local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
 local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, AvatarUsername = "sjbcjjs0"})
+local GraphicsTab = MakeTab({Name = "جرافكس", TabTitle = true})
+
+-- =============================================
+-- MONETOR X - ADAPTIVE GRAPHICS ENGINE V2
+-- لا يضع FPS Cap ولا يغيّر سقف الفريمات الطبيعي للجهاز.
+-- يخفف الحمل فقط عند هبوط الأداء، ثم يعيد الإعدادات تدريجياً عند الاستقرار.
+-- =============================================
+do
+    local GFX = {
+        Enabled = false,
+        Smart = false,
+        Level = 0,
+        BaselineFPS = nil,
+        CalibrationStarted = 0,
+        CalibrationPeak = 0,
+        Saved = {},
+        Changed = {},
+        Connection = nil,
+        LastSample = os.clock(),
+        Frames = 0,
+        CurrentFPS = 0,
+        StableSince = 0,
+        CooldownUntil = 0,
+    }
+
+    local function gfxSave(obj, prop)
+        if not obj or not obj.Parent then return end
+        GFX.Saved[obj] = GFX.Saved[obj] or {}
+        if GFX.Saved[obj][prop] == nil then
+            local ok, value = pcall(function() return obj[prop] end)
+            if ok then GFX.Saved[obj][prop] = value end
+        end
+    end
+
+    local function gfxSet(obj, prop, value)
+        if not obj or not obj.Parent then return end
+        local ok = pcall(function()
+            gfxSave(obj, prop)
+            obj[prop] = value
+            GFX.Changed[obj] = true
+        end)
+        return ok
+    end
+
+    local function gfxRestore()
+        for obj, props in pairs(GFX.Saved) do
+            if obj and obj.Parent then
+                for prop, value in pairs(props) do
+                    pcall(function() obj[prop] = value end)
+                end
+            end
+        end
+        GFX.Saved = {}
+        GFX.Changed = {}
+        GFX.Level = 0
+    end
+
+    local function gfxIsLocalUI(obj)
+        return obj:IsDescendantOf(ScreenGui)
+    end
+
+    local function gfxApply(level)
+        level = math.clamp(tonumber(level) or 0, 0, 3)
+        if level == 0 then return end
+
+        -- Lighting/PostEffects: cheap and generally safe first step.
+        if level >= 1 then
+            pcall(function() gfxSet(Lighting, "GlobalShadows", false) end)
+            for _, fx in ipairs(Lighting:GetChildren()) do
+                if (fx:IsA("BloomEffect") or fx:IsA("BlurEffect") or fx:IsA("ColorCorrectionEffect")
+                    or fx:IsA("SunRaysEffect") or fx:IsA("DepthOfFieldEffect")) and not gfxIsLocalUI(fx) then
+                    pcall(function() gfxSet(fx, "Enabled", false) end)
+                end
+            end
+        end
+
+        -- Particle / trail / beam load reduction.
+        if level >= 2 then
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke")
+                    or obj:IsA("Fire") or obj:IsA("Sparkles") or obj:IsA("Beam") then
+                    pcall(function() gfxSet(obj, "Enabled", false) end)
+                end
+            end
+        end
+
+        -- Level 3 is still reversible and does not touch UI or character scripts.
+        if level >= 3 then
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    pcall(function() gfxSet(obj, "CastShadow", false) end)
+                    pcall(function() gfxSet(obj, "Reflectance", 0) end)
+                    -- Only use SmoothPlastic where the material is not special terrain/character UI.
+                    if not obj:IsDescendantOf(LP.Character or workspace:FindFirstChild("__none__")) then
+                        pcall(function() gfxSet(obj, "Material", Enum.Material.SmoothPlastic) end)
+                    end
+                end
+            end
+        end
+
+        GFX.Level = math.max(GFX.Level, level)
+    end
+
+    local function gfxDeviceText()
+        local mobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+        return mobile and "جوال — بدون تحديد FPS" or "PC — بدون تحديد FPS"
+    end
+
+    local function gfxNotify(text)
+        pcall(function() MakeNotifi({Title = "Monetor X • جرافكس", Text = text, Time = 2}) end)
+    end
+
+    local function gfxStartSmart()
+        if GFX.Smart then return end
+        GFX.Smart = true
+        GFX.Enabled = true
+        GFX.BaselineFPS = nil
+        GFX.CalibrationStarted = os.clock()
+        GFX.CalibrationPeak = 0
+        GFX.Frames = 0
+        GFX.LastSample = os.clock()
+        GFX.StableSince = os.clock()
+
+        if GFX.Connection then pcall(function() GFX.Connection:Disconnect() end) end
+        GFX.Connection = RunService.RenderStepped:Connect(function()
+            GFX.Frames += 1
+            local now = os.clock()
+            local elapsed = now - GFX.LastSample
+            if elapsed < 1 then return end
+
+            local fps = GFX.Frames / elapsed
+            GFX.CurrentFPS = math.floor(fps + 0.5)
+            GFX.Frames = 0
+            GFX.LastSample = now
+
+            -- Learn the device's natural FPS for a few seconds. We NEVER set an FPS cap.
+            if not GFX.BaselineFPS then
+                GFX.CalibrationPeak = math.max(GFX.CalibrationPeak or 0, GFX.CurrentFPS)
+                if now - GFX.CalibrationStarted < 5 then
+                    return
+                end
+                GFX.BaselineFPS = math.max(30, GFX.CalibrationPeak)
+                GFX.StableSince = now
+                return
+            end
+
+            local baseline = GFX.BaselineFPS
+            local dropRatio = (baseline - GFX.CurrentFPS) / math.max(baseline, 1)
+
+            -- Escalate only after a real sustained drop.
+            if dropRatio >= 0.30 and now >= GFX.CooldownUntil then
+                if GFX.Level < 3 then
+                    gfxApply(GFX.Level + 1)
+                    GFX.CooldownUntil = now + 4
+                    GFX.StableSince = now
+                end
+            elseif dropRatio <= 0.08 then
+                if GFX.StableSince == 0 then GFX.StableSince = now end
+                -- Restore one level at a time after stable performance.
+                if GFX.Level > 0 and now - GFX.StableSince >= 12 then
+                    gfxRestore()
+                    GFX.CooldownUntil = now + 6
+                    GFX.StableSince = now
+                end
+            else
+                GFX.StableSince = now
+            end
+        end)
+        gfxNotify("تم تشغيل الوضع الذكي — الفريمات تبقى طبيعية")
+    end
+
+    local function gfxStopSmart()
+        GFX.Smart = false
+        GFX.Enabled = false
+        if GFX.Connection then pcall(function() GFX.Connection:Disconnect() end) end
+        GFX.Connection = nil
+        gfxRestore()
+        gfxNotify("تم إيقاف التحسين واسترجاع الرسوميات")
+    end
+
+    AddTextLabel(GraphicsTab, "MONETOR X — ADAPTIVE GRAPHICS ENGINE\nتحسين ذكي بدون FPS Cap • " .. gfxDeviceText())
+
+    AddToggleButton(GraphicsTab, {
+        Name = "الوضع الذكي المتكيف",
+        OnText = "الوضع الذكي — يعمل تلقائياً",
+        OffText = "الوضع الذكي — متوقف",
+        Callback = nil,
+        OnEnable = gfxStartSmart,
+        OnDisable = gfxStopSmart,
+    })
+
+    AddButton(GraphicsTab, {
+        Name = "⚡ Performance Boost — آمن",
+        Callback = function()
+            gfxApply(1)
+            gfxNotify("تم تطبيق Boost بدون تحديد FPS")
+        end
+    })
+
+    AddButton(GraphicsTab, {
+        Name = "مؤثرات خفيفة فقط",
+        Callback = function()
+            for _, fx in ipairs(Lighting:GetChildren()) do
+                if fx:IsA("PostEffect") then pcall(function() gfxSet(fx, "Enabled", false) end) end
+            end
+            gfxNotify("تم تخفيف مؤثرات الإضاءة فقط")
+        end
+    })
+
+    AddButton(GraphicsTab, {
+        Name = "إيقاف المؤثرات الثقيلة",
+        Callback = function()
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam")
+                    or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") then
+                    pcall(function() gfxSet(obj, "Enabled", false) end)
+                end
+            end
+            gfxNotify("تم إيقاف المؤثرات الثقيلة")
+        end
+    })
+
+    AddButton(GraphicsTab, {
+        Name = "استرجاع كل الرسوميات",
+        Callback = function()
+            if GFX.Smart then GFX.Smart = false end
+            if GFX.Connection then pcall(function() GFX.Connection:Disconnect() end) end
+            GFX.Connection = nil
+            GFX.Enabled = false
+            gfxRestore()
+            gfxNotify("تم استرجاع إعدادات الرسوميات الأصلية")
+        end
+    })
+
+    AddTextLabel(GraphicsTab, "الفريمات: " .. (GFX.CurrentFPS > 0 and tostring(GFX.CurrentFPS) or "قياس تلقائي") .. "  •  لا يوجد FPS Limit")
+end
 
 -- =============================================
 -- COMMAND PANEL
