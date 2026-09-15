@@ -1727,6 +1727,355 @@ local TeleportTab = MakeTab({Name = "الانتقال ", TabTitle = true})
 local TrollTab = MakeTab({Name = "Troll", TabTitle = true, Image = "rbxassetid://6031075931"})
 local RightsTab = MakeTab({Name = "حقوق", TabTitle = true, AvatarUsername = "sjbcjjs0"})
 
+local GraphicsTab = MakeTab({Name = "جرافكس", TabTitle = true})
+
+-- =============================================
+-- MONETOR X - ADAPTIVE PERFORMANCE ENGINE V3
+-- FPS is never capped or forced down. The engine only reduces
+-- non-essential visual work when performance/memory pressure rises.
+-- =============================================
+do
+    local StatsService = game:GetService("Stats")
+    local Camera = workspace.CurrentCamera
+    local Adaptive = {
+        Enabled = false,
+        FocusMode = true,
+        Emergency = true,
+        Level = 0,
+        LastFPS = 0,
+        LastMemory = 0,
+        FrameTime = 0,
+        FrameCount = 0,
+        LastSample = os.clock(),
+        Saved = {},
+        Cache = nil,
+        Connection = nil,
+        LastAction = 0,
+        RestoreCooldown = 0
+    }
+
+    local function notify(text)
+        pcall(function()
+            MakeNotifi({Title = "Monetor X", Text = text, Time = 2})
+        end)
+    end
+
+    local function remember(inst, prop)
+        if not inst then return end
+        Adaptive.Saved[inst] = Adaptive.Saved[inst] or {}
+        if Adaptive.Saved[inst][prop] == nil then
+            local ok, value = pcall(function() return inst[prop] end)
+            if ok then Adaptive.Saved[inst][prop] = value end
+        end
+    end
+
+    local function setSafe(inst, prop, value)
+        if not inst or not inst.Parent then return false end
+        local ok = pcall(function()
+            remember(inst, prop)
+            inst[prop] = value
+        end)
+        return ok
+    end
+
+    local function restoreAll()
+        for inst, props in pairs(Adaptive.Saved) do
+            if inst and inst.Parent then
+                for prop, value in pairs(props) do
+                    pcall(function() inst[prop] = value end)
+                end
+            end
+        end
+        Adaptive.Saved = {}
+        Adaptive.Level = 0
+    end
+
+    local function buildCache()
+        if Adaptive.Cache then return Adaptive.Cache end
+        local cache = {
+            particles = {}, trails = {}, beams = {}, smoke = {}, fire = {}, sparkles = {}, lights = {}
+        }
+        local ok, descendants = pcall(function() return workspace:GetDescendants() end)
+        if not ok or type(descendants) ~= "table" then
+            Adaptive.Cache = cache
+            return cache
+        end
+        for _, obj in ipairs(descendants) do
+            local cls = obj.ClassName
+            if cls == "ParticleEmitter" then
+                table.insert(cache.particles, obj)
+            elseif cls == "Trail" then
+                table.insert(cache.trails, obj)
+            elseif cls == "Beam" then
+                table.insert(cache.beams, obj)
+            elseif cls == "Smoke" then
+                table.insert(cache.smoke, obj)
+            elseif cls == "Fire" then
+                table.insert(cache.fire, obj)
+            elseif cls == "Sparkles" then
+                table.insert(cache.sparkles, obj)
+            elseif cls == "PointLight" or cls == "SpotLight" or cls == "SurfaceLight" then
+                table.insert(cache.lights, obj)
+            end
+        end
+        Adaptive.Cache = cache
+        return cache
+    end
+
+    local function isInFocus(part)
+        if not Adaptive.FocusMode then return true end
+        Camera = workspace.CurrentCamera or Camera
+        if not Camera then return true end
+        local pos
+        if part:IsA("BasePart") then
+            pos = part.Position
+        elseif part:IsA("Attachment") and part.Parent and part.Parent:IsA("BasePart") then
+            pos = part.Parent.Position
+        elseif part.Parent and part.Parent:IsA("BasePart") then
+            pos = part.Parent.Position
+        else
+            return true
+        end
+        local offset = pos - Camera.CFrame.Position
+        local distance = offset.Magnitude
+        if distance <= 28 then return true end
+        if distance > 180 then return false end
+        local dir = offset.Unit
+        local facing = Camera.CFrame.LookVector:Dot(dir)
+        return facing > 0.15
+    end
+
+    local function applyEffectPressure(level)
+        local cache = buildCache()
+        local now = os.clock()
+        -- Level 1: only heavy effects that are behind/far from the camera.
+        -- Level 2: reduce secondary effects, preserving nearby/front visuals.
+        -- Level 3: emergency protection; temporarily disables selected lights too.
+        local changed = 0
+        for _, obj in ipairs(cache.particles) do
+            if obj and obj.Parent then
+                local active = isInFocus(obj)
+                if level >= 2 and not active then
+                    remember(obj, "Enabled")
+                    pcall(function() obj.Enabled = false end)
+                    changed += 1
+                elseif level == 1 and not active then
+                    remember(obj, "Rate")
+                    pcall(function() obj.Rate = math.max(0, obj.Rate * 0.35) end)
+                end
+            end
+        end
+        local groups = {cache.trails, cache.beams, cache.smoke, cache.fire, cache.sparkles}
+        for _, group in ipairs(groups) do
+            for _, obj in ipairs(group) do
+                if obj and obj.Parent then
+                    local active = isInFocus(obj)
+                    if level >= 2 and not active then
+                        remember(obj, "Enabled")
+                        pcall(function() obj.Enabled = false end)
+                        changed += 1
+                    end
+                end
+            end
+        end
+        if level >= 3 then
+            for _, light in ipairs(cache.lights) do
+                if light and light.Parent and not isInFocus(light) then
+                    remember(light, "Enabled")
+                    pcall(function() light.Enabled = false end)
+                end
+            end
+        end
+        Adaptive.LastAction = now
+        Adaptive.Level = level
+        return changed
+    end
+
+    local function applyShadowReduction(level)
+        if level < 2 then return end
+        -- Shadow removal is applied only once at level 2+ and restored on exit.
+        local ok, descendants = pcall(function() return workspace:GetDescendants() end)
+        if not ok then return end
+        for _, obj in ipairs(descendants) do
+            if obj:IsA("BasePart") and not isInFocus(obj) then
+                remember(obj, "CastShadow")
+                pcall(function() obj.CastShadow = false end)
+            end
+        end
+    end
+
+    local function getMemoryMB()
+        local ok, value = pcall(function() return StatsService:GetTotalMemoryUsageMb() end)
+        if ok and type(value) == "number" then return value end
+        return 0
+    end
+
+    local function getPerfStat(name)
+        local value = nil
+        pcall(function()
+            local perf = StatsService:FindFirstChild("PerformanceStats")
+            local stat = perf and perf:FindFirstChild(name)
+            if stat then
+                if stat.GetValue then value = stat:GetValue() else value = stat.Value end
+            end
+        end)
+        return type(value) == "number" and value or nil
+    end
+
+    local function classifyAndAct(fps, memory)
+        local cpu = getPerfStat("CPU")
+        local gpu = getPerfStat("GPU")
+        local pressure = 0
+        -- Memory is a controllable local signal; CPU/GPU metrics are used when Roblox exposes them.
+        if cpu and cpu >= 30 then pressure = math.max(pressure, 1) end
+        if gpu and gpu >= 30 then pressure = math.max(pressure, 1) end
+        if fps > 0 and fps < 45 then pressure = math.max(pressure, 1) end
+        if fps > 0 and fps < 32 then pressure = math.max(pressure, 2) end
+        if Adaptive.Emergency then
+            if memory >= 2700 then pressure = math.max(pressure, 2) end
+            if memory >= 2900 then pressure = 3 end
+        end
+
+        if pressure > 0 then
+            if pressure > Adaptive.Level and (os.clock() - Adaptive.LastAction) > 1.0 then
+                applyEffectPressure(pressure)
+                if pressure >= 2 then applyShadowReduction(pressure) end
+            end
+        elseif Adaptive.Level > 0 and fps >= 52 and memory < 2450 and (os.clock() - Adaptive.RestoreCooldown) > 3 then
+            Adaptive.RestoreCooldown = os.clock()
+            restoreAll()
+        end
+    end
+
+    local function startAdaptive()
+        if Adaptive.Enabled then return end
+        Adaptive.Enabled = true
+        Adaptive.LastAction = 0
+        Adaptive.LastSample = os.clock()
+        Adaptive.FrameCount = 0
+        Adaptive.FrameTime = 0
+        Adaptive.Level = 0
+        buildCache()
+        if Adaptive.Connection then Adaptive.Connection:Disconnect() end
+        Adaptive.Connection = RunService.Heartbeat:Connect(function(dt)
+            if not Adaptive.Enabled then return end
+            Adaptive.FrameCount += 1
+            Adaptive.FrameTime += dt
+            local now = os.clock()
+            if now - Adaptive.LastSample >= 1 then
+                local elapsed = now - Adaptive.LastSample
+                local fps = Adaptive.FrameCount / math.max(elapsed, 0.001)
+                local memory = getMemoryMB()
+                Adaptive.LastFPS = math.floor(fps * 10 + 0.5) / 10
+                Adaptive.LastMemory = math.floor(memory * 10 + 0.5) / 10
+                Adaptive.LastSample = now
+                Adaptive.FrameCount = 0
+                Adaptive.FrameTime = 0
+                classifyAndAct(Adaptive.LastFPS, Adaptive.LastMemory)
+            end
+        end)
+        notify("تم تشغيل الأداء الذكي — بدون تحديد FPS")
+    end
+
+    local function stopAdaptive()
+        Adaptive.Enabled = false
+        if Adaptive.Connection then
+            Adaptive.Connection:Disconnect()
+            Adaptive.Connection = nil
+        end
+        restoreAll()
+        notify("تم إيقاف الأداء الذكي واسترجاع الإعدادات")
+    end
+
+    AddTextLabel(GraphicsTab,
+        "Adaptive Performance V3\n" ..
+        "FPS يبقى على الحد الطبيعي للجهاز — التحسين يركز على الأشياء البعيدة والمؤثرات فقط.\n" ..
+        "Memory Budget: 3.0 GB (تنبيه/حماية، وليس حدّاً قسرياً على Roblox).")
+
+    local SmartToggle = AddToggleButton(GraphicsTab, {
+        Name = "الوضع الذكي",
+        StartState = false,
+        OnText = "الوضع الذكي — مفعّل",
+        OffText = "الوضع الذكي — متوقف",
+        OnEnable = startAdaptive,
+        OnDisable = stopAdaptive
+    })
+
+    AddToggleButton(GraphicsTab, {
+        Name = "Focus Mode",
+        StartState = true,
+        OnText = "تركيز الكاميرا — قريب/أمامك",
+        OffText = "تركيز الكاميرا — الكل",
+        OnEnable = function() Adaptive.FocusMode = true notify("تم تفعيل تركيز الكاميرا") end,
+        OnDisable = function() Adaptive.FocusMode = false notify("تم إيقاف تركيز الكاميرا") end
+    })
+
+    AddToggleButton(GraphicsTab, {
+        Name = "حماية الذاكرة",
+        StartState = true,
+        OnText = "Memory Guard — 3GB",
+        OffText = "Memory Guard — متوقف",
+        OnEnable = function() Adaptive.Emergency = true notify("حماية الذاكرة مفعّلة") end,
+        OnDisable = function() Adaptive.Emergency = false notify("حماية الذاكرة متوقفة") end
+    })
+
+    AddButton(GraphicsTab, {
+        Name = "تحسين خفيف",
+        Callback = function()
+            buildCache()
+            applyEffectPressure(1)
+            notify("تم تطبيق تحسين خفيف بدون FPS Cap")
+        end
+    })
+
+    AddButton(GraphicsTab, {
+        Name = "تركيز قوي على ما أمامك",
+        Callback = function()
+            Adaptive.FocusMode = true
+            buildCache()
+            applyEffectPressure(2)
+            applyShadowReduction(2)
+            notify("تم تخفيف الأشياء البعيدة مع إبقاء القريب")
+        end
+    })
+
+    AddButton(GraphicsTab, {
+        Name = "حماية الطوارئ للذاكرة",
+        Callback = function()
+            buildCache()
+            applyEffectPressure(3)
+            applyShadowReduction(3)
+            notify("تم تفعيل حماية الذاكرة")
+        end
+    })
+
+    AddButton(GraphicsTab, {
+        Name = "استرجاع كل الرسوميات",
+        Callback = function()
+            restoreAll()
+            notify("تم استرجاع إعدادات الرسوميات الأصلية")
+        end
+    })
+
+    local PerfStatus = AddTextLabel(GraphicsTab, "FPS: -- | Memory: -- MB | CPU/GPU: مراقبة عند توفر الإحصاءات")
+
+    task.spawn(function()
+        while ScreenGui and ScreenGui.Parent do
+            task.wait(1)
+            local fps = Adaptive.LastFPS
+            local memory = Adaptive.LastMemory
+            local cpu = getPerfStat("CPU")
+            local gpu = getPerfStat("GPU")
+            local cpuText = cpu and string.format("%.1f%%", cpu) or "--"
+            local gpuText = gpu and string.format("%.1f%%", gpu) or "--"
+            local state = Adaptive.Enabled and (" | مستوى الحماية: " .. tostring(Adaptive.Level)) or " | ذكي: متوقف"
+            pcall(function()
+                PerfStatus.Text = string.format("FPS: %.1f | Memory: %.0f MB / 3000 MB | CPU: %s | GPU: %s%s", fps, memory, cpuText, gpuText, state)
+            end)
+        end
+    end)
+end
+
 -- =============================================
 -- COMMAND PANEL
 -- =============================================
