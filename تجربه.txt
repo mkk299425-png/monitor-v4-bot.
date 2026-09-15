@@ -1047,16 +1047,142 @@ Stroke(UI.Content)
 
 UI.FirstTab = true
 
--- دخول ناعم وقوي للواجهة الرئيسية.
-pcall(function()
-    UI.MenuScale = Create("UIScale", UI.Menu, {Scale = 0.92})
-    UI.Menu.Size = UDim2.new(0, 500, 0, 295)
-    UI.Menu.Position = UDim2.new(0.5, -250, 0.5, -147)
-    task.defer(function()
-        CreateTween(UI.MenuScale, "Scale", 1, 0.45, false)
-        CreateTween(UI.Menu, "Size", UDim2.new(0,530,0,320), 0.45, false)
-        CreateTween(UI.Menu, "Position", UDim2.new(0.5,-265,0.5,-160), 0.45, false)
+-- =============================================
+-- MONETOR X - ANIMATION V5 / GOD MODE
+-- Cinematic UI animation layer: visual only.
+-- Does not alter tab/tool callbacks.
+-- =============================================
+local V5 = {
+    MenuBusy = false,
+    TabBusy = false,
+    Opened = false,
+    Reduced = false
+}
+
+local function V5Tween(obj, info, props)
+    if not obj or not obj.Parent then return nil end
+    local ok, tween = pcall(function()
+        return TweenService:Create(obj, info, props)
     end)
+    if ok and tween then
+        tween:Play()
+        return tween
+    end
+end
+
+local V5Fast = TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local V5Smooth = TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local V5Pop = TweenInfo.new(0.42, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+local V5Cine = TweenInfo.new(0.62, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+-- Main cinematic entrance.
+pcall(function()
+    UI.MenuScale = Create("UIScale", UI.Menu, {Scale = 0.72})
+    UI.Menu.Size = UDim2.new(0, 455, 0, 250)
+    UI.Menu.Position = UDim2.new(0.5, -227, 0.5, -125)
+    UI.Menu.Rotation = -1.5
+
+    task.defer(function()
+        V5.Opened = true
+        V5Tween(UI.MenuScale, V5Cine, {Scale = 1})
+        V5Tween(UI.Menu, V5Cine, {
+            Size = UDim2.new(0,530,0,320),
+            Position = UDim2.new(0.5,-265,0.5,-160),
+            Rotation = 0
+        })
+
+        -- Header/logo impact.
+        task.delay(0.12, function()
+            if UI.Logo and UI.Logo.Parent then
+                UI.Logo.Rotation = -12
+                V5Tween(UI.Logo, V5Pop, {Rotation = 0})
+                local logoScale = Create("UIScale", UI.Logo, {Scale = 0.72})
+                V5Tween(logoScale, V5Pop, {Scale = 1})
+            end
+        end)
+
+        -- Status pulse.
+        task.delay(0.25, function()
+            if UI.Status and UI.Status.Parent then
+                local s = Create("UIScale", UI.Status, {Scale = 0.88})
+                V5Tween(s, V5Pop, {Scale = 1})
+            end
+        end)
+    end)
+end)
+
+-- Lightweight animated background accents: only a few objects for mobile safety.
+pcall(function()
+    UI.V5Ambient = Create("Frame", UI.Menu, {
+        Name = "V5Ambient",
+        Size = UDim2.new(1,0,1,0),
+        Position = UDim2.new(0,0,0,0),
+        BackgroundTransparency = 1,
+        ClipsDescendants = true,
+        ZIndex = 50
+    })
+
+    for i = 1, 5 do
+        local orb = Create("Frame", UI.V5Ambient, {
+            Size = UDim2.new(0, math.random(70,125), 0, math.random(12,24)),
+            Position = UDim2.new(0, math.random(-80,420), 0, math.random(75,285)),
+            BackgroundColor3 = Color3.fromRGB(130, 12, 30),
+            BackgroundTransparency = 0.88,
+            BorderSizePixel = 0,
+            Rotation = math.random(-18,18),
+            ZIndex = 50
+        })
+        Corner(orb, {CornerRadius = UDim.new(1,0)})
+
+        task.spawn(function()
+            while orb and orb.Parent do
+                local x = math.random(-70,430)
+                local y = math.random(70,290)
+                local r = math.random(-25,25)
+                local dur = math.random(45,70) / 10
+                V5Tween(orb, TweenInfo.new(dur, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                    Position = UDim2.new(0,x,0,y),
+                    Rotation = r
+                })
+                task.wait(dur)
+            end
+        end)
+    end
+end)
+
+-- Global hover/press polish for the main control buttons.
+local function V5ButtonFX(button)
+    if not button or not button:IsA("GuiButton") then return end
+    local base = button.Size
+    local scale = Create("UIScale", button, {Scale = 1})
+
+    button.MouseEnter:Connect(function()
+        if V5.Reduced then return end
+        V5Tween(scale, V5Fast, {Scale = 1.035})
+    end)
+
+    button.MouseLeave:Connect(function()
+        V5Tween(scale, V5Fast, {Scale = 1})
+    end)
+
+    button.Activated:Connect(function()
+        if V5.Reduced then return end
+        V5Tween(scale, TweenInfo.new(0.07, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = 0.955})
+        task.delay(0.075, function()
+            if scale and scale.Parent then
+                V5Tween(scale, V5Pop, {Scale = 1})
+            end
+        end)
+    end)
+end
+
+task.defer(function()
+    task.wait(0.65)
+    for _, obj in ipairs(UI.Menu:GetDescendants()) do
+        if obj:IsA("TextButton") or obj:IsA("ImageButton") then
+            pcall(V5ButtonFX, obj)
+        end
+    end
 end)
 
 -- تصغير/تكبير
@@ -1065,14 +1191,13 @@ UI.Minimize.Activated:Connect(function()
     UI.Minimized = not UI.Minimized
     UI.Minimize.Text = UI.Minimized and "+" or "−"
     if UI.MenuScale then
-        CreateTween(UI.MenuScale, "Scale", UI.Minimized and 0.98 or 1, 0.22, false)
+        V5Tween(UI.MenuScale, TweenInfo.new(0.32, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+            {Scale = UI.Minimized and 0.985 or 1})
     end
-    CreateTween(
+    V5Tween(
         UI.Menu,
-        "Size",
-        UI.Minimized and UDim2.new(0,530,0,66) or UDim2.new(0,530,0,320),
-        0.30,
-        false
+        TweenInfo.new(0.38, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
+        {Size = UI.Minimized and UDim2.new(0,530,0,66) or UDim2.new(0,530,0,320)}
     )
 end)
 
@@ -1148,8 +1273,17 @@ local function ShowCloseConfirm()
 
     UI.ConfirmClose.MouseButton1Click:Connect(function()
         if UI.CloseDialog then UI.CloseDialog:Destroy(); UI.CloseDialog = nil end
-        CreateTween(UI.Menu, "Size", UDim2.new(0,530,0,0), 0.2, true)
-        task.delay(0.22, function()
+        if UI.MenuScale then
+            V5Tween(UI.MenuScale, TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+                Scale = 0.78
+            })
+        end
+        V5Tween(UI.Menu, TweenInfo.new(0.30, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+            Size = UDim2.new(0,430,0,0),
+            Position = UDim2.new(0.5,-215,0.5,0),
+            Rotation = 1.5
+        })
+        task.delay(0.32, function()
             pcall(DestroyScript)
         end)
     end)
@@ -1218,10 +1352,33 @@ function MakeTab(Configs)
 
         Page.Visible = true
         Page.CanvasPosition = Vector2.new(0,0)
-        Page.Position = UDim2.new(0, 18, 0, 6)
+        Page.Position = UDim2.new(0, 34, 0, 9)
         Chip.BackgroundColor3 = Color3.fromRGB(158,18,39)
         Chip.TextColor3 = Color3.fromRGB(255,255,255)
-        CreateTween(Page, "Position", UDim2.new(0, 0, 0, 0), 0.24, false)
+
+        -- V5 tab impact: slide + overshoot + tiny scale.
+        local pageScale = Page:FindFirstChild("V5PageScale") or Create("UIScale", Page, {
+            Name = "V5PageScale",
+            Scale = 0.965
+        })
+        V5Tween(pageScale, V5Pop, {Scale = 1})
+        V5Tween(Page, TweenInfo.new(0.36, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0, 0, 0, 0)
+        })
+
+        -- Active-tab pulse.
+        local chipScale = Chip:FindFirstChild("V5ChipScale") or Create("UIScale", Chip, {
+            Name = "V5ChipScale",
+            Scale = 1
+        })
+        V5Tween(chipScale, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Scale = 0.96
+        })
+        task.delay(0.08, function()
+            if chipScale and chipScale.Parent then
+                V5Tween(chipScale, V5Pop, {Scale = 1})
+            end
+        end)
     end
 
     Chip.MouseEnter:Connect(function()
@@ -1305,10 +1462,23 @@ function AddButton(parent, Configs)
         CreateTween(Accent, "Position", UDim2.new(0,10,0.5,-11), 0.18, false)
     end)
     Button.Activated:Connect(function()
-        CreateTween(Button, "Size", UDim2.new(1,-4,0,36), 0.07, false)
-        task.delay(0.08, function()
-            if Button and Button.Parent then
-                CreateTween(Button, "Size", UDim2.new(1,0,0,38), 0.18, false)
+        -- V5 impact layer; original callback remains untouched.
+        local fx = Button:FindFirstChild("V5ButtonScale") or Create("UIScale", Button, {
+            Name = "V5ButtonScale",
+            Scale = 1
+        })
+        V5Tween(fx, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = 0.94})
+        V5Tween(Accent, TweenInfo.new(0.08, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0,9,0,29),
+            Position = UDim2.new(0,7,0.5,-14)
+        })
+        task.delay(0.07, function()
+            if fx and fx.Parent then V5Tween(fx, V5Pop, {Scale = 1}) end
+            if Accent and Accent.Parent then
+                V5Tween(Accent, V5Pop, {
+                    Size = UDim2.new(0,6,0,26),
+                    Position = UDim2.new(0,8,0.5,-13)
+                })
             end
         end)
         pcall(Callback)
@@ -1741,7 +1911,6 @@ do
         Enabled = false,
         FocusMode = true,
         Emergency = true,
-        PersistentLoaded = false,
         Level = 0,
         LastFPS = 0,
         LastMemory = 0,
@@ -1754,51 +1923,6 @@ do
         LastAction = 0,
         RestoreCooldown = 0
     }
-
-    -- =============================================
-    -- MONETOR X - SILENT SETTINGS STORAGE
-    -- Uses Delta's local file API when available.
-    -- Simple local .db settings file (not JSON and not encrypted).
-    -- =============================================
-    local MXFolder = "/storage/emulated/0/Delta/MonetorX"
-    local MXFile = MXFolder .. "/settings.db"
-    local function mxPack()
-        return table.concat({
-            "MONETORX_DB_V1",
-            "Adaptive=" .. (Adaptive.Enabled and "1" or "0"),
-            "FocusMode=" .. (Adaptive.FocusMode and "1" or "0"),
-            "Emergency=" .. (Adaptive.Emergency and "1" or "0")
-        }, "\n")
-    end
-
-    local function mxUnpack(data)
-        if type(data) ~= "string" or data == "" then return end
-        local function flag(name, default)
-            local value = data:match("[\n\r]" .. name .. "=([01])")
-            if value == nil then return default end
-            return value == "1"
-        end
-        Adaptive.Enabled = flag("Adaptive", Adaptive.Enabled)
-        Adaptive.FocusMode = flag("FocusMode", Adaptive.FocusMode)
-        Adaptive.Emergency = flag("Emergency", Adaptive.Emergency)
-        Adaptive.PersistentLoaded = true
-    end
-
-    local function mxSave()
-        if not mxCanUseFiles() then return false end
-        mxEnsureFolder()
-        return pcall(function() writefile(MXFile, mxPack()) end)
-    end
-
-    local function mxLoad()
-        if not mxCanUseFiles() then return false end
-        local ok, data = pcall(function() return readfile(MXFile) end)
-        if not ok or type(data) ~= "string" or data == "" then return false end
-        local ok2 = pcall(function() mxUnpack(data) end)
-        return ok2 and Adaptive.PersistentLoaded == true
-    end
-
-    mxLoad()
 
     local function notify(text)
         pcall(function()
@@ -2030,7 +2154,6 @@ do
             Adaptive.Connection = nil
         end
         restoreAll()
-        mxSave()
         notify("تم إيقاف الأداء الذكي واسترجاع الإعدادات")
     end
 
@@ -2041,29 +2164,29 @@ do
 
     local SmartToggle = AddToggleButton(GraphicsTab, {
         Name = "الوضع الذكي",
-        StartState = Adaptive.Enabled,
+        StartState = false,
         OnText = "الوضع الذكي — مفعّل",
         OffText = "الوضع الذكي — متوقف",
-        OnEnable = function() startAdaptive(); mxSave() end,
-        OnDisable = function() stopAdaptive(); mxSave() end
+        OnEnable = startAdaptive,
+        OnDisable = stopAdaptive
     })
 
     AddToggleButton(GraphicsTab, {
         Name = "Focus Mode",
-        StartState = Adaptive.FocusMode,
+        StartState = true,
         OnText = "تركيز الكاميرا — قريب/أمامك",
         OffText = "تركيز الكاميرا — الكل",
-        OnEnable = function() Adaptive.FocusMode = true; mxSave(); notify("تم تفعيل تركيز الكاميرا") end,
-        OnDisable = function() Adaptive.FocusMode = false; mxSave(); notify("تم إيقاف تركيز الكاميرا") end
+        OnEnable = function() Adaptive.FocusMode = true notify("تم تفعيل تركيز الكاميرا") end,
+        OnDisable = function() Adaptive.FocusMode = false notify("تم إيقاف تركيز الكاميرا") end
     })
 
     AddToggleButton(GraphicsTab, {
         Name = "حماية الذاكرة",
-        StartState = Adaptive.Emergency,
+        StartState = true,
         OnText = "Memory Guard — 3GB",
         OffText = "Memory Guard — متوقف",
-        OnEnable = function() Adaptive.Emergency = true; mxSave(); notify("حماية الذاكرة مفعّلة") end,
-        OnDisable = function() Adaptive.Emergency = false; mxSave(); notify("حماية الذاكرة متوقفة") end
+        OnEnable = function() Adaptive.Emergency = true notify("حماية الذاكرة مفعّلة") end,
+        OnDisable = function() Adaptive.Emergency = false notify("حماية الذاكرة متوقفة") end
     })
 
     AddButton(GraphicsTab, {
@@ -2079,7 +2202,6 @@ do
         Name = "تركيز قوي على ما أمامك",
         Callback = function()
             Adaptive.FocusMode = true
-            mxSave()
             buildCache()
             applyEffectPressure(2)
             applyShadowReduction(2)
@@ -2106,11 +2228,6 @@ do
     })
 
     local PerfStatus = AddTextLabel(GraphicsTab, "FPS: -- | Memory: -- MB | CPU/GPU: مراقبة عند توفر الإحصاءات")
-
-    -- Restore the user's previous Smart state silently after the UI exists.
-    if Adaptive.Enabled then
-        task.defer(function() pcall(startAdaptive) end)
-    end
 
     task.spawn(function()
         while ScreenGui and ScreenGui.Parent do
