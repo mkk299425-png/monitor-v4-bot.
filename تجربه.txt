@@ -1741,6 +1741,7 @@ do
         Enabled = false,
         FocusMode = true,
         Emergency = true,
+        PersistentLoaded = false,
         Level = 0,
         LastFPS = 0,
         LastMemory = 0,
@@ -1753,6 +1754,51 @@ do
         LastAction = 0,
         RestoreCooldown = 0
     }
+
+    -- =============================================
+    -- MONETOR X - SILENT SETTINGS STORAGE
+    -- Uses Delta's local file API when available.
+    -- Simple local .db settings file (not JSON and not encrypted).
+    -- =============================================
+    local MXFolder = "/storage/emulated/0/Delta/MonetorX"
+    local MXFile = MXFolder .. "/settings.db"
+    local function mxPack()
+        return table.concat({
+            "MONETORX_DB_V1",
+            "Adaptive=" .. (Adaptive.Enabled and "1" or "0"),
+            "FocusMode=" .. (Adaptive.FocusMode and "1" or "0"),
+            "Emergency=" .. (Adaptive.Emergency and "1" or "0")
+        }, "\n")
+    end
+
+    local function mxUnpack(data)
+        if type(data) ~= "string" or data == "" then return end
+        local function flag(name, default)
+            local value = data:match("[\n\r]" .. name .. "=([01])")
+            if value == nil then return default end
+            return value == "1"
+        end
+        Adaptive.Enabled = flag("Adaptive", Adaptive.Enabled)
+        Adaptive.FocusMode = flag("FocusMode", Adaptive.FocusMode)
+        Adaptive.Emergency = flag("Emergency", Adaptive.Emergency)
+        Adaptive.PersistentLoaded = true
+    end
+
+    local function mxSave()
+        if not mxCanUseFiles() then return false end
+        mxEnsureFolder()
+        return pcall(function() writefile(MXFile, mxPack()) end)
+    end
+
+    local function mxLoad()
+        if not mxCanUseFiles() then return false end
+        local ok, data = pcall(function() return readfile(MXFile) end)
+        if not ok or type(data) ~= "string" or data == "" then return false end
+        local ok2 = pcall(function() mxUnpack(data) end)
+        return ok2 and Adaptive.PersistentLoaded == true
+    end
+
+    mxLoad()
 
     local function notify(text)
         pcall(function()
@@ -1984,6 +2030,7 @@ do
             Adaptive.Connection = nil
         end
         restoreAll()
+        mxSave()
         notify("تم إيقاف الأداء الذكي واسترجاع الإعدادات")
     end
 
@@ -1994,29 +2041,29 @@ do
 
     local SmartToggle = AddToggleButton(GraphicsTab, {
         Name = "الوضع الذكي",
-        StartState = false,
+        StartState = Adaptive.Enabled,
         OnText = "الوضع الذكي — مفعّل",
         OffText = "الوضع الذكي — متوقف",
-        OnEnable = startAdaptive,
-        OnDisable = stopAdaptive
+        OnEnable = function() startAdaptive(); mxSave() end,
+        OnDisable = function() stopAdaptive(); mxSave() end
     })
 
     AddToggleButton(GraphicsTab, {
         Name = "Focus Mode",
-        StartState = true,
+        StartState = Adaptive.FocusMode,
         OnText = "تركيز الكاميرا — قريب/أمامك",
         OffText = "تركيز الكاميرا — الكل",
-        OnEnable = function() Adaptive.FocusMode = true notify("تم تفعيل تركيز الكاميرا") end,
-        OnDisable = function() Adaptive.FocusMode = false notify("تم إيقاف تركيز الكاميرا") end
+        OnEnable = function() Adaptive.FocusMode = true; mxSave(); notify("تم تفعيل تركيز الكاميرا") end,
+        OnDisable = function() Adaptive.FocusMode = false; mxSave(); notify("تم إيقاف تركيز الكاميرا") end
     })
 
     AddToggleButton(GraphicsTab, {
         Name = "حماية الذاكرة",
-        StartState = true,
+        StartState = Adaptive.Emergency,
         OnText = "Memory Guard — 3GB",
         OffText = "Memory Guard — متوقف",
-        OnEnable = function() Adaptive.Emergency = true notify("حماية الذاكرة مفعّلة") end,
-        OnDisable = function() Adaptive.Emergency = false notify("حماية الذاكرة متوقفة") end
+        OnEnable = function() Adaptive.Emergency = true; mxSave(); notify("حماية الذاكرة مفعّلة") end,
+        OnDisable = function() Adaptive.Emergency = false; mxSave(); notify("حماية الذاكرة متوقفة") end
     })
 
     AddButton(GraphicsTab, {
@@ -2032,6 +2079,7 @@ do
         Name = "تركيز قوي على ما أمامك",
         Callback = function()
             Adaptive.FocusMode = true
+            mxSave()
             buildCache()
             applyEffectPressure(2)
             applyShadowReduction(2)
@@ -2058,6 +2106,11 @@ do
     })
 
     local PerfStatus = AddTextLabel(GraphicsTab, "FPS: -- | Memory: -- MB | CPU/GPU: مراقبة عند توفر الإحصاءات")
+
+    -- Restore the user's previous Smart state silently after the UI exists.
+    if Adaptive.Enabled then
+        task.defer(function() pcall(startAdaptive) end)
+    end
 
     task.spawn(function()
         while ScreenGui and ScreenGui.Parent do
